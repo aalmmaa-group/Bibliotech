@@ -70,6 +70,23 @@
                 <strong>User</strong>
                 <small>Responsável pela sala</small>
             </span>
+
+            <button class="profile-menu-button" id="profileMenuButton" type="button" aria-label="Abrir opções do usuário" aria-controls="profileMenu" aria-expanded="false" aria-haspopup="menu">
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <circle cx="12" cy="5" r="1.6"/>
+                    <circle cx="12" cy="12" r="1.6"/>
+                    <circle cx="12" cy="19" r="1.6"/>
+                </svg>
+            </button>
+
+            <div class="profile-menu" id="profileMenu" role="menu" hidden>
+                <button class="profile-menu__logout" id="logoutButton" type="button" role="menuitem">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M10 5H5v14h5M14 8l4 4-4 4M9 12h9"/>
+                    </svg>
+                    <span>Sair</span>
+                </button>
+            </div>
         </div>
     </aside>
 
@@ -85,30 +102,34 @@
                 <strong id="breadcrumbCurrent" aria-current="page">Visão geral</strong>
             </nav>
 
-            <div class="notification-area">
-                <button class="notification" id="notificationButton" type="button" aria-label="Abrir notificações" aria-controls="notificationPanel" aria-expanded="false" aria-haspopup="true">
-                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                        <path d="M7.5 10.5a4.5 4.5 0 0 1 9 0c0 5 2 5.5 2 5.5h-13s2-.5 2-5.5Z"/>
-                        <path d="M10 19h4"/>
-                    </svg>
-                    <span class="notification__dot"></span>
-                </button>
+            <div class="topbar-actions">
+                <button class="help-button" id="helpButton" type="button">Ajuda</button>
 
-                <section class="notification-panel" id="notificationPanel" aria-labelledby="notificationPanelTitle" hidden>
-                    <header class="notification-panel__header">
-                        <h2 id="notificationPanelTitle">Notificações</h2>
-                    </header>
-                    <div class="notification-panel__empty">
-                        <span class="notification-panel__icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" fill="none">
-                                <path d="M7.5 10.5a4.5 4.5 0 0 1 9 0c0 5 2 5.5 2 5.5h-13s2-.5 2-5.5Z"/>
-                                <path d="M10 19h4"/>
-                            </svg>
-                        </span>
-                        <strong>Nenhuma notificação</strong>
-                        <p>Quando houver novidades, elas aparecerão aqui.</p>
-                    </div>
-                </section>
+                <div class="notification-area">
+                    <button class="notification" id="notificationButton" type="button" aria-label="Abrir notificações" aria-controls="notificationPanel" aria-expanded="false" aria-haspopup="true">
+                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <path d="M7.5 10.5a4.5 4.5 0 0 1 9 0c0 5 2 5.5 2 5.5h-13s2-.5 2-5.5Z"/>
+                            <path d="M10 19h4"/>
+                        </svg>
+                        <span class="notification__dot"></span>
+                    </button>
+
+                    <section class="notification-panel" id="notificationPanel" aria-labelledby="notificationPanelTitle" hidden>
+                        <header class="notification-panel__header">
+                            <h2 id="notificationPanelTitle">Notificações</h2>
+                        </header>
+                        <div class="notification-panel__empty">
+                            <span class="notification-panel__icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none">
+                                    <path d="M7.5 10.5a4.5 4.5 0 0 1 9 0c0 5 2 5.5 2 5.5h-13s2-.5 2-5.5Z"/>
+                                    <path d="M10 19h4"/>
+                                </svg>
+                            </span>
+                            <strong>Nenhuma notificação</strong>
+                            <p>Quando houver novidades, elas aparecerão aqui.</p>
+                        </div>
+                    </section>
+                </div>
             </div>
         </header>
 

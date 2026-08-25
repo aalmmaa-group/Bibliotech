@@ -16,6 +16,9 @@ const collectionSearchForm = document.querySelector(".collection-search__form");
 const overviewLower = document.querySelector(".overview-lower");
 const quickActions = document.querySelectorAll(".quick-action");
 const viewHistoryButton = document.querySelector("#viewHistoryButton");
+const profileMenuButton = document.querySelector("#profileMenuButton");
+const profileMenu = document.querySelector("#profileMenu");
+const logoutButton = document.querySelector("#logoutButton");
 
 const pageInformation = {
     "Visão geral": {
@@ -94,6 +97,7 @@ document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
         closeSidebar();
         closeNotificationPanel();
+        closeProfileMenu();
     }
 });
 
@@ -118,6 +122,28 @@ notificationPanel.addEventListener("click", (event) => {
 });
 
 document.addEventListener("click", closeNotificationPanel);
+
+function closeProfileMenu() {
+    profileMenu.hidden = true;
+    profileMenuButton.setAttribute("aria-expanded", "false");
+    profileMenuButton.setAttribute("aria-label", "Abrir opções do usuário");
+}
+
+profileMenuButton.addEventListener("click", (event) => {
+    event.stopPropagation();
+    const willOpen = profileMenu.hidden;
+
+    profileMenu.hidden = !willOpen;
+    profileMenuButton.setAttribute("aria-expanded", String(willOpen));
+    profileMenuButton.setAttribute("aria-label", willOpen ? "Fechar opções do usuário" : "Abrir opções do usuário");
+});
+
+profileMenu.addEventListener("click", (event) => {
+    event.stopPropagation();
+});
+
+logoutButton.addEventListener("click", closeProfileMenu);
+document.addEventListener("click", closeProfileMenu);
 
 registerLoanButton.addEventListener("click", () => {
     const loansMenuItem = [...menuItems].find((item) => item.dataset.page === "Empréstimos");
