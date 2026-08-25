@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bibliotech</title>
+    <link rel="stylesheet" href="style.css/style.css">
+</head>
+<body>
+    <aside class="sidebar" id="sidebar" aria-label="Menu principal">
+        <div class="brand">
+            <span class="brand__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M4.5 5.5c2.4-.9 4.7-.5 7.5 1v12c-2.8-1.5-5.1-1.9-7.5-1V5.5Z"/>
+                    <path d="M19.5 5.5c-2.4-.9-4.7-.5-7.5 1v12c2.8-1.5 5.1-1.9 7.5-1V5.5Z"/>
+                </svg>
+            </span>
+            <span class="brand__text">
+                <strong>Bibliotech</strong>
+                <small>Sala de leitura</small>
+            </span>
+        </div>
+
+        <div class="sidebar__content">
+            <p class="sidebar__label">Menu principal</p>
+
+            <nav class="menu">
+                <button class="menu__item is-active" type="button" data-page="Visão geral" aria-current="page">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <rect x="4" y="4" width="6" height="6" rx="1"/>
+                        <rect x="14" y="4" width="6" height="6" rx="1"/>
+                        <rect x="4" y="14" width="6" height="6" rx="1"/>
+                        <rect x="14" y="14" width="6" height="6" rx="1"/>
+                    </svg>
+                    <span>Visão geral</span>
+                </button>
+
+                <button class="menu__item" type="button" data-page="Empréstimos">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M6 8h12M6 8l3-3M6 8l3 3M18 16H6m12 0-3-3m3 3-3 3"/>
+                    </svg>
+                    <span>Empréstimos</span>
+                </button>
+
+                <button class="menu__item" type="button" data-page="Acervo">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M4.5 5.5c2.4-.9 4.7-.5 7.5 1v12c-2.8-1.5-5.1-1.9-7.5-1V5.5Z"/>
+                        <path d="M19.5 5.5c-2.4-.9-4.7-.5-7.5 1v12c2.8-1.5 5.1-1.9 7.5-1V5.5Z"/>
+                    </svg>
+                    <span>Acervo</span>
+                </button>
+
+                <button class="menu__item" type="button" data-page="Relatórios">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M5 19V9m5 10V5m5 14v-7m5 7H3"/>
+                    </svg>
+                    <span>Relatórios</span>
+                </button>
+            </nav>
+        </div>
+
+        <div class="profile">
+            <span class="profile__avatar" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="8" r="3.25"/>
+                    <path d="M5.5 19c.8-3.3 3-5 6.5-5s5.7 1.7 6.5 5"/>
+                </svg>
+            </span>
+            <span class="profile__text">
+                <strong>User</strong>
+                <small>Responsável pela sala</small>
+            </span>
+        </div>
+    </aside>
+
+    <div class="app">
+        <header class="topbar">
+            <button class="mobile-menu" id="mobileMenu" type="button" aria-label="Abrir menu" aria-controls="sidebar" aria-expanded="false">
+                <span></span><span></span><span></span>
+            </button>
+
+            <nav class="breadcrumb" aria-label="Navegação estrutural">
+                <span>Bibliotech</span>
+                <span class="breadcrumb__separator" aria-hidden="true">/</span>
+                <strong id="breadcrumbCurrent" aria-current="page">Visão geral</strong>
+            </nav>
+
+            <div class="notification-area">
+                <button class="notification" id="notificationButton" type="button" aria-label="Abrir notificações" aria-controls="notificationPanel" aria-expanded="false" aria-haspopup="true">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M7.5 10.5a4.5 4.5 0 0 1 9 0c0 5 2 5.5 2 5.5h-13s2-.5 2-5.5Z"/>
+                        <path d="M10 19h4"/>
+                    </svg>
+                    <span class="notification__dot"></span>
+                </button>
+
+                <section class="notification-panel" id="notificationPanel" aria-labelledby="notificationPanelTitle" hidden>
+                    <header class="notification-panel__header">
+                        <h2 id="notificationPanelTitle">Notificações</h2>
+                    </header>
+                    <div class="notification-panel__empty">
+                        <span class="notification-panel__icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none">
+                                <path d="M7.5 10.5a4.5 4.5 0 0 1 9 0c0 5 2 5.5 2 5.5h-13s2-.5 2-5.5Z"/>
+                                <path d="M10 19h4"/>
+                            </svg>
+                        </span>
+                        <strong>Nenhuma notificação</strong>
+                        <p>Quando houver novidades, elas aparecerão aqui.</p>
+                    </div>
+                </section>
+            </div>
+        </header>
+
+        <main class="page-content" id="pageContent" tabindex="-1">
+            <section class="page-intro" aria-labelledby="pageTitle">
+                <div class="page-intro__top">
+                    <div>
+                        <p class="page-intro__eyebrow" id="pageEyebrow">Painel da sala de leitura</p>
+                        <h1 id="pageTitle">Visão geral</h1>
+                        <p class="page-intro__description" id="pageDescription">Acompanhe o que acontece no acervo hoje.</p>
+                    </div>
+
+                    <button class="primary-action" id="registerLoanButton" type="button">
+                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <path d="M12 5v14M5 12h14"/>
+                        </svg>
+                        <span>Registrar Empréstimo</span>
+                    </button>
+                </div>
+
+                <div class="stats-grid" aria-label="Resumo da biblioteca">
+                    <article class="stat-card">
+                        <div class="stat-card__header">
+                            <p>Livros no acervo</p>
+                            <span class="stat-card__icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none">
+                                    <path d="M4.5 5.5c2.4-.9 4.7-.5 7.5 1v12c-2.8-1.5-5.1-1.9-7.5-1V5.5Z"/>
+                                    <path d="M19.5 5.5c-2.4-.9-4.7-.5-7.5 1v12c2.8-1.5 5.1-1.9 7.5-1V5.5Z"/>
+                                </svg>
+                            </span>
+                        </div>
+                        <strong>1.248</strong>
+                        <small>32 adicionados este mês</small>
+                    </article>
+
+                    <article class="stat-card">
+                        <div class="stat-card__header">
+                            <p>Disponíveis agora</p>
+                            <span class="stat-card__icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none">
+                                    <rect x="5" y="4" width="14" height="16" rx="2"/>
+                                    <path d="m9 12 2 2 4-5"/>
+                                </svg>
+                            </span>
+                        </div>
+                        <strong>1.079</strong>
+                        <small>86% do acervo</small>
+                    </article>
+
+                    <article class="stat-card">
+                        <div class="stat-card__header">
+                            <p>Empréstimos ativos</p>
+                            <span class="stat-card__icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none">
+                                    <path d="M6 8h12M6 8l3-3M6 8l3 3M18 16H6m12 0-3-3m3 3-3 3"/>
+                                </svg>
+                            </span>
+                        </div>
+                        <strong>169</strong>
+                        <small>12 realizados hoje</small>
+                    </article>
+
+                    <article class="stat-card stat-card--warning">
+                        <div class="stat-card__header">
+                            <p>Devoluções atrasadas</p>
+                            <span class="stat-card__icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none">
+                                    <circle cx="12" cy="12" r="8"/>
+                                    <path d="M12 8v5l3 2"/>
+                                </svg>
+                            </span>
+                        </div>
+                        <strong>8</strong>
+                        <small>Requer atenção</small>
+                    </article>
+                </div>
+
+                <section class="collection-search" aria-labelledby="collectionSearchTitle">
+                    <div class="collection-search__text">
+                        <h2 id="collectionSearchTitle">Consultar acervo</h2>
+                        <p>Busque por título, autor ou gênero quando o módulo Acervo estiver disponível.</p>
+                    </div>
+
+                    <form class="collection-search__form" role="search">
+                        <label class="sr-only" for="collectionSearchInput">Buscar no acervo</label>
+                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <circle cx="11" cy="11" r="6"/>
+                            <path d="m16 16 4 4"/>
+                        </svg>
+                        <input id="collectionSearchInput" type="search" placeholder="Buscar no acervo" autocomplete="off">
+                    </form>
+                </section>
+
+                <div class="overview-lower">
+                    <section class="recent-activity" aria-labelledby="recentActivityTitle">
+                        <header class="panel-heading">
+                            <div>
+                                <h2 id="recentActivityTitle">Movimentações recentes</h2>
+                                <p>Últimos registros da sala de leitura</p>
+                            </div>
+                            <button class="panel-link" id="viewHistoryButton" type="button">Ver histórico <span aria-hidden="true">→</span></button>
+                        </header>
+
+                        <div class="activity-list">
+                            <article class="activity-item">
+                                <span class="book-marker book-marker--coral" aria-hidden="true"></span>
+                                <div class="activity-item__content">
+                                    <strong>O Pequeno Príncipe</strong>
+                                    <p>Emprestado para Gabriel Costa · 8º A</p>
+                                </div>
+                                <time datetime="09:40">Hoje, 09:40</time>
+                                <span class="activity-badge activity-badge--loan">Empréstimo</span>
+                            </article>
+
+                            <article class="activity-item">
+                                <span class="book-marker book-marker--purple" aria-hidden="true"></span>
+                                <div class="activity-item__content">
+                                    <strong>Extraordinário</strong>
+                                    <p>Devolvido por Ana Clara · 7º B</p>
+                                </div>
+                                <time datetime="08:15">Hoje, 08:15</time>
+                                <span class="activity-badge activity-badge--return">Devolução</span>
+                            </article>
+
+                            <article class="activity-item">
+                                <span class="book-marker book-marker--blue" aria-hidden="true"></span>
+                                <div class="activity-item__content">
+                                    <strong>A Bolsa Amarela</strong>
+                                    <p>Emprestado para Lucas Martins · 9º A</p>
+                                </div>
+                                <time>Ontem, 15:27</time>
+                                <span class="activity-badge activity-badge--loan">Empréstimo</span>
+                            </article>
+                        </div>
+                    </section>
+
+                    <section class="quick-access" aria-labelledby="quickAccessTitle">
+                        <header class="panel-heading">
+                            <div>
+                                <h2 id="quickAccessTitle">Acesso rápido</h2>
+                                <p>Principais ações</p>
+                            </div>
+                        </header>
+
+                        <div class="quick-access__list">
+                            <button class="quick-action" type="button" data-target-page="Empréstimos">
+                                <span class="quick-action__icon quick-action__icon--loan" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" fill="none"><path d="M7 17 17 7M10 7h7v7"/></svg>
+                                </span>
+                                <span class="quick-action__text">
+                                    <strong>Novo empréstimo</strong>
+                                    <small>Registrar uma retirada</small>
+                                </span>
+                                <span class="quick-action__arrow" aria-hidden="true">›</span>
+                            </button>
+
+                            <button class="quick-action" type="button" data-target-page="Acervo">
+                                <span class="quick-action__icon quick-action__icon--book" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14"/></svg>
+                                </span>
+                                <span class="quick-action__text">
+                                    <strong>Cadastrar livro</strong>
+                                    <small>Adicionar ao acervo</small>
+                                </span>
+                                <span class="quick-action__arrow" aria-hidden="true">›</span>
+                            </button>
+                        </div>
+                    </section>
+                </div>
+            </section>
+
+            <!-- O conteúdo de cada tela será implementado aqui. -->
+        </main>
+    </div>
+
+    <div class="sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+    <script src="script.js"></script>
+</body>
+</html>
