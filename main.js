@@ -1,4 +1,4 @@
-//const AppDatabase = require('./src/db/database');
+const AppDatabase = require('./src/db/database');
 
 const { app, BrowserWindow } = require('electron/main');
 const path = require('node:path');
@@ -20,7 +20,7 @@ function createWindow () {
 }
 
 app.whenReady().then(() => {
-    //db = new AppDatabase();
+    db = new AppDatabase();
   createWindow()
 
   app.on('activate', () => {
