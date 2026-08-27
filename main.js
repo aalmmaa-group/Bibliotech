@@ -47,6 +47,15 @@ function cadastrarLivro(bookData) {
   }
 
   const { title, author, genre, quantity, notes = "" } = bookData;
+  
+  // Não permite que o título, autor, genero,quantidade ou observação estaja vazia.
+  if (!title || !author || !genre || !notes || quantity === undefined || quantity === "") {
+    return {
+      ok: false,
+      code: 'VALIDATION_ERROR',
+      message: 'Campos obrigatórios não podem estar vazios.'
+    };
+  }
 
   try {
     // Usando 'db.db' em vez de 'banco.db'
@@ -70,8 +79,7 @@ function cadastrarLivro(bookData) {
       message: "Livro cadastrado no acervo com sucesso!",
       payload: { id: info.lastInsertRowid, ...bookData } 
     };
-
-    // Mensagem de erro
+      // Mensagem de erro
   } catch (erro) {
     console.error("Erro ao cadastrar livro no SQLite:", erro);
     return { 

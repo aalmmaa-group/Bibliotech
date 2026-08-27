@@ -5,7 +5,6 @@ const Database = require('better-sqlite3');
 class AppDatabase{
     constructor(){
         const dbPath = path.join(app.getPath('userData'), 'bibliotech.sqlite');
-        console.log("📍 O BANCO DE DADOS ESTÁ AQUI:", dbPath);
         this.db = new Database(dbPath);
         this.db.pragma('journal_mode = WAL');
         this.setUpDataBase();
