@@ -76,7 +76,7 @@ function validateBookForm() {
 
 /**
  * Converte os valores do formulário no objeto enviado pela ponte Electron.
- * @returns {{title:string, author:string, genre:string, quantity:number, registeredAt:string, notes:string}}
+ * @returns {{title:string, author:string, genre:string, quantity:number, notes:string}}
  */
 function getBookPayload() {
   const formData = new FormData(bookForm);
@@ -85,7 +85,6 @@ function getBookPayload() {
     author: formData.get('author').trim(),
     genre: formData.get('genre').trim(),
     quantity: Number(formData.get('quantity')),
-    registeredAt: formData.get('registeredAt'),
     notes: formData.get('notes').trim()
   };
 }
@@ -144,16 +143,6 @@ async function handleBookSubmit(event) {
   showPending(result?.message || 'Abra pelo Electron para enviar o cadastro.');
 }
 
-/** Inicializa os eventos após o carregamento do HTML. */
-function initializeApp() {
-  setupNavigation();
-  setupPendingActions();
-  bookForm.elements.registeredAt.value = new Date().toISOString().slice(0, 10);
-  bookForm.addEventListener('submit', handleBookSubmit);
-}
-
-initializeApp();
-
 // Selecionamos o formulário pelo ID do html
 const form = document.getElementById('bookForm');
 
@@ -189,3 +178,14 @@ form.addEventListener('submit', async (event) => {
     alert("Ocorreu um erro inesperado ao tentar salvar o livro.");
   }
 });
+
+/** Inicializa os eventos após o carregamento do HTML. */
+function initializeApp() {
+  setupNavigation();
+  setupPendingActions();
+  /** tirei essa parte pq eu criei outra ali em baixo que ta salvando o livro tbm (por isso tava salvando duas) -Arthur
+  bookForm.addEventListener('submit', handleBookSubmit);*/
+  
+}
+
+initializeApp();

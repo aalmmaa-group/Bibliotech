@@ -48,8 +48,8 @@ function cadastrarLivro(bookData) {
 
   const { title, author, genre, quantity, notes = "" } = bookData;
   
-  // Não permite que o título, autor, genero,quantidade ou observação estaja vazia.
-  if (!title || !author || !genre || !notes || quantity === undefined || quantity === "") {
+  // Não permite que o título, autor, genero ou quantidade estaja vazia.
+  if (!title || !author || !genre || quantity === undefined || quantity === "") {
     return {
       ok: false,
       code: 'VALIDATION_ERROR',
@@ -58,7 +58,6 @@ function cadastrarLivro(bookData) {
   }
 
   try {
-    // Usando 'db.db' em vez de 'banco.db'
     const stmt = db.db.prepare(`
       INSERT INTO livros (
         nome, 
