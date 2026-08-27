@@ -1,7 +1,6 @@
 /** Processo principal: cria a janela e recebe chamadas seguras da interface. */
 const { app, BrowserWindow, ipcMain } = require('electron/main');
 const path = require('node:path');
-
 let db;
 
 
@@ -29,12 +28,60 @@ function createWindow() {
  * Contrato inicial da tela de cadastro com o processo principal.
  * A camada de persistência pode substituir este retorno pela gravação real.
  */
-ipcMain.handle('books:create', async (_event, book) => ({
-  ok: false,
-  code: 'DATABASE_METHOD_PENDING',
-  message: 'Cadastro validado e pronto para conexão com o banco de dados.',
-  payload: book
-}));
+//Substituito pela gravação real -Arthur
+ipcMain.handle('books:create', async (_event, book) => {
+  // Agora ele chama a função real em vez de retornar o texto pendente
+  return cadastrarLivro(book);
+});
+
+
+// função de cadastrar os livros 
+function cadastrarLivro(bookData) {
+  // Prevenção: verifica se o banco de dados carregou corretamente
+  if (!db || !db.db) {
+    return {
+      ok: false,
+      code: 'DB_UNAVAILABLE',
+      message: 'O banco de dados está indisponível nesta máquina.'
+    };
+  }
+
+  const { title, author, genre, quantity, notes = "" } = bookData;
+
+  try {
+    // Usando 'db.db' em vez de 'banco.db'
+    const stmt = db.db.prepare(`
+      INSERT INTO livros (
+        nome, 
+        autor, 
+        genero,   
+        quantidade_livros_total, 
+        quantidade_livros_disponiveis, 
+        observacao
+      ) VALUES (?, ?, ?, ?, ?, ?)
+    `);
+
+    const info = stmt.run(title, author, genre, quantity, quantity, notes);
+
+      // Mensagem de retorno
+    return {
+      ok: true,
+      code: 'SUCCESS',
+      message: "Livro cadastrado no acervo com sucesso!",
+      payload: { id: info.lastInsertRowid, ...bookData } 
+    };
+
+    // Mensagem de erro
+  } catch (erro) {
+    console.error("Erro ao cadastrar livro no SQLite:", erro);
+    return { 
+      ok: false, 
+      code: 'INSERT_ERROR',
+      message: "Ocorreu um erro interno ao salvar o livro." 
+    };
+  }
+}
+
 
 /** Inicializa dependências locais e abre a primeira janela do aplicativo. */
 app.whenReady().then(() => {
@@ -61,3 +108,4 @@ app.on('window-all-closed', () => {
     app.quit()
   }
 })
+

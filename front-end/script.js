@@ -153,3 +153,39 @@ function initializeApp() {
 }
 
 initializeApp();
+
+// Selecionamos o formulário pelo ID do html
+const form = document.getElementById('bookForm');
+
+// Escuta o evento de submit
+form.addEventListener('submit', async (event) => {
+  
+  //Evita que a página recarregue quando o formulário é enviado
+  event.preventDefault();
+
+  //Captura todos os dados do formulário automaticamente usando os "names" do HTML
+  const formData = new FormData(form);
+  const bookData = {
+    title: formData.get('title'),
+    author: formData.get('author'),
+    genre: formData.get('genre'),
+    quantity: Number(formData.get('quantity')),
+    notes: formData.get('notes')
+  }
+  try {
+    // Envia os dados para o Electron (via preload.js)
+    const resultado = await window.bibliotech.books.create(bookData);
+
+    // Verifica se deu certo
+    if (resultado.ok) {
+      alert(resultado.message); // Avisa o usuário
+      form.reset(); // Limpa todos os campos do formulário
+    } else {
+      alert("Erro ao cadastrar: " + resultado.message);
+    }
+
+  } catch (erro) {
+    console.error("Erro na comunicação com o backend:", erro);
+    alert("Ocorreu um erro inesperado ao tentar salvar o livro.");
+  }
+});
