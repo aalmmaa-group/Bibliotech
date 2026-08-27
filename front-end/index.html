@@ -4,22 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bibliotech</title>
+    <link rel="icon" type="image/svg+xml" href="assets/bibliotech-logo.svg">
     <link rel="stylesheet" href="style.css/style.css">
 </head>
 <body>
     <aside class="sidebar" id="sidebar" aria-label="Menu principal">
-        <div class="brand">
-            <span class="brand__icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none">
-                    <path d="M4.5 5.5c2.4-.9 4.7-.5 7.5 1v12c-2.8-1.5-5.1-1.9-7.5-1V5.5Z"/>
-                    <path d="M19.5 5.5c-2.4-.9-4.7-.5-7.5 1v12c2.8-1.5 5.1-1.9 7.5-1V5.5Z"/>
-                </svg>
-            </span>
+        <button class="brand" id="brandHome" type="button" aria-label="Voltar à visão geral">
+            <img class="brand__icon" src="assets/bibliotech-logo.svg" alt="">
             <span class="brand__text">
                 <strong>Bibliotech</strong>
                 <small>Sala de leitura</small>
             </span>
-        </div>
+        </button>
 
         <div class="sidebar__content">
             <p class="sidebar__label">Menu principal</p>
@@ -33,6 +29,10 @@
                         <rect x="14" y="14" width="6" height="6" rx="1"/>
                     </svg>
                     <span>Visão geral</span>
+                </button>
+                <button class="menu__item" type="button" data-page="Gestão">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg>
+                    <span>Gestão</span>
                 </button>
 
                 <button class="menu__item" type="button" data-page="Empréstimos">
@@ -134,7 +134,7 @@
         </header>
 
         <main class="page-content" id="pageContent" tabindex="-1">
-            <section class="page-intro" aria-labelledby="pageTitle">
+            <section class="page-intro" id="overviewPage" aria-labelledby="pageTitle">
                 <div class="page-intro__top">
                     <div>
                         <p class="page-intro__eyebrow" id="pageEyebrow">Painel da sala de leitura</p>
@@ -301,7 +301,29 @@
                 </div>
             </section>
 
-            <!-- O conteúdo de cada tela será implementado aqui. -->
+            <!-- Gestão concentra os dois fluxos operacionais principais. -->
+            <section class="page-intro management-page" id="managementPage" hidden>
+                <p class="page-intro__eyebrow">Área operacional</p><h1>Gestão</h1>
+                <p class="page-intro__description">Escolha a rotina que deseja organizar.</p>
+                <div class="management-options">
+                    <article><span>↔</span><div><p>GESTÃO DE MOVIMENTAÇÕES</p><h2>Empréstimos e devoluções</h2><small>Registre saídas, prazos e retornos.</small></div><button type="button" data-pending="Empréstimos e devoluções">Abrir →</button></article>
+                    <article><span>＋</span><div><p>GESTÃO DO CATÁLOGO</p><h2>Cadastro de livros</h2><small>Adicione e organize os dados do acervo.</small></div><button type="button" data-open-view="cadastro">Cadastrar livro →</button></article>
+                </div>
+            </section>
+            <!-- Formulário alinhado aos atributos previstos no banco SQLite. -->
+            <section class="page-intro registration-page" id="registrationPage" hidden>
+                <p class="page-intro__eyebrow">Gestão do catálogo</p><h1>Cadastro de livro</h1>
+                <p class="page-intro__description">Preencha as informações do exemplar para o acervo.</p>
+                <form id="bookForm" class="book-form" novalidate>
+                    <label class="wide">Título do livro *<input name="title" required maxlength="160"><small></small></label>
+                    <label>Autor *<input name="author" required maxlength="120"><small></small></label>
+                    <label>Gênero *<input name="genre" required maxlength="80"><small></small></label>
+                    <label>Quantidade *<input name="quantity" type="number" min="1" step="1" required><small></small></label>
+                    <label>Data de cadastro *<input name="registeredAt" type="date" required><small></small></label>
+                    <label class="wide">Observação <textarea name="notes" rows="4" maxlength="500"></textarea><small></small></label>
+                    <div class="form-actions wide"><button type="button" data-open-view="gestao">Cancelar</button><button class="primary-action" type="submit">Validar e enviar cadastro</button></div>
+                </form>
+            </section>
         </main>
     </div>
 

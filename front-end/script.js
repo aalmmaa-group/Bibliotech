@@ -1,176 +1,155 @@
-const menuItems = document.querySelectorAll(".menu__item");
-const pageTitle = document.querySelector("#pageTitle");
-const pageEyebrow = document.querySelector("#pageEyebrow");
-const pageDescription = document.querySelector("#pageDescription");
-const breadcrumbCurrent = document.querySelector("#breadcrumbCurrent");
-const pageContent = document.querySelector("#pageContent");
-const sidebar = document.querySelector("#sidebar");
-const mobileMenu = document.querySelector("#mobileMenu");
-const sidebarOverlay = document.querySelector("#sidebarOverlay");
-const notificationButton = document.querySelector("#notificationButton");
-const notificationPanel = document.querySelector("#notificationPanel");
-const registerLoanButton = document.querySelector("#registerLoanButton");
-const statsGrid = document.querySelector(".stats-grid");
-const collectionSearch = document.querySelector(".collection-search");
-const collectionSearchForm = document.querySelector(".collection-search__form");
-const overviewLower = document.querySelector(".overview-lower");
-const quickActions = document.querySelectorAll(".quick-action");
-const viewHistoryButton = document.querySelector("#viewHistoryButton");
-const profileMenuButton = document.querySelector("#profileMenuButton");
-const profileMenu = document.querySelector("#profileMenu");
-const logoutButton = document.querySelector("#logoutButton");
+/**
+ * Controlador da interface.
+ * Centraliza a navegação entre telas, os avisos de módulos futuros e o
+ * formulário de cadastro, sem acessar Node.js ou o banco diretamente.
+ */
 
-const pageInformation = {
-    "Visão geral": {
-        eyebrow: "Painel da sala de leitura",
-        description: "Acompanhe o que acontece no acervo hoje."
-    },
-    "Empréstimos": {
-        eyebrow: "Gestão de empréstimos",
-        description: "Registre e acompanhe os empréstimos, devoluções e prazos."
-    },
-    "Acervo": {
-        eyebrow: "Gestão do acervo",
-        description: "Cadastre livros e consulte a disponibilidade dos exemplares."
-    },
-    "Relatórios": {
-        eyebrow: "Indicadores da biblioteca",
-        description: "Acompanhe os livros mais lidos e a movimentação da sala."
-    }
-};
+// --- Referências reutilizadas pela interface. ---
+const menuItems = document.querySelectorAll('.menu__item');
+const overviewPage = document.querySelector('#overviewPage');
+const managementPage = document.querySelector('#managementPage');
+const registrationPage = document.querySelector('#registrationPage');
+const pageTitle = document.querySelector('#pageTitle');
+const breadcrumbCurrent = document.querySelector('#breadcrumbCurrent');
+const bookForm = document.querySelector('#bookForm');
 
-function setActivePage(selectedItem) {
-    menuItems.forEach((item) => {
-        const isSelected = item === selectedItem;
-        item.classList.toggle("is-active", isSelected);
+/**
+ * Alterna a tela visível da aplicação.
+ * @param {'inicio'|'gestao'|'cadastro'} view Tela que deve ser exibida.
+ */
+function openView(view) {
+  overviewPage.hidden = view !== 'inicio';
+  managementPage.hidden = view !== 'gestao';
+  registrationPage.hidden = view !== 'cadastro';
 
-        if (isSelected) {
-            item.setAttribute("aria-current", "page");
-        } else {
-            item.removeAttribute("aria-current");
-        }
+  const titleByView = {
+    inicio: 'Visão geral',
+    gestao: 'Gestão',
+    cadastro: 'Cadastro de livro'
+  };
+  const title = titleByView[view];
+
+  pageTitle.textContent = title;
+  breadcrumbCurrent.textContent = title;
+  document.title = `${title} | Bibliotech`;
+
+  // Gestão permanece destacado enquanto o formulário de cadastro estiver aberto.
+  const activePage = view === 'inicio' ? 'Visão geral' : 'Gestão';
+  menuItems.forEach((item) => {
+    item.classList.toggle('is-active', item.dataset.page === activePage);
+  });
+}
+
+/**
+ * Mostra uma mensagem temporária no painel de notificações.
+ * @param {string} message Texto explicativo para o usuário.
+ */
+function showPending(message) {
+  const panel = document.querySelector('#notificationPanel');
+  panel.querySelector('.notification-panel__empty strong').textContent = 'Em construção';
+  panel.querySelector('.notification-panel__empty p').textContent = message;
+  panel.hidden = false;
+  window.setTimeout(() => { panel.hidden = true; }, 3500);
+}
+
+/**
+ * Valida os campos obrigatórios previstos para um livro.
+ * @returns {boolean} true quando todos os campos estão corretos.
+ */
+function validateBookForm() {
+  let isValid = true;
+
+  bookForm.querySelectorAll('input[required]').forEach((input) => {
+    const isQuantityInvalid = input.name === 'quantity' && Number(input.value) < 1;
+    const hasError = !input.value.trim() || isQuantityInvalid;
+    const field = input.closest('label');
+
+    field.classList.toggle('is-invalid', hasError);
+    field.querySelector('small').textContent = hasError
+      ? 'Preencha este campo corretamente.'
+      : '';
+    isValid &&= !hasError;
+  });
+
+  return isValid;
+}
+
+/**
+ * Converte os valores do formulário no objeto enviado pela ponte Electron.
+ * @returns {{title:string, author:string, genre:string, quantity:number, registeredAt:string, notes:string}}
+ */
+function getBookPayload() {
+  const formData = new FormData(bookForm);
+  return {
+    title: formData.get('title').trim(),
+    author: formData.get('author').trim(),
+    genre: formData.get('genre').trim(),
+    quantity: Number(formData.get('quantity')),
+    registeredAt: formData.get('registeredAt'),
+    notes: formData.get('notes').trim()
+  };
+}
+
+/** Conecta botões do menu às telas disponíveis ou aos avisos de planejamento. */
+function setupNavigation() {
+  menuItems.forEach((item) => {
+    item.addEventListener('click', () => {
+      const page = item.dataset.page;
+      if (page === 'Visão geral') return openView('inicio');
+      if (page === 'Gestão') return openView('gestao');
+      showPending(`${page} será disponibilizado nas próximas etapas.`);
     });
+  });
 
-    const selectedPage = selectedItem.dataset.page;
-    const selectedInformation = pageInformation[selectedPage];
+  document.querySelectorAll('[data-open-view]').forEach((button) => {
+    button.addEventListener('click', () => openView(button.dataset.openView));
+  });
 
-    pageTitle.textContent = selectedPage;
-    breadcrumbCurrent.textContent = selectedPage;
-    pageEyebrow.textContent = selectedInformation.eyebrow;
-    pageDescription.textContent = selectedInformation.description;
-    const isOverview = selectedPage === "Visão geral";
-    statsGrid.hidden = !isOverview;
-    collectionSearch.hidden = !isOverview;
-    overviewLower.hidden = !isOverview;
-    registerLoanButton.hidden = !isOverview;
-    document.title = `${selectedPage} | Bibliotech`;
-    pageContent.focus({ preventScroll: true });
-    closeSidebar();
+  document.querySelector('#brandHome').addEventListener('click', () => openView('inicio'));
 }
 
-function openSidebar() {
-    sidebar.classList.add("is-open");
-    sidebarOverlay.classList.add("is-visible");
-    sidebarOverlay.setAttribute("aria-hidden", "false");
-    mobileMenu.setAttribute("aria-expanded", "true");
-}
+/** Configura comportamentos dos módulos ainda fora do escopo atual. */
+function setupPendingActions() {
+  document.querySelectorAll('[data-pending]').forEach((button) => {
+    button.addEventListener('click', () => showPending(`${button.dataset.pending} está em construção.`));
+  });
 
-function closeSidebar() {
-    sidebar.classList.remove("is-open");
-    sidebarOverlay.classList.remove("is-visible");
-    sidebarOverlay.setAttribute("aria-hidden", "true");
-    mobileMenu.setAttribute("aria-expanded", "false");
-}
-
-menuItems.forEach((item) => {
-    item.addEventListener("click", () => setActivePage(item));
-});
-
-mobileMenu.addEventListener("click", () => {
-    const isOpen = sidebar.classList.contains("is-open");
-    isOpen ? closeSidebar() : openSidebar();
-});
-
-sidebarOverlay.addEventListener("click", closeSidebar);
-
-document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") {
-        closeSidebar();
-        closeNotificationPanel();
-        closeProfileMenu();
-    }
-});
-
-function closeNotificationPanel() {
-    notificationPanel.hidden = true;
-    notificationButton.setAttribute("aria-expanded", "false");
-    notificationButton.setAttribute("aria-label", "Abrir notificações");
-}
-
-notificationButton.addEventListener("click", (event) => {
-    event.stopPropagation();
-    const willOpen = notificationPanel.hidden;
-
-    notificationButton.querySelector(".notification__dot")?.remove();
-    notificationPanel.hidden = !willOpen;
-    notificationButton.setAttribute("aria-expanded", String(willOpen));
-    notificationButton.setAttribute("aria-label", willOpen ? "Fechar notificações" : "Abrir notificações");
-});
-
-notificationPanel.addEventListener("click", (event) => {
-    event.stopPropagation();
-});
-
-document.addEventListener("click", closeNotificationPanel);
-
-function closeProfileMenu() {
-    profileMenu.hidden = true;
-    profileMenuButton.setAttribute("aria-expanded", "false");
-    profileMenuButton.setAttribute("aria-label", "Abrir opções do usuário");
-}
-
-profileMenuButton.addEventListener("click", (event) => {
-    event.stopPropagation();
-    const willOpen = profileMenu.hidden;
-
-    profileMenu.hidden = !willOpen;
-    profileMenuButton.setAttribute("aria-expanded", String(willOpen));
-    profileMenuButton.setAttribute("aria-label", willOpen ? "Fechar opções do usuário" : "Abrir opções do usuário");
-});
-
-profileMenu.addEventListener("click", (event) => {
-    event.stopPropagation();
-});
-
-logoutButton.addEventListener("click", closeProfileMenu);
-document.addEventListener("click", closeProfileMenu);
-
-registerLoanButton.addEventListener("click", () => {
-    const loansMenuItem = [...menuItems].find((item) => item.dataset.page === "Empréstimos");
-
-    if (loansMenuItem) {
-        setActivePage(loansMenuItem);
-    }
-});
-
-collectionSearchForm.addEventListener("submit", (event) => {
-    event.preventDefault();
-});
-
-quickActions.forEach((action) => {
-    action.addEventListener("click", () => {
-        const targetMenuItem = [...menuItems].find((item) => item.dataset.page === action.dataset.targetPage);
-
-        if (targetMenuItem) {
-            setActivePage(targetMenuItem);
-        }
+  document.querySelector('#registerLoanButton').addEventListener('click', () => {
+    showPending('Empréstimos será disponibilizado nas próximas etapas.');
+  });
+  document.querySelector('#viewHistoryButton').addEventListener('click', () => {
+    showPending('O histórico completo está em construção.');
+  });
+  document.querySelector('#helpButton').addEventListener('click', () => {
+    showPending('A central de ajuda está em construção.');
+  });
+  document.querySelectorAll('.quick-action').forEach((button) => {
+    button.addEventListener('click', () => {
+      button.dataset.targetPage === 'Acervo'
+        ? openView('cadastro')
+        : showPending('Empréstimos está em construção.');
     });
-});
+  });
+}
 
-viewHistoryButton.addEventListener("click", () => {
-    const loansMenuItem = [...menuItems].find((item) => item.dataset.page === "Empréstimos");
+/** Valida e encaminha o livro pela API segura exposta em preload.js. */
+async function handleBookSubmit(event) {
+  event.preventDefault();
+  if (!validateBookForm()) {
+    showPending('Revise os campos destacados antes de enviar.');
+    return;
+  }
 
-    if (loansMenuItem) {
-        setActivePage(loansMenuItem);
-    }
-});
+  const result = await window.bibliotech?.books?.create(getBookPayload());
+  showPending(result?.message || 'Abra pelo Electron para enviar o cadastro.');
+}
+
+/** Inicializa os eventos após o carregamento do HTML. */
+function initializeApp() {
+  setupNavigation();
+  setupPendingActions();
+  bookForm.elements.registeredAt.value = new Date().toISOString().slice(0, 10);
+  bookForm.addEventListener('submit', handleBookSubmit);
+}
+
+initializeApp();

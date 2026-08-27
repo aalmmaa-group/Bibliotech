@@ -1094,3 +1094,22 @@ button {
         transition-duration: 0.01ms !important;
     }
 }
+
+/* Integração da Gestão e cadastro: usa os mesmos tons e superfícies da tela base. */
+.brand { border: 0; background: transparent; text-align: left; cursor: pointer; }
+.brand__icon { width: 36px; height: 36px; }
+.management-options { display: grid; gap: 14px; margin-top: 28px; }
+.management-options article { display: grid; grid-template-columns: 46px 1fr auto; gap: 16px; align-items: center; padding: 22px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow); }
+.management-options article > span { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 10px; background: #e8f5e4; color: var(--primary); font-size: 20px; }
+.management-options p { margin: 0 0 5px; color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: 1px; }
+.management-options h2 { margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: 19px; }
+.management-options small { display: block; margin-top: 5px; color: var(--muted); }
+.management-options button, .form-actions > button { border: 1px solid #cfe3c7; border-radius: 7px; background: transparent; color: var(--primary); padding: 10px 13px; font-weight: 700; cursor: pointer; }
+.book-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 17px; margin-top: 26px; padding: 24px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow); }
+.book-form label { display: grid; gap: 7px; color: var(--text); font-size: 12px; font-weight: 700; }
+.book-form .wide { grid-column: 1 / -1; }
+.book-form input, .book-form textarea { width: 100%; border: 1px solid #ccd9cc; border-radius: 7px; outline: none; background: #fbfdf9; padding: 10px 11px; font: inherit; }
+.book-form input:focus, .book-form textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(7, 141, 135, .14); }
+.book-form label.is-invalid input { border-color: #bf684b; }.book-form label small { min-height: 12px; color: #a65238; font-size: 10px; }
+.form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px; }.form-actions .primary-action { border: 0; }
+@media (max-width: 760px) { .management-options article { grid-template-columns: 42px 1fr; }.management-options button { grid-column: 1 / -1; width: 100%; }.book-form { grid-template-columns: 1fr; padding: 18px; }.book-form .wide { grid-column: auto; } }
