@@ -161,17 +161,42 @@ form.addEventListener('submit', async (event) => {
     quantity: Number(formData.get('quantity')),
     notes: formData.get('notes')
   }
+  // faz o aviso na tela sem alert
+  if (!bookData.title || !bookData.author || !bookData.quantity) {
+      const mensagemAlerta = document.getElementById('mensagem-alerta');
+      mensagemAlerta.textContent = "Por favor, preencha todos os campos obrigatórios.";
+      mensagemAlerta.style.color = "red";
+      
+      // Apaga o aviso após 4 segundos
+      setTimeout(() => {
+          mensagemAlerta.textContent = "";
+      }, 4000);
+      
+      return;
+    }
+
   try {
     // Envia os dados para o Electron (via preload.js)
     const resultado = await window.bibliotech.books.create(bookData);
 
     // Verifica se deu certo
-    if (resultado.ok) {
-      alert(resultado.message); // Avisa o usuário
-      form.reset(); // Limpa todos os campos do formulário
-    } else {
-      alert("Erro ao cadastrar: " + resultado.message);
-    }
+   const mensagemAlerta = document.getElementById('mensagem-alerta');
+
+  // Verifica se deu certo
+  if (resultado.ok) {
+      mensagemAlerta.textContent = resultado.message;
+      mensagemAlerta.style.color = "green"; 
+      form.reset(); 
+      form.querySelector('[name="title"]').focus(); 
+  } else {
+      mensagemAlerta.textContent = "Erro ao cadastrar: " + resultado.message;
+      mensagemAlerta.style.color = "red"; 
+  }
+
+  // Faz a mensagem sumir sozinha após 4 segundos para limpar a tela
+  setTimeout(() => {
+      mensagemAlerta.textContent = "";
+  }, 4000);
 
   } catch (erro) {
     console.error("Erro na comunicação com o backend:", erro);
