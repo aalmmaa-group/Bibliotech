@@ -4,7 +4,15 @@
   "description": "",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "build": "electron-builder"
+  },
+  "build": {
+    "appId": "com.aalmmaa-group.bibliotech",
+    "productName": "Bibliotech",
+    "win": {
+      "target": "nsis"
+    }
   },
   "keywords": [],
   "author": "",
@@ -15,6 +23,7 @@
     "pg": "^8.23.0"
   },
   "devDependencies": {
-    "electron": "^41.10.7"
+    "electron": "^41.10.7",
+    "electron-builder": "^26.15.3"
   }
 }

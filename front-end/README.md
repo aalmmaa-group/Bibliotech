@@ -9,7 +9,9 @@ Na raiz do projeto:
 ```bash
 npm install
 npm start
+npm run build #para criar a pasta dist com o executavel 
 ```
+
 
 Na maioria dos computadores, somente esses dois comandos são necessários.
 O Electron e as demais dependências serão baixados automaticamente.
