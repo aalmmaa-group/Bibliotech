@@ -4,17 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bibliotech</title>
-    <link rel="icon" type="image/svg+xml" href="assets/bibliotech-logo.svg">
+    <link rel="icon" type="image/svg+xml" href="assets/bibliotech-logo.svg?v=2">
     <link rel="stylesheet" href="style.css/style.css">
 </head>
 <body>
     <aside class="sidebar" id="sidebar" aria-label="Menu principal">
         <button class="brand" id="brandHome" type="button" aria-label="Voltar à visão geral">
             <img class="brand__icon" src="assets/bibliotech-logo.svg" alt="">
-            <span class="brand__text">
-                <strong>Bibliotech</strong>
-                <small>Sala de leitura</small>
-            </span>
+            <img class="brand__wordmark" src="assets/bibliotech-brand-teal.png" alt="Bibliotech">
         </button>
 
         <div class="sidebar__content">
@@ -22,38 +19,26 @@
 
             <nav class="menu">
                 <button class="menu__item is-active" type="button" data-page="Visão geral" aria-current="page">
-                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                        <rect x="4" y="4" width="6" height="6" rx="1"/>
-                        <rect x="14" y="4" width="6" height="6" rx="1"/>
-                        <rect x="4" y="14" width="6" height="6" rx="1"/>
-                        <rect x="14" y="14" width="6" height="6" rx="1"/>
-                    </svg>
+                    <img class="menu__icon" src="assets/icons/overview.svg" alt="" aria-hidden="true">
                     <span>Visão geral</span>
                 </button>
                 <button class="menu__item" type="button" data-page="Gestão">
-                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg>
+                    <img class="menu__icon" src="assets/icons/management.svg" alt="" aria-hidden="true">
                     <span>Gestão</span>
                 </button>
 
                 <button class="menu__item" type="button" data-page="Empréstimos">
-                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                        <path d="M6 8h12M6 8l3-3M6 8l3 3M18 16H6m12 0-3-3m3 3-3 3"/>
-                    </svg>
+                    <img class="menu__icon" src="assets/icons/loans.svg" alt="" aria-hidden="true">
                     <span>Empréstimos</span>
                 </button>
 
                 <button class="menu__item" type="button" data-page="Acervo">
-                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                        <path d="M4.5 5.5c2.4-.9 4.7-.5 7.5 1v12c-2.8-1.5-5.1-1.9-7.5-1V5.5Z"/>
-                        <path d="M19.5 5.5c-2.4-.9-4.7-.5-7.5 1v12c2.8-1.5 5.1-1.9 7.5-1V5.5Z"/>
-                    </svg>
+                    <img class="menu__icon" src="assets/icons/collection.svg" alt="" aria-hidden="true">
                     <span>Acervo</span>
                 </button>
 
                 <button class="menu__item" type="button" data-page="Relatórios">
-                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                        <path d="M5 19V9m5 10V5m5 14v-7m5 7H3"/>
-                    </svg>
+                    <img class="menu__icon" src="assets/icons/reports.svg" alt="" aria-hidden="true">
                     <span>Relatórios</span>
                 </button>
             </nav>
@@ -142,11 +127,9 @@
                         <p class="page-intro__description" id="pageDescription">Acompanhe o que acontece no acervo hoje.</p>
                     </div>
 
-                    <button class="primary-action" id="registerLoanButton" type="button">
-                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                            <path d="M12 5v14M5 12h14"/>
-                        </svg>
-                        <span>Registrar Empréstimo</span>
+                    <button class="primary-action register-book-button overview-register-button" type="button" data-open-view="cadastro">
+                        <span class="register-book-button__label">Cadastrar livro</span>
+                        <img class="register-book-button__icon" src="assets/icons/register-book.svg" alt="" aria-hidden="true">
                     </button>
                 </div>
 
@@ -303,26 +286,90 @@
 
             <!-- Gestão concentra os dois fluxos operacionais principais. -->
             <section class="page-intro management-page" id="managementPage" hidden>
-                <p class="page-intro__eyebrow">Área operacional</p><h1>Gestão</h1>
+                <p class="page-intro__eyebrow">Área operacional</p>
+                <h1>Gestão</h1>
                 <p class="page-intro__description">Escolha a rotina que deseja organizar.</p>
+
                 <div class="management-options">
-                    <article><span>↔</span><div><p>GESTÃO DE MOVIMENTAÇÕES</p><h2>Empréstimos e devoluções</h2><small>Registre saídas, prazos e retornos.</small></div><button type="button" data-pending="Empréstimos e devoluções">Abrir →</button></article>
-                    <article><span>＋</span><div><p>GESTÃO DO CATÁLOGO</p><h2>Cadastro de livros</h2><small>Adicione e organize os dados do acervo.</small></div><button type="button" data-open-view="cadastro">Cadastrar livro →</button></article>
+                    <article>
+                        <span aria-hidden="true">↔</span>
+                        <div>
+                            <p>GESTÃO DE MOVIMENTAÇÕES</p>
+                            <h2>Empréstimos e devoluções</h2>
+                            <small>Registre saídas, prazos e retornos.</small>
+                        </div>
+                        <button type="button" data-pending="Empréstimos e devoluções">Abrir →</button>
+                    </article>
+
+                    <article>
+                        <span aria-hidden="true">＋</span>
+                        <div>
+                            <p>GESTÃO DO CATÁLOGO</p>
+                            <h2>Cadastro de livros</h2>
+                            <small>Adicione e organize os dados do acervo.</small>
+                        </div>
+                        <button class="register-book-button" type="button" data-open-view="cadastro">
+                            <span class="register-book-button__label">Cadastrar livro</span>
+                            <img class="register-book-button__icon" src="assets/icons/register-book.svg" alt="" aria-hidden="true">
+                        </button>
+                    </article>
                 </div>
             </section>
+
             <!-- Formulário alinhado aos atributos previstos no banco SQLite. -->
             <section class="page-intro registration-page" id="registrationPage" hidden>
-                <p class="page-intro__eyebrow">Gestão do catálogo</p><h1>Cadastro de livro</h1>
+                <p class="page-intro__eyebrow">Gestão do catálogo</p>
+                <h1>Cadastro de livro</h1>
                 <p class="page-intro__description">Preencha as informações do exemplar para o acervo.</p>
                 <form id="bookForm" class="book-form" novalidate>
-                    <label class="wide">Título do livro *<input name="title" required maxlength="160"><small></small></label>
-                    <label>Autor *<input name="author" required maxlength="120"><small></small></label>
-                    <label>Gênero *<input name="genre" required maxlength="80"><small></small></label>
-                    <label>Quantidade *<input name="quantity" type="number" min="1" step="1" required><small></small></label>
-                    <label class="wide">Observação <textarea name="notes" rows="4" maxlength="500" required></textarea><small></small></label>
-                    <!-- o alert novo que aparece na tela-->
-                    <p id="mensagem-alerta" style="font-weight: bold; text-align: center; min-height: 20px;"></p>
-                    <div class="form-actions wide"><button type="button" data-open-view="gestao">Cancelar</button><button class="primary-action" id="btnCadastrar" type="submit">Validar e enviar cadastro</button></div>
+                    <label class="wide">
+                        <span class="field-label">
+                            Título do livro
+                            <span class="required-marker" tabindex="0" aria-label="Campo obrigatório" data-tooltip="Campo obrigatório">*</span>
+                        </span>
+                        <input name="title" required maxlength="160">
+                        <small></small>
+                    </label>
+
+                    <label>
+                        <span class="field-label">
+                            Autor
+                            <span class="required-marker" tabindex="0" aria-label="Campo obrigatório" data-tooltip="Campo obrigatório">*</span>
+                        </span>
+                        <input name="author" required maxlength="120">
+                        <small></small>
+                    </label>
+
+                    <label>
+                        <span class="field-label">
+                            Gênero
+                            <span class="required-marker" tabindex="0" aria-label="Campo obrigatório" data-tooltip="Campo obrigatório">*</span>
+                        </span>
+                        <input name="genre" required maxlength="80">
+                        <small></small>
+                    </label>
+
+                    <label>
+                        <span class="field-label">
+                            Quantidade
+                            <span class="required-marker" tabindex="0" aria-label="Campo obrigatório" data-tooltip="Campo obrigatório">*</span>
+                        </span>
+                        <input name="quantity" type="number" min="1" step="1" required>
+                        <small></small>
+                    </label>
+
+                    <label class="wide">
+                        <span class="field-label">Observação</span>
+                        <textarea name="notes" rows="4" maxlength="500"></textarea>
+                        <small></small>
+                    </label>
+
+                    <p class="form-message wide" id="mensagem-alerta" role="status" aria-live="polite"></p>
+
+                    <div class="form-actions wide">
+                        <button type="button" data-open-view="gestao">Cancelar</button>
+                        <button class="primary-action" id="btnCadastrar" type="submit">Validar e enviar cadastro</button>
+                    </div>
                 </form>
             </section>
         </main>

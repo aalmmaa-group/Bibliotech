@@ -54,9 +54,28 @@ button {
     display: flex;
     min-height: var(--topbar-height);
     align-items: center;
-    gap: 12px;
-    padding: 0 20px;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 5px 14px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    transition: background 220ms ease;
+}
+
+.brand:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.brand__wordmark {
+    display: block;
+    width: min(166px, calc(100% - 46px));
+    height: auto;
+    filter: drop-shadow(0 5px 10px rgba(3, 16, 31, 0.34));
+    transition: filter 260ms ease, transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.brand:hover .brand__wordmark {
+    filter: drop-shadow(0 7px 14px rgba(65, 211, 205, 0.22));
+    transform: translateY(-1px) scale(1.015);
 }
 
 .brand__icon {
@@ -121,6 +140,7 @@ button {
 }
 
 .menu__item {
+    position: relative;
     display: flex;
     width: 100%;
     min-height: 44px;
@@ -133,12 +153,36 @@ button {
     border-radius: 7px;
     cursor: pointer;
     text-align: left;
-    transition: color 160ms ease, background 160ms ease, transform 160ms ease;
+    overflow: hidden;
+    transition: color 220ms ease, background 220ms ease, transform 220ms ease;
 }
 
 .menu__item:hover {
     color: #ffffff;
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Indicador de navegação: cresce da esquerda para a direita no hover. */
+.menu__item::after {
+    position: absolute;
+    right: 14px;
+    bottom: 6px;
+    left: 46px;
+    height: 3px;
+    content: '';
+    background: linear-gradient(90deg, #43d6ca 0%, #6ac7f2 55%, #a7e7df 100%);
+    border-radius: 999px;
+    box-shadow: 0 0 10px rgba(105, 210, 226, 0.38);
+    opacity: 0;
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform 480ms cubic-bezier(0.16, 1, 0.3, 1), opacity 220ms ease;
+}
+
+.menu__item:hover::after,
+.menu__item:focus-visible::after {
+    opacity: 1;
+    transform: scaleX(1);
 }
 
 .menu__item:active {
@@ -158,14 +202,19 @@ button {
     font-weight: 600;
 }
 
-.menu__item svg {
+.menu__icon {
     width: 20px;
     height: 20px;
     flex: 0 0 20px;
-    stroke: currentColor;
-    stroke-width: 1.7;
-    stroke-linecap: round;
-    stroke-linejoin: round;
+    opacity: 0.78;
+    filter: brightness(0) invert(1);
+    transition: opacity 220ms ease, transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.menu__item:hover .menu__icon,
+.menu__item:focus-visible .menu__icon {
+    opacity: 1;
+    transform: translateY(-1px) scale(1.08);
 }
 
 .profile {
@@ -421,6 +470,31 @@ button {
     box-shadow: 0 16px 36px rgba(20, 60, 63, 0.16);
 }
 
+/* Classes ativadas pelo JavaScript para entradas curtas e naturais. */
+.is-entering {
+    animation: content-enter 340ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.notification-panel.is-entering {
+    transform-origin: top right;
+}
+
+button.is-pressed {
+    transform: translateY(1px) scale(0.98) !important;
+}
+
+@keyframes content-enter {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 .notification-panel__header {
     padding: 17px 19px;
     border-bottom: 1px solid #e8eeee;
@@ -551,6 +625,124 @@ button {
     stroke: currentColor;
     stroke-width: 2;
     stroke-linecap: round;
+}
+
+/* Botões de ação recebem profundidade e resposta tátil sem alterar a paleta. */
+.help-button,
+.notification,
+.management-options button,
+.form-actions > button {
+    transition: color 200ms ease, background 200ms ease, border-color 200ms ease,
+        box-shadow 200ms ease, transform 200ms ease;
+}
+
+.help-button:hover,
+.notification:hover,
+.management-options button:hover,
+.form-actions > button:hover {
+    box-shadow: 0 8px 18px rgba(19, 46, 65, 0.12);
+    transform: translateY(-2px);
+}
+
+.register-book-button {
+    display: inline-flex;
+    width: 174px;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+/* Mantém o novo atalho de cadastro com a presença visual do botão substituído. */
+.overview-register-button {
+    width: 210px;
+    min-height: 46px;
+}
+
+.overview-register-button .register-book-button__icon {
+    filter: brightness(0) invert(1);
+}
+
+.register-book-button__label {
+    max-width: 122px;
+    overflow: hidden;
+    opacity: 1;
+    transition: max-width 340ms ease, opacity 220ms ease, letter-spacing 340ms ease,
+        transform 340ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.register-book-button__icon {
+    width: 20px;
+    height: 20px;
+    flex: 0 0 20px;
+    filter: brightness(0) saturate(100%) invert(43%) sepia(79%) saturate(871%) hue-rotate(132deg) brightness(84%) contrast(96%);
+    transform-origin: center;
+    transition: filter 220ms ease, transform 340ms cubic-bezier(0.2, 0.9, 0.25, 1);
+}
+
+.register-book-button:hover .register-book-button__icon {
+    filter: brightness(0) invert(1);
+}
+
+/* O texto se recolhe enquanto o livro recebe o foco visual do clique. */
+.register-book-button.is-book-launch {
+    gap: 0;
+    color: #ffffff;
+    background: var(--primary);
+    border-color: var(--primary);
+}
+
+.register-book-button.is-book-launch .register-book-button__label {
+    max-width: 0;
+    opacity: 0;
+    letter-spacing: -0.35em;
+    transform: translateX(-10px) scale(0.88);
+}
+
+.register-book-button.is-book-launch .register-book-button__icon {
+    filter: brightness(0) invert(1);
+    animation: book-focus 520ms cubic-bezier(0.2, 0.9, 0.25, 1) both;
+}
+
+@keyframes book-focus {
+    0% {
+        transform: rotate(0) scale(1);
+    }
+
+    58% {
+        transform: rotate(-6deg) scale(1.48);
+    }
+
+    100% {
+        transform: rotate(0) scale(1.32);
+    }
+}
+
+.help-button:active,
+.notification:active,
+.management-options button:active,
+.form-actions > button:active {
+    box-shadow: none;
+    transform: translateY(0);
+}
+
+.management-options button:hover,
+.form-actions > button:hover {
+    color: #ffffff;
+    background: var(--primary);
+    border-color: var(--primary);
+}
+
+.primary-action:not(.register-book-button) span,
+.panel-link span {
+    display: inline-block;
+    transition: transform 200ms ease;
+}
+
+.primary-action:not(.register-book-button):hover span,
+.panel-link:hover span {
+    transform: translateX(3px);
 }
 
 .stats-grid {
@@ -758,6 +950,7 @@ button {
 }
 
 .panel-link {
+    position: relative;
     flex: 0 0 auto;
     padding: 2px 0;
     color: var(--primary-dark);
@@ -769,7 +962,26 @@ button {
 }
 
 .panel-link:hover {
-    text-decoration: underline;
+    text-decoration: none;
+}
+
+.panel-link::after {
+    position: absolute;
+    right: 0;
+    bottom: -2px;
+    left: 0;
+    height: 2px;
+    content: '';
+    background: currentColor;
+    border-radius: 999px;
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform 220ms ease;
+}
+
+.panel-link:hover::after,
+.panel-link:focus-visible::after {
+    transform: scaleX(1);
 }
 
 .activity-list {
@@ -872,6 +1084,7 @@ button {
     border-bottom: 1px solid #edf1f1;
     cursor: pointer;
     text-align: left;
+    transition: background 180ms ease, padding 180ms ease;
 }
 
 .quick-action:last-child {
@@ -881,6 +1094,11 @@ button {
 .quick-action:hover .quick-action__text strong,
 .quick-action:hover .quick-action__arrow {
     color: var(--primary-dark);
+}
+
+.quick-action:hover {
+    padding-inline: 8px;
+    background: #f7fcfc;
 }
 
 .quick-action__icon {
@@ -935,6 +1153,38 @@ button {
 
 .quick-action:hover .quick-action__arrow {
     transform: translateX(2px);
+}
+
+/* O clique concentra a atenção no ícone antes de abrir o destino da ação. */
+.quick-action.is-quick-launch {
+    padding-inline: 8px;
+    background: #f0fbfb;
+}
+
+.quick-action.is-quick-launch .quick-action__icon {
+    color: #ffffff;
+    background: linear-gradient(135deg, var(--primary), #2a7fa3);
+    box-shadow: 0 9px 22px rgba(7, 141, 135, 0.24);
+    animation: quick-icon-focus 440ms cubic-bezier(0.2, 0.9, 0.25, 1) both;
+}
+
+.quick-action.is-quick-launch .quick-action__arrow {
+    color: var(--primary-dark);
+    transform: translateX(5px);
+}
+
+@keyframes quick-icon-focus {
+    0% {
+        transform: scale(1) rotate(0);
+    }
+
+    58% {
+        transform: scale(1.28) rotate(-5deg);
+    }
+
+    100% {
+        transform: scale(1.12) rotate(0);
+    }
 }
 
 .mobile-menu {
@@ -1096,20 +1346,259 @@ button {
 }
 
 /* Integração da Gestão e cadastro: usa os mesmos tons e superfícies da tela base. */
-.brand { border: 0; background: transparent; text-align: left; cursor: pointer; }
-.brand__icon { width: 36px; height: 36px; }
-.management-options { display: grid; gap: 14px; margin-top: 28px; }
-.management-options article { display: grid; grid-template-columns: 46px 1fr auto; gap: 16px; align-items: center; padding: 22px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow); }
-.management-options article > span { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 10px; background: #e8f5e4; color: var(--primary); font-size: 20px; }
-.management-options p { margin: 0 0 5px; color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: 1px; }
-.management-options h2 { margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: 19px; }
-.management-options small { display: block; margin-top: 5px; color: var(--muted); }
-.management-options button, .form-actions > button { border: 1px solid #cfe3c7; border-radius: 7px; background: transparent; color: var(--primary); padding: 10px 13px; font-weight: 700; cursor: pointer; }
-.book-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 17px; margin-top: 26px; padding: 24px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow); }
-.book-form label { display: grid; gap: 7px; color: var(--text); font-size: 12px; font-weight: 700; }
-.book-form .wide { grid-column: 1 / -1; }
-.book-form input, .book-form textarea { width: 100%; border: 1px solid #ccd9cc; border-radius: 7px; outline: none; background: #fbfdf9; padding: 10px 11px; font: inherit; }
-.book-form input:focus, .book-form textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(7, 141, 135, .14); }
-.book-form label.is-invalid input { border-color: #bf684b; }.book-form label small { min-height: 12px; color: #a65238; font-size: 10px; }
-.form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px; }.form-actions .primary-action { border: 0; }
-@media (max-width: 760px) { .management-options article { grid-template-columns: 42px 1fr; }.management-options button { grid-column: 1 / -1; width: 100%; }.book-form { grid-template-columns: 1fr; padding: 18px; }.book-form .wide { grid-column: auto; } }
+.brand {
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+}
+
+.brand__icon {
+    width: 36px;
+    height: 36px;
+}
+
+.management-options {
+    display: grid;
+    gap: 14px;
+    margin-top: 28px;
+}
+
+.management-options article {
+    display: grid;
+    grid-template-columns: 46px 1fr auto;
+    align-items: center;
+    gap: 16px;
+    padding: 22px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+}
+
+.management-options article > span {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    color: var(--primary);
+    background: #e8f5e4;
+    border-radius: 10px;
+    font-size: 20px;
+    place-items: center;
+}
+
+.management-options p {
+    margin: 0 0 5px;
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+
+.management-options h2 {
+    margin: 0;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 19px;
+}
+
+.management-options small {
+    display: block;
+    margin-top: 5px;
+    color: var(--muted);
+}
+
+.management-options button,
+.form-actions > button {
+    padding: 10px 13px;
+    color: var(--primary);
+    background: transparent;
+    border: 1px solid #cfe3c7;
+    border-radius: 7px;
+    cursor: pointer;
+    font-weight: 700;
+}
+
+/* Formulário de cadastro e estados de validação. */
+.book-form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 17px;
+    margin-top: 26px;
+    padding: 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+}
+
+.book-form label {
+    display: grid;
+    gap: 7px;
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.field-label {
+    display: inline-flex;
+    width: max-content;
+    align-items: center;
+    gap: 4px;
+}
+
+.required-marker {
+    position: relative;
+    color: #d92d20;
+    cursor: help;
+    font-size: 15px;
+    font-weight: 900;
+    line-height: 1;
+}
+
+.required-marker::after {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    z-index: 20;
+    padding: 7px 9px;
+    color: #ffffff;
+    background: #3a2424;
+    border-radius: 6px;
+    box-shadow: 0 8px 18px rgba(56, 23, 23, 0.18);
+    content: attr(data-tooltip);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, 4px);
+    transition: opacity 160ms ease, transform 160ms ease;
+    white-space: nowrap;
+}
+
+.required-marker::before {
+    position: absolute;
+    bottom: calc(100% + 3px);
+    left: 50%;
+    z-index: 21;
+    width: 8px;
+    height: 8px;
+    background: #3a2424;
+    content: "";
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(-50%) rotate(45deg);
+    transition: opacity 160ms ease;
+}
+
+.required-marker:hover::after,
+.required-marker:focus-visible::after {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+
+.required-marker:hover::before,
+.required-marker:focus-visible::before {
+    opacity: 1;
+}
+
+.required-marker:focus-visible {
+    border-radius: 2px;
+    outline: 2px solid rgba(217, 45, 32, 0.3);
+    outline-offset: 3px;
+}
+
+.book-form .wide {
+    grid-column: 1 / -1;
+}
+
+.book-form input,
+.book-form textarea {
+    width: 100%;
+    padding: 10px 11px;
+    background: #fbfdf9;
+    border: 1px solid #ccd9cc;
+    border-radius: 7px;
+    outline: none;
+    font: inherit;
+}
+
+.book-form input:focus,
+.book-form textarea:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(7, 141, 135, 0.14);
+}
+
+.book-form label.is-invalid input,
+.book-form label.is-invalid textarea {
+    background: #fff8f7;
+    border-color: #d92d20;
+    box-shadow: 0 0 0 3px rgba(217, 45, 32, 0.11);
+}
+
+.book-form label.is-invalid input:focus,
+.book-form label.is-invalid textarea:focus {
+    border-color: #b42318;
+    box-shadow: 0 0 0 3px rgba(217, 45, 32, 0.17);
+}
+
+.book-form label small {
+    min-height: 12px;
+    color: #b42318;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.form-message {
+    min-height: 20px;
+    margin: 0;
+    padding: 0;
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: 700;
+    text-align: center;
+    transition: color 180ms ease, background 180ms ease, padding 180ms ease;
+}
+
+.form-message.is-error {
+    padding: 9px 12px;
+    color: #b42318;
+    background: #fff1f0;
+}
+
+.form-message.is-success {
+    padding: 9px 12px;
+    color: #176b49;
+    background: #eaf8f0;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 4px;
+}
+
+.form-actions .primary-action {
+    border: 0;
+}
+
+@media (max-width: 760px) {
+    .management-options article {
+        grid-template-columns: 42px 1fr;
+    }
+
+    .management-options button {
+        grid-column: 1 / -1;
+        width: 100%;
+    }
+
+    .book-form {
+        grid-template-columns: 1fr;
+        padding: 18px;
+    }
+
+    .book-form .wide {
+        grid-column: auto;
+    }
+}
