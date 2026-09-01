@@ -193,17 +193,32 @@
                 <section class="collection-search" aria-labelledby="collectionSearchTitle">
                     <div class="collection-search__text">
                         <h2 id="collectionSearchTitle">Consultar acervo</h2>
-                        <p>Busque por título, autor ou gênero quando o módulo Acervo estiver disponível.</p>
+                        <p>Busque por título, autor ou gênero entre os livros cadastrados.</p>
                     </div>
 
-                    <form class="collection-search__form" role="search">
-                        <label class="sr-only" for="collectionSearchInput">Buscar no acervo</label>
-                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                            <circle cx="11" cy="11" r="6"/>
-                            <path d="m16 16 4 4"/>
-                        </svg>
-                        <input id="collectionSearchInput" type="search" placeholder="Buscar no acervo" autocomplete="off">
-                    </form>
+                    <div class="collection-search__controls">
+                        <div class="collection-search__filter">
+                            <button class="collection-search__filter-button" id="collectionSearchFilter" type="button" aria-label="Filtrar busca" aria-controls="collectionSearchFilterMenu" aria-expanded="false">
+                                <span>Filtrar</span>
+                            </button>
+                            <div class="collection-search__filter-menu" id="collectionSearchFilterMenu" role="menu" hidden>
+                                <button type="button" role="menuitemradio" data-filter="title" aria-checked="true">Título</button>
+                                <button type="button" role="menuitemradio" data-filter="author" aria-checked="false">Autor</button>
+                                <button type="button" role="menuitemradio" data-filter="genre" aria-checked="false">Gênero</button>
+                            </div>
+                        </div>
+
+                        <form class="collection-search__form" role="search">
+                            <label class="sr-only" for="collectionSearchInput">Buscar no acervo</label>
+                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                <circle cx="11" cy="11" r="6"/>
+                                <path d="m16 16 4 4"/>
+                            </svg>
+                            <input id="collectionSearchInput" type="search" placeholder="Buscar por título" autocomplete="off">
+                        </form>
+
+                        <section class="collection-search__results" id="collectionSearchResults" aria-live="polite" aria-label="Resultados da busca" hidden></section>
+                    </div>
                 </section>
 
                 <div class="overview-lower">
@@ -340,14 +355,49 @@
                         <small></small>
                     </label>
 
-                    <label>
+                    <div class="form-field">
                         <span class="field-label">
                             Gênero
                             <span class="required-marker" tabindex="0" aria-label="Campo obrigatório" data-tooltip="Campo obrigatório">*</span>
                         </span>
-                        <input name="genre" required maxlength="80">
+                        <input id="genreInput" name="genre" type="hidden" required>
+                        <div class="genre-select" id="genreSelect">
+                            <button class="genre-select__trigger" id="genreSelectButton" type="button" aria-haspopup="listbox" aria-controls="genreOptions" aria-expanded="false">
+                                <span>Selecione um gênero</span>
+                                <span class="genre-select__arrow" aria-hidden="true"></span>
+                            </button>
+                            <div class="genre-select__options" id="genreOptions" role="listbox" aria-label="Gêneros de livros" hidden>
+                                <button type="button" role="option" data-value="Ação" aria-selected="false">Ação</button>
+                                <button type="button" role="option" data-value="Aventura" aria-selected="false">Aventura</button>
+                                <button type="button" role="option" data-value="Autoajuda" aria-selected="false">Autoajuda</button>
+                                <button type="button" role="option" data-value="Biografia e autobiografia" aria-selected="false">Biografia e autobiografia</button>
+                                <button type="button" role="option" data-value="Ciência" aria-selected="false">Ciência</button>
+                                <button type="button" role="option" data-value="Científico e acadêmico" aria-selected="false">Científico e acadêmico</button>
+                                <button type="button" role="option" data-value="Clássico" aria-selected="false">Clássico</button>
+                                <button type="button" role="option" data-value="Comédia" aria-selected="false">Comédia</button>
+                                <button type="button" role="option" data-value="Conto" aria-selected="false">Conto</button>
+                                <button type="button" role="option" data-value="Crônica" aria-selected="false">Crônica</button>
+                                <button type="button" role="option" data-value="Didático" aria-selected="false">Didático</button>
+                                <button type="button" role="option" data-value="Drama" aria-selected="false">Drama</button>
+                                <button type="button" role="option" data-value="Fantasia" aria-selected="false">Fantasia</button>
+                                <button type="button" role="option" data-value="Ficção científica" aria-selected="false">Ficção científica</button>
+                                <button type="button" role="option" data-value="Filosofia" aria-selected="false">Filosofia</button>
+                                <button type="button" role="option" data-value="História" aria-selected="false">História</button>
+                                <button type="button" role="option" data-value="História em quadrinhos e mangá" aria-selected="false">História em quadrinhos e mangá</button>
+                                <button type="button" role="option" data-value="Infantil" aria-selected="false">Infantil</button>
+                                <button type="button" role="option" data-value="Juvenil" aria-selected="false">Juvenil</button>
+                                <button type="button" role="option" data-value="Mistério" aria-selected="false">Mistério</button>
+                                <button type="button" role="option" data-value="Poesia" aria-selected="false">Poesia</button>
+                                <button type="button" role="option" data-value="Policial" aria-selected="false">Policial</button>
+                                <button type="button" role="option" data-value="Religião e espiritualidade" aria-selected="false">Religião e espiritualidade</button>
+                                <button type="button" role="option" data-value="Romance" aria-selected="false">Romance</button>
+                                <button type="button" role="option" data-value="Suspense" aria-selected="false">Suspense</button>
+                                <button type="button" role="option" data-value="Terror" aria-selected="false">Terror</button>
+                                <button type="button" role="option" data-value="Outro" aria-selected="false">Outro</button>
+                            </div>
+                        </div>
                         <small></small>
-                    </label>
+                    </div>
 
                     <label>
                         <span class="field-label">
@@ -358,9 +408,17 @@
                         <small></small>
                     </label>
 
+                    <label class="genre-other-field" id="genreOtherField" hidden>
+                        Informe o gênero
+                        <input id="genreOtherInput" name="genreOther" type="text" maxlength="80">
+                        <small></small>
+                    </label>
+
                     <label class="wide">
                         <span class="field-label">Observação</span>
-                        <textarea name="notes" rows="4" maxlength="500"></textarea>
+                        <span class="textarea-resize-boundary">
+                            <textarea name="notes" rows="4" maxlength="500"></textarea>
+                        </span>
                         <small></small>
                     </label>
 
