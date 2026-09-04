@@ -8,14 +8,17 @@
 const menuItems = document.querySelectorAll('.menu__item');
 const overviewPage = document.querySelector('#overviewPage');
 const managementPage = document.querySelector('#managementPage');
+const loanPage = document.querySelector('#loanPage');
 const registrationPage = document.querySelector('#registrationPage');
 const pageTitle = document.querySelector('#pageTitle');
 const breadcrumbCurrent = document.querySelector('#breadcrumbCurrent');
 const bookForm = document.querySelector('#bookForm');
+const loanForm = document.querySelector('#loanForm');
 const notificationButton = document.querySelector('#notificationButton');
 const notificationPanel = document.querySelector('#notificationPanel');
 let pendingMessageTimer;
 let formMessageTimer;
+let loanMessageTimer;
 let collectionSearchTimer;
 const sessionCollectionBooks = [];
 
@@ -31,16 +34,18 @@ function replayEntranceAnimation(element) {
 
 /**
  * Alterna a tela visível da aplicação.
- * @param {'inicio'|'gestao'|'cadastro'} view Tela que deve ser exibida.
+ * @param {'inicio'|'gestao'|'emprestimos'|'cadastro'} view Tela que deve ser exibida.
  */
 function openView(view) {
   overviewPage.hidden = view !== 'inicio';
   managementPage.hidden = view !== 'gestao';
+  loanPage.hidden = view !== 'emprestimos';
   registrationPage.hidden = view !== 'cadastro';
 
   const titleByView = {
     inicio: 'Visão geral',
     gestao: 'Gestão',
+    emprestimos: 'Empréstimos',
     cadastro: 'Cadastro de livro'
   };
   const title = titleByView[view];
@@ -49,17 +54,23 @@ function openView(view) {
   breadcrumbCurrent.textContent = title;
   document.title = `${title} | Bibliotech`;
 
-  // Gestão permanece destacado enquanto o formulário de cadastro estiver aberto.
-  const activePage = view === 'inicio' ? 'Visão geral' : 'Gestão';
+  // As telas filhas mantêm destacado o ponto de entrada correspondente no menu.
+  const activePage = view === 'inicio'
+    ? 'Visão geral'
+    : view === 'emprestimos'
+      ? 'Empréstimos'
+      : 'Gestão';
   menuItems.forEach((item) => {
     item.classList.toggle('is-active', item.dataset.page === activePage);
   });
 
-  const visiblePage = document.querySelector(view === 'inicio'
-    ? '#overviewPage'
-    : view === 'gestao'
-      ? '#managementPage'
-      : '#registrationPage');
+  const pageByView = {
+    inicio: overviewPage,
+    gestao: managementPage,
+    emprestimos: loanPage,
+    cadastro: registrationPage
+  };
+  const visiblePage = pageByView[view];
   replayEntranceAnimation(visiblePage);
 }
 
@@ -447,6 +458,295 @@ function getBookPayload() {
   };
 }
 
+/** Retorna a data local no formato aceito por campos HTML do tipo date. */
+function getLocalDateValue(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+/** Valida os campos do empréstimo e mantém a indicação de erro acessível. */
+function validateLoanField(input) {
+  const value = input.value.trim();
+  let errorMessage = '';
+
+  if (input.required && !value) {
+    errorMessage = 'Este campo é obrigatório.';
+  } else if (input.name === 'returnDate' && value < getLocalDateValue()) {
+    errorMessage = 'A devolução não pode ser anterior à data de hoje.';
+  }
+
+  const field = input.closest('label, .form-field');
+  const validationControl = input.name === 'returnDate'
+    ? document.querySelector('#returnDateButton')
+    : input;
+  field.classList.toggle('is-invalid', Boolean(errorMessage));
+  field.querySelector('small').textContent = errorMessage;
+  validationControl.setAttribute('aria-invalid', String(Boolean(errorMessage)));
+  return !errorMessage;
+}
+
+/** Valida a estrutura completa exigida para um novo empréstimo. */
+function validateLoanForm() {
+  return [...loanForm.querySelectorAll('[required]')]
+    .map(validateLoanField)
+    .every(Boolean);
+}
+
+/** Mostra o retorno da validação sem simular uma gravação no banco. */
+function setLoanMessage(message, tone = 'error') {
+  const messageElement = document.querySelector('#loanFormMessage');
+  window.clearTimeout(loanMessageTimer);
+  messageElement.textContent = message;
+  messageElement.classList.remove('is-error', 'is-success');
+
+  if (!message) return;
+  messageElement.classList.add(tone === 'success' ? 'is-success' : 'is-error');
+  loanMessageTimer = window.setTimeout(() => {
+    messageElement.textContent = '';
+    messageElement.classList.remove('is-error', 'is-success');
+  }, 6000);
+}
+
+/**
+ * Converte os dados digitados no contrato esperado pela futura integração.
+ * O identificador do livro será preenchido quando a busca do acervo vier do banco.
+ * @returns {{bookId:number|null, bookName:string, studentName:string, classroom:string, expectedReturnDate:string}}
+ */
+function getLoanPayload() {
+  const formData = new FormData(loanForm);
+  const bookInput = loanForm.querySelector('[name="bookName"]');
+  const bookId = Number(bookInput.dataset.bookId);
+  return {
+    bookId: Number.isInteger(bookId) && bookId > 0 ? bookId : null,
+    bookName: formData.get('bookName').trim(),
+    studentName: formData.get('studentName').trim(),
+    classroom: formData.get('classroom').trim(),
+    expectedReturnDate: formData.get('returnDate')
+  };
+}
+
+/** Configura a seleção manual e os atalhos da data de devolução. */
+function setupLoanCalendar() {
+  const returnDate = loanForm.querySelector('[name="returnDate"]');
+  const datePicker = document.querySelector('.loan-date-picker');
+  const dateButton = document.querySelector('#returnDateButton');
+  const dateDisplay = document.querySelector('#returnDateDisplay');
+  const calendar = document.querySelector('#returnDateCalendar');
+  const calendarLabel = document.querySelector('#calendarMonthLabel');
+  const calendarDays = document.querySelector('#calendarDays');
+  const previousMonthButton = calendar.querySelector('[data-calendar-action="previous"]');
+  const dateHelp = document.querySelector('#returnDateHelp');
+  const dateShortcutButtons = [...loanForm.querySelectorAll('[data-return-days]')];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  let calendarCursor = new Date(today.getFullYear(), today.getMonth(), 1);
+
+  const formatLongDate = (date) => new Intl.DateTimeFormat('pt-BR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  }).format(date);
+
+  const setCalendarOpen = (isOpen) => {
+    calendar.hidden = !isOpen;
+    dateButton.setAttribute('aria-expanded', String(isOpen));
+    datePicker.classList.toggle('is-open', isOpen);
+    if (isOpen) replayEntranceAnimation(calendar);
+  };
+
+  const selectReturnDate = (date) => {
+    returnDate.value = getLocalDateValue(date);
+    returnDate.dispatchEvent(new Event('change', { bubbles: true }));
+    setCalendarOpen(false);
+    dateButton.focus();
+  };
+
+  const renderCalendar = () => {
+    const year = calendarCursor.getFullYear();
+    const month = calendarCursor.getMonth();
+    const firstWeekday = new Date(year, month, 1).getDay();
+    const numberOfDays = new Date(year, month + 1, 0).getDate();
+    const selectedValue = returnDate.value;
+    const monthText = new Intl.DateTimeFormat('pt-BR', {
+      month: 'long',
+      year: 'numeric'
+    }).format(calendarCursor);
+
+    calendarLabel.textContent = monthText.charAt(0).toLocaleUpperCase('pt-BR') + monthText.slice(1);
+    previousMonthButton.disabled = year === today.getFullYear() && month === today.getMonth();
+    calendarDays.replaceChildren();
+
+    for (let blank = 0; blank < firstWeekday; blank += 1) {
+      const spacer = document.createElement('span');
+      spacer.className = 'loan-calendar__blank';
+      spacer.setAttribute('aria-hidden', 'true');
+      calendarDays.append(spacer);
+    }
+
+    for (let day = 1; day <= numberOfDays; day += 1) {
+      const date = new Date(year, month, day);
+      const dateValue = getLocalDateValue(date);
+      const dayButton = document.createElement('button');
+      dayButton.type = 'button';
+      dayButton.textContent = String(day);
+      dayButton.dataset.date = dateValue;
+      dayButton.setAttribute('aria-label', formatLongDate(date));
+      dayButton.disabled = date < today;
+
+      if (dateValue === getLocalDateValue(today)) {
+        dayButton.classList.add('is-today');
+        dayButton.setAttribute('aria-current', 'date');
+      }
+
+      if (dateValue === selectedValue) {
+        dayButton.classList.add('is-selected');
+        dayButton.setAttribute('aria-pressed', 'true');
+      }
+
+      dayButton.addEventListener('click', () => selectReturnDate(date));
+      calendarDays.append(dayButton);
+    }
+  };
+
+  const updateDateShortcuts = () => {
+    const selectedDate = returnDate.value
+      ? new Date(`${returnDate.value}T00:00:00`)
+      : null;
+
+    dateShortcutButtons.forEach((button) => {
+      const shortcutDate = new Date();
+      shortcutDate.setHours(0, 0, 0, 0);
+      shortcutDate.setDate(shortcutDate.getDate() + Number(button.dataset.returnDays));
+      const isSelected = returnDate.value === getLocalDateValue(shortcutDate);
+      button.classList.toggle('is-selected', isSelected);
+      button.setAttribute('aria-pressed', String(isSelected));
+    });
+
+    dateHelp.textContent = selectedDate
+      ? `Devolução escolhida: ${formatLongDate(selectedDate)}.`
+      : 'Use um prazo rápido ou escolha uma data no calendário.';
+    dateDisplay.textContent = selectedDate
+      ? new Intl.DateTimeFormat('pt-BR').format(selectedDate)
+      : 'Selecione uma data';
+    dateButton.classList.toggle('has-value', Boolean(selectedDate));
+    renderCalendar();
+  };
+
+  dateButton.addEventListener('click', (event) => {
+    event.stopPropagation();
+    const selectedDate = returnDate.value
+      ? new Date(`${returnDate.value}T00:00:00`)
+      : today;
+    calendarCursor = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+    renderCalendar();
+    setCalendarOpen(calendar.hidden);
+  });
+
+  calendar.querySelectorAll('[data-calendar-action]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const action = button.dataset.calendarAction;
+      if (action === 'previous') {
+        calendarCursor = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() - 1, 1);
+        renderCalendar();
+      } else if (action === 'next') {
+        calendarCursor = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() + 1, 1);
+        renderCalendar();
+      } else if (action === 'today') {
+        selectReturnDate(today);
+      } else {
+        setCalendarOpen(false);
+        dateButton.focus();
+      }
+    });
+  });
+
+  calendar.addEventListener('click', (event) => event.stopPropagation());
+  document.addEventListener('click', (event) => {
+    if (!event.target.closest('.loan-date-picker')) setCalendarOpen(false);
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape' || calendar.hidden) return;
+    setCalendarOpen(false);
+    dateButton.focus();
+  });
+
+  dateShortcutButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      const shortcutDate = new Date();
+      shortcutDate.setHours(0, 0, 0, 0);
+      shortcutDate.setDate(shortcutDate.getDate() + Number(button.dataset.returnDays));
+      selectReturnDate(shortcutDate);
+    });
+  });
+
+  returnDate.addEventListener('change', updateDateShortcuts);
+}
+
+/** Prepara a validação progressiva e o resumo do novo empréstimo. */
+function setupLoanForm() {
+  loanForm.querySelectorAll('[required]').forEach((input) => {
+    if (input.type !== 'hidden') input.addEventListener('blur', () => validateLoanField(input));
+    const validationEvent = input.name === 'returnDate' ? 'change' : 'input';
+    input.addEventListener(validationEvent, () => {
+      if (input.closest('label, .form-field').classList.contains('is-invalid')) validateLoanField(input);
+    });
+  });
+
+  loanForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const preview = document.querySelector('#loanPreview');
+    preview.hidden = true;
+
+    if (!validateLoanForm()) {
+      setLoanMessage('Preencha corretamente os campos obrigatórios destacados em vermelho.');
+      loanForm.querySelector('[aria-invalid="true"]')?.focus();
+      return;
+    }
+
+    const loanData = getLoanPayload();
+    const returnDateText = new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' })
+      .format(new Date(`${loanData.expectedReturnDate}T00:00:00Z`));
+    document.querySelector('#loanPreviewSummary').textContent =
+      `${loanData.bookName} para ${loanData.studentName} (${loanData.classroom}), devolução em ${returnDateText}.`;
+    preview.hidden = false;
+    replayEntranceAnimation(preview);
+    setLoanMessage('Dados do empréstimo validados com sucesso.', 'success');
+  });
+}
+
+/** Alterna entre o cadastro de empréstimo e o acompanhamento de devoluções. */
+function setupLoanTabs() {
+  const tabs = [...document.querySelectorAll('[data-loan-tab]')];
+  const panels = {
+    new: document.querySelector('#newLoanPanel'),
+    returns: document.querySelector('#returnsPanel')
+  };
+
+  const activateTab = (activeTab) => {
+    tabs.forEach((tab) => {
+      const isActive = tab === activeTab;
+      tab.setAttribute('aria-selected', String(isActive));
+      tab.tabIndex = isActive ? 0 : -1;
+      panels[tab.dataset.loanTab].hidden = !isActive;
+    });
+    replayEntranceAnimation(panels[activeTab.dataset.loanTab]);
+  };
+
+  tabs.forEach((tab, index) => {
+    tab.addEventListener('click', () => activateTab(tab));
+    tab.addEventListener('keydown', (event) => {
+      if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+      event.preventDefault();
+      const direction = event.key === 'ArrowRight' ? 1 : -1;
+      const nextTab = tabs[(index + direction + tabs.length) % tabs.length];
+      activateTab(nextTab);
+      nextTab.focus();
+    });
+  });
+}
+
 /** Conecta botões do menu às telas disponíveis ou aos avisos de planejamento. */
 function setupNavigation() {
   menuItems.forEach((item) => {
@@ -454,6 +754,7 @@ function setupNavigation() {
       const page = item.dataset.page;
       if (page === 'Visão geral') return openView('inicio');
       if (page === 'Gestão') return openView('gestao');
+      if (page === 'Empréstimos') return openView('emprestimos');
       showPending(`${page} será disponibilizado nas próximas etapas.`);
     });
   });
@@ -479,6 +780,25 @@ function setupNavigation() {
           button.removeAttribute('aria-busy');
           openView(targetView);
         }, 520);
+        return;
+      }
+
+      // O atalho de empréstimos reforça visualmente a mudança de módulo.
+      if (targetView === 'emprestimos' && button.classList.contains('loan-launch-button') && !reducedMotion) {
+        if (button.dataset.navigating === 'true') return;
+
+        button.dataset.navigating = 'true';
+        button.setAttribute('aria-busy', 'true');
+        button.classList.remove('is-loan-launch');
+        void button.offsetWidth;
+        button.classList.add('is-loan-launch');
+
+        window.setTimeout(() => {
+          button.classList.remove('is-loan-launch');
+          delete button.dataset.navigating;
+          button.removeAttribute('aria-busy');
+          openView(targetView);
+        }, 420);
         return;
       }
 
@@ -513,7 +833,7 @@ function setupPendingActions() {
 
         button.dataset.targetPage === 'Acervo'
           ? openView('cadastro')
-          : showPending('Empréstimos está em construção.');
+          : openView('emprestimos');
       };
 
       if (reducedMotion) {
@@ -577,6 +897,9 @@ function initializeApp() {
   setupGenreSelect();
   setupClickFeedback();
   setupBookFormValidation();
+  setupLoanCalendar();
+  setupLoanForm();
+  setupLoanTabs();
   bookForm.addEventListener('submit', handleBookSubmit);
 }
 

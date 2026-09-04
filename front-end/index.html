@@ -144,8 +144,8 @@
                                 </svg>
                             </span>
                         </div>
-                        <strong>1.248</strong>
-                        <small>32 adicionados este mês</small>
+                        <strong id="metricBooksTotal" aria-live="polite">—</strong>
+                        <small>Aguardando dados do acervo</small>
                     </article>
 
                     <article class="stat-card">
@@ -158,8 +158,8 @@
                                 </svg>
                             </span>
                         </div>
-                        <strong>1.079</strong>
-                        <small>86% do acervo</small>
+                        <strong id="metricBooksAvailable" aria-live="polite">—</strong>
+                        <small>Disponibilidade ainda não carregada</small>
                     </article>
 
                     <article class="stat-card">
@@ -171,8 +171,8 @@
                                 </svg>
                             </span>
                         </div>
-                        <strong>169</strong>
-                        <small>12 realizados hoje</small>
+                        <strong id="metricActiveLoans" aria-live="polite">—</strong>
+                        <small>Movimentações ainda não carregadas</small>
                     </article>
 
                     <article class="stat-card stat-card--warning">
@@ -185,8 +185,8 @@
                                 </svg>
                             </span>
                         </div>
-                        <strong>8</strong>
-                        <small>Requer atenção</small>
+                        <strong id="metricOverdueReturns" aria-live="polite">—</strong>
+                        <small>Atrasos ainda não calculados</small>
                     </article>
                 </div>
 
@@ -231,36 +231,12 @@
                             <button class="panel-link" id="viewHistoryButton" type="button">Ver histórico <span aria-hidden="true">→</span></button>
                         </header>
 
-                        <div class="activity-list">
-                            <article class="activity-item">
-                                <span class="book-marker book-marker--coral" aria-hidden="true"></span>
-                                <div class="activity-item__content">
-                                    <strong>O Pequeno Príncipe</strong>
-                                    <p>Emprestado para Gabriel Costa · 8º A</p>
-                                </div>
-                                <time datetime="09:40">Hoje, 09:40</time>
-                                <span class="activity-badge activity-badge--loan">Empréstimo</span>
-                            </article>
-
-                            <article class="activity-item">
-                                <span class="book-marker book-marker--purple" aria-hidden="true"></span>
-                                <div class="activity-item__content">
-                                    <strong>Extraordinário</strong>
-                                    <p>Devolvido por Ana Clara · 7º B</p>
-                                </div>
-                                <time datetime="08:15">Hoje, 08:15</time>
-                                <span class="activity-badge activity-badge--return">Devolução</span>
-                            </article>
-
-                            <article class="activity-item">
-                                <span class="book-marker book-marker--blue" aria-hidden="true"></span>
-                                <div class="activity-item__content">
-                                    <strong>A Bolsa Amarela</strong>
-                                    <p>Emprestado para Lucas Martins · 9º A</p>
-                                </div>
-                                <time>Ontem, 15:27</time>
-                                <span class="activity-badge activity-badge--loan">Empréstimo</span>
-                            </article>
+                        <div class="activity-list" id="recentActivityList" aria-live="polite">
+                            <div class="data-empty-state">
+                                <span class="data-empty-state__icon" aria-hidden="true">↔</span>
+                                <strong>Nenhuma movimentação carregada</strong>
+                                <p>Empréstimos e devoluções reais aparecerão aqui.</p>
+                            </div>
                         </div>
                     </section>
 
@@ -313,7 +289,10 @@
                             <h2>Empréstimos e devoluções</h2>
                             <small>Registre saídas, prazos e retornos.</small>
                         </div>
-                        <button type="button" data-pending="Empréstimos e devoluções">Abrir →</button>
+                        <button class="loan-launch-button" type="button" data-open-view="emprestimos">
+                            <span>Abrir empréstimos</span>
+                            <span class="loan-launch-button__icon" aria-hidden="true">↗</span>
+                        </button>
                     </article>
 
                     <article>
@@ -329,6 +308,152 @@
                         </button>
                     </article>
                 </div>
+            </section>
+
+            <!-- Estrutura visual da Sprint 2, preparada para a futura integração com o back-end. -->
+            <section class="page-intro loan-page" id="loanPage" hidden>
+                <p class="page-intro__eyebrow">Gestão de movimentações</p>
+                <h1>Empréstimos</h1>
+                <p class="page-intro__description">Registre retiradas e acompanhe os livros que precisam ser devolvidos.</p>
+
+                <div class="loan-tabs" role="tablist" aria-label="Áreas de empréstimos">
+                    <button id="newLoanTab" type="button" role="tab" aria-selected="true" aria-controls="newLoanPanel" data-loan-tab="new">
+                        Novo empréstimo
+                    </button>
+                    <button id="returnsTab" type="button" role="tab" aria-selected="false" aria-controls="returnsPanel" data-loan-tab="returns" tabindex="-1">
+                        Devoluções
+                    </button>
+                </div>
+
+                <div class="loan-layout" id="newLoanPanel" role="tabpanel" aria-labelledby="newLoanTab">
+                    <form id="loanForm" class="book-form loan-form" novalidate>
+                        <header class="loan-form__header wide">
+                            <span class="loan-form__icon" aria-hidden="true">↔</span>
+                            <span>
+                                <strong>Dados do empréstimo</strong>
+                                <small>Todos os campos abaixo são obrigatórios.</small>
+                            </span>
+                        </header>
+
+                        <label class="wide">
+                            <span class="field-label">
+                                Nome do aluno
+                                <span class="required-marker" tabindex="0" aria-label="Campo obrigatório" data-tooltip="Campo obrigatório">*</span>
+                            </span>
+                            <input name="studentName" autocomplete="name" required maxlength="120" placeholder="Digite o nome completo">
+                            <small></small>
+                        </label>
+
+                        <label>
+                            <span class="field-label">
+                                Sala ou turma
+                                <span class="required-marker" tabindex="0" aria-label="Campo obrigatório" data-tooltip="Campo obrigatório">*</span>
+                            </span>
+                            <input name="classroom" required maxlength="50" placeholder="Ex.: 8º A">
+                            <small></small>
+                        </label>
+
+                        <div class="form-field loan-date-field">
+                            <label class="field-label" for="returnDate">
+                                Data de devolução
+                                <span class="required-marker" tabindex="0" aria-label="Campo obrigatório" data-tooltip="Campo obrigatório">*</span>
+                            </label>
+                            <div class="loan-date-picker">
+                                <button class="loan-date-picker__trigger" id="returnDateButton" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="returnDateCalendar" aria-describedby="returnDateHelp">
+                                    <span id="returnDateDisplay">Selecione uma data</span>
+                                    <span class="loan-date-picker__icon" aria-hidden="true">▦</span>
+                                </button>
+                                <input id="returnDate" name="returnDate" type="hidden" required>
+
+                                <section class="loan-calendar" id="returnDateCalendar" role="dialog" aria-label="Escolher data de devolução" hidden>
+                                    <header class="loan-calendar__header">
+                                        <button type="button" data-calendar-action="previous" aria-label="Mês anterior">‹</button>
+                                        <strong id="calendarMonthLabel" aria-live="polite"></strong>
+                                        <button type="button" data-calendar-action="next" aria-label="Próximo mês">›</button>
+                                    </header>
+                                    <div class="loan-calendar__weekdays" aria-hidden="true">
+                                        <span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span>
+                                    </div>
+                                    <div class="loan-calendar__days" id="calendarDays"></div>
+                                    <footer class="loan-calendar__footer">
+                                        <button type="button" data-calendar-action="today">Hoje</button>
+                                        <button type="button" data-calendar-action="close">Fechar</button>
+                                    </footer>
+                                </section>
+                            </div>
+                            <div class="loan-date-shortcuts" role="group" aria-label="Atalhos para data de devolução">
+                                <span>Prazo rápido:</span>
+                                <button type="button" data-return-days="7" aria-pressed="false">7 dias</button>
+                                <button type="button" data-return-days="14" aria-pressed="false">14 dias</button>
+                                <button type="button" data-return-days="30" aria-pressed="false">30 dias</button>
+                            </div>
+                            <span class="loan-date-help" id="returnDateHelp">Use um prazo rápido ou escolha uma data no calendário.</span>
+                            <small></small>
+                        </div>
+
+                        <label class="wide">
+                            <span class="field-label">
+                                Nome do livro
+                                <span class="required-marker" tabindex="0" aria-label="Campo obrigatório" data-tooltip="Campo obrigatório">*</span>
+                            </span>
+                            <input name="bookName" required maxlength="160" data-book-id="" placeholder="Digite o título do livro">
+                            <small></small>
+                        </label>
+
+                        <section class="loan-preview wide" id="loanPreview" aria-live="polite" hidden>
+                            <span class="loan-preview__status" aria-hidden="true">✓</span>
+                            <div>
+                                <strong>Empréstimo validado</strong>
+                                <p id="loanPreviewSummary"></p>
+                            </div>
+                        </section>
+
+                        <p class="form-message wide" id="loanFormMessage" role="status" aria-live="polite"></p>
+
+                        <div class="form-actions wide">
+                            <button type="button" data-open-view="gestao">Cancelar</button>
+                            <button class="primary-action loan-submit-button" type="submit">
+                                <span>Validar empréstimo</span>
+                                <span aria-hidden="true">→</span>
+                            </button>
+                        </div>
+                    </form>
+
+                    <aside class="loan-guidance" aria-label="Orientações do empréstimo">
+                        <span class="loan-guidance__eyebrow">Fluxo preparado</span>
+                        <h2>Antes de registrar</h2>
+                        <ul>
+                            <li>Confirme o nome e a sala do aluno.</li>
+                            <li>Confira o título do livro selecionado.</li>
+                            <li>Defina uma devolução a partir de hoje.</li>
+                        </ul>
+                    </aside>
+                </div>
+
+                <section class="returns-panel" id="returnsPanel" role="tabpanel" aria-labelledby="returnsTab" hidden>
+                    <header class="returns-panel__header">
+                        <div>
+                            <p>ACOMPANHAMENTO</p>
+                            <h2>Devoluções pendentes</h2>
+                            <small>Os empréstimos ativos ficarão reunidos aqui para registrar o retorno.</small>
+                        </div>
+                    </header>
+
+                    <div class="returns-table" aria-label="Lista de devoluções pendentes">
+                        <div class="returns-table__header" aria-hidden="true">
+                            <span>Livro</span>
+                            <span>Aluno</span>
+                            <span>Turma</span>
+                            <span>Prazo</span>
+                            <span>Ação</span>
+                        </div>
+                        <div class="data-empty-state" role="status">
+                            <span class="data-empty-state__icon" aria-hidden="true">✓</span>
+                            <strong>Nenhuma devolução carregada</strong>
+                            <p>Os empréstimos ativos aparecerão nesta lista quando estiverem disponíveis.</p>
+                        </div>
+                    </div>
+                </section>
             </section>
 
             <!-- Formulário alinhado aos atributos previstos no banco SQLite. -->

@@ -1124,6 +1124,42 @@ button.is-pressed {
     display: grid;
 }
 
+.data-empty-state {
+    display: grid;
+    min-height: 190px;
+    place-items: center;
+    align-content: center;
+    gap: 7px;
+    padding: 30px;
+    color: var(--muted);
+    text-align: center;
+}
+
+.data-empty-state__icon {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    margin-bottom: 5px;
+    color: var(--primary-dark);
+    background: #e7f6f7;
+    border-radius: 50%;
+    font-size: 19px;
+    font-weight: 800;
+    place-items: center;
+}
+
+.data-empty-state strong {
+    color: var(--text);
+    font-size: 14px;
+}
+
+.data-empty-state p {
+    max-width: 390px;
+    margin: 0;
+    font-size: 11px;
+    line-height: 1.5;
+}
+
 .activity-item {
     display: grid;
     grid-template-columns: 38px minmax(0, 1fr) auto auto;
@@ -1565,6 +1601,542 @@ button.is-pressed {
     font-weight: 700;
 }
 
+/* Empréstimos reutiliza a base visual do cadastro e acrescenta orientação lateral. */
+.loan-launch-button {
+    display: inline-flex;
+    min-width: 166px;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    overflow: hidden;
+}
+
+.loan-launch-button__icon {
+    display: inline-block;
+    font-size: 16px;
+    transition: transform 200ms ease;
+}
+
+.loan-launch-button:hover .loan-launch-button__icon {
+    transform: translate(2px, -2px);
+}
+
+.loan-launch-button.is-loan-launch {
+    color: #ffffff;
+    background: var(--primary);
+    border-color: var(--primary);
+}
+
+.loan-launch-button.is-loan-launch .loan-launch-button__icon {
+    animation: loan-arrow-focus 420ms cubic-bezier(0.2, 0.9, 0.25, 1) both;
+}
+
+@keyframes loan-arrow-focus {
+    0% {
+        transform: translate(0, 0) scale(1);
+    }
+
+    55% {
+        transform: translate(5px, -5px) scale(1.2);
+    }
+
+    100% {
+        transform: translate(2px, -2px) scale(1);
+    }
+}
+
+.loan-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.65fr) minmax(240px, 0.7fr);
+    align-items: start;
+    gap: 24px;
+    margin-top: 26px;
+}
+
+.loan-tabs {
+    display: inline-flex;
+    gap: 4px;
+    margin-top: 24px;
+    padding: 4px;
+    background: #e5efed;
+    border-radius: 9px;
+}
+
+.loan-tabs button {
+    min-height: 38px;
+    padding: 8px 16px;
+    color: var(--muted);
+    background: transparent;
+    border: 0;
+    border-radius: 7px;
+    cursor: pointer;
+    font-weight: 800;
+    transition: color 180ms ease, background-color 180ms ease,
+        box-shadow 180ms ease, transform 180ms ease;
+}
+
+.loan-tabs button:hover,
+.loan-tabs button:focus-visible {
+    color: var(--primary-dark);
+    outline: none;
+}
+
+.loan-tabs button:focus-visible {
+    box-shadow: 0 0 0 3px rgba(7, 141, 135, 0.18);
+}
+
+.loan-tabs button[aria-selected="true"] {
+    color: var(--primary-dark);
+    background: #ffffff;
+    box-shadow: 0 3px 10px rgba(19, 46, 65, 0.09);
+}
+
+.loan-tabs + .loan-layout {
+    margin-top: 16px;
+}
+
+.loan-form {
+    margin-top: 0;
+}
+
+.loan-form__header {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--border);
+}
+
+.loan-form__header strong,
+.loan-form__header small {
+    display: block;
+}
+
+.loan-form__header small {
+    margin-top: 4px;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.loan-form__icon {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+    color: var(--primary-dark);
+    background: #e7f6f7;
+    border-radius: 10px;
+    font-size: 21px;
+    font-weight: 800;
+    place-items: center;
+}
+
+.loan-date-field {
+    align-content: start;
+}
+
+.book-form .loan-date-field > .field-label {
+    display: inline-flex;
+    width: max-content;
+    align-items: center;
+    gap: 4px;
+}
+
+.loan-date-picker {
+    position: relative;
+}
+
+.loan-date-picker__trigger {
+    display: flex;
+    width: 100%;
+    min-height: 41px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 11px;
+    color: #8b9798;
+    background: #fbfdf9;
+    border: 1px solid #ccd9cc;
+    border-radius: 7px;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 500;
+    text-align: left;
+    transition: border-color 180ms ease, box-shadow 180ms ease,
+        background-color 180ms ease;
+}
+
+.loan-date-picker__trigger.has-value {
+    color: var(--text);
+    font-weight: 700;
+}
+
+.loan-date-picker__trigger:hover,
+.loan-date-picker__trigger:focus-visible,
+.loan-date-picker.is-open .loan-date-picker__trigger {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(7, 141, 135, 0.14);
+    outline: none;
+}
+
+.loan-date-picker__icon {
+    display: grid;
+    width: 23px;
+    height: 23px;
+    flex: 0 0 23px;
+    color: var(--primary-dark);
+    background: #e7f6f7;
+    border-radius: 6px;
+    place-items: center;
+}
+
+.loan-calendar {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: 60;
+    width: min(320px, calc(100vw - 48px));
+    padding: 14px;
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 20px 45px rgba(19, 46, 65, 0.2);
+}
+
+.loan-calendar[hidden] {
+    display: none;
+}
+
+.loan-calendar__header {
+    display: grid;
+    grid-template-columns: 34px 1fr 34px;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.loan-calendar__header strong {
+    color: var(--text);
+    font-size: 13px;
+    text-align: center;
+}
+
+.loan-calendar__header button,
+.loan-calendar__footer button {
+    min-height: 32px;
+    color: var(--primary-dark);
+    background: #f1f8f6;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    cursor: pointer;
+    font-weight: 800;
+}
+
+.loan-calendar__header button:hover:not(:disabled),
+.loan-calendar__header button:focus-visible,
+.loan-calendar__footer button:hover,
+.loan-calendar__footer button:focus-visible {
+    color: #ffffff;
+    background: var(--primary);
+    outline: none;
+}
+
+.loan-calendar__header button:disabled {
+    cursor: not-allowed;
+    opacity: 0.35;
+}
+
+.loan-calendar__weekdays,
+.loan-calendar__days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+}
+
+.loan-calendar__weekdays {
+    margin-bottom: 5px;
+    color: var(--muted);
+    font-size: 9px;
+    font-weight: 800;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.loan-calendar__days button,
+.loan-calendar__blank {
+    min-width: 0;
+    min-height: 34px;
+}
+
+.loan-calendar__days button {
+    padding: 0;
+    color: var(--text);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 700;
+    transition: color 140ms ease, background-color 140ms ease,
+        border-color 140ms ease, transform 140ms ease;
+}
+
+.loan-calendar__days button:hover:not(:disabled),
+.loan-calendar__days button:focus-visible {
+    color: var(--primary-dark);
+    background: #e7f6f7;
+    outline: none;
+    transform: translateY(-1px);
+}
+
+.loan-calendar__days button.is-today {
+    border-color: #8bcac6;
+}
+
+.loan-calendar__days button.is-selected {
+    color: #ffffff;
+    background: var(--primary);
+    border-color: var(--primary);
+}
+
+.loan-calendar__days button:disabled {
+    color: #bec8c8;
+    cursor: not-allowed;
+    text-decoration: line-through;
+}
+
+.loan-calendar__footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 12px;
+    padding-top: 11px;
+    border-top: 1px solid var(--border);
+}
+
+.loan-calendar__footer button {
+    padding: 6px 11px;
+    font-size: 10px;
+}
+
+.loan-date-shortcuts {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-top: 2px;
+}
+
+.loan-date-shortcuts > span {
+    margin-right: 2px;
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.loan-date-shortcuts button {
+    min-height: 28px;
+    padding: 5px 9px;
+    color: var(--primary-dark);
+    background: #f4faf8;
+    border: 1px solid #c9ded7;
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 10px;
+    font-weight: 800;
+    transition: color 160ms ease, background-color 160ms ease,
+        border-color 160ms ease, transform 160ms ease;
+}
+
+.loan-date-shortcuts button:hover,
+.loan-date-shortcuts button:focus-visible,
+.loan-date-shortcuts button.is-selected {
+    color: #ffffff;
+    background: var(--primary);
+    border-color: var(--primary);
+    outline: none;
+    transform: translateY(-1px);
+}
+
+.loan-date-shortcuts button:focus-visible {
+    box-shadow: 0 0 0 3px rgba(7, 141, 135, 0.18);
+}
+
+.loan-date-help {
+    min-height: 14px;
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 500;
+    line-height: 1.4;
+}
+
+.loan-date-field.is-invalid .loan-date-picker__trigger {
+    background: #fff8f7;
+    border-color: #d92d20;
+    box-shadow: 0 0 0 3px rgba(217, 45, 32, 0.11);
+}
+
+.loan-guidance {
+    padding: 24px;
+    background: linear-gradient(145deg, #103d3c 0%, #0b302f 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    color: #ffffff;
+}
+
+.loan-guidance__eyebrow {
+    margin: 0 0 7px;
+    color: #8ad8d4;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.loan-guidance h2 {
+    margin: 0;
+    font-family: Inter, "Segoe UI", Arial, sans-serif;
+    font-size: 19px;
+}
+
+.loan-guidance ul {
+    display: grid;
+    gap: 13px;
+    margin: 21px 0;
+    padding: 0;
+    list-style: none;
+}
+
+.loan-guidance li {
+    position: relative;
+    padding-left: 22px;
+    color: #d7eeee;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.loan-guidance li::before {
+    position: absolute;
+    top: 1px;
+    left: 0;
+    color: #79cec9;
+    content: "✓";
+    font-weight: 900;
+}
+
+.loan-guidance__note {
+    margin: 0;
+    padding-top: 17px;
+    color: #a9cecc;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    font-size: 10px;
+    line-height: 1.55;
+}
+
+.loan-preview {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    color: #176b49;
+    background: #eaf8f0;
+    border: 1px solid #b7dec7;
+    border-radius: 9px;
+}
+
+.loan-preview[hidden] {
+    display: none;
+}
+
+.loan-preview__status {
+    display: grid;
+    width: 24px;
+    height: 24px;
+    flex: 0 0 24px;
+    color: #ffffff;
+    background: #25845e;
+    border-radius: 50%;
+    place-items: center;
+}
+
+.loan-preview strong {
+    font-size: 13px;
+}
+
+.loan-preview p {
+    margin: 3px 0 0;
+    color: #356d55;
+    font-size: 11px;
+    line-height: 1.45;
+}
+
+.loan-submit-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.loan-submit-button span {
+    transition: transform 200ms ease;
+}
+
+.loan-submit-button:hover span {
+    transform: translateX(3px);
+}
+
+.returns-panel {
+    margin-top: 16px;
+    padding: 28px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+}
+
+.returns-panel__header p {
+    margin: 0 0 5px;
+    color: var(--primary-dark);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+
+.returns-panel__header h2 {
+    margin: 0;
+    font-family: Inter, "Segoe UI", Arial, sans-serif;
+    font-size: 20px;
+}
+
+.returns-panel__header small {
+    display: block;
+    margin-top: 5px;
+    color: var(--muted);
+}
+
+.returns-table {
+    margin-top: 23px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+}
+
+.returns-table__header {
+    display: grid;
+    grid-template-columns: 1.5fr 1.2fr 0.7fr 0.8fr 0.7fr;
+    gap: 12px;
+    padding: 11px 16px;
+    color: var(--muted);
+    background: #f4f8f7;
+    border-bottom: 1px solid var(--border);
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
 /* Formulário de cadastro e estados de validação. */
 .book-form {
     display: grid;
@@ -1800,6 +2372,7 @@ button.is-pressed {
 }
 
 .book-form label.is-invalid input,
+.book-form .form-field.is-invalid input,
 .book-form label.is-invalid select,
 .book-form label.is-invalid textarea {
     background: #fff8f7;
@@ -1814,6 +2387,7 @@ button.is-pressed {
 }
 
 .book-form label.is-invalid input:focus,
+.book-form .form-field.is-invalid input:focus,
 .book-form label.is-invalid select:focus,
 .book-form label.is-invalid textarea:focus {
     border-color: #b42318;
@@ -1892,5 +2466,46 @@ button.is-pressed {
 
     .book-form .wide {
         grid-column: auto;
+    }
+
+    .loan-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .loan-form__header,
+    .loan-preview,
+    .loan-form .form-message,
+    .loan-form .form-actions {
+        grid-column: auto;
+    }
+
+    .loan-tabs {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        width: 100%;
+    }
+
+    .loan-tabs button {
+        padding-inline: 10px;
+    }
+
+    .loan-calendar {
+        right: auto;
+        left: 0;
+        width: min(320px, calc(100vw - 86px));
+    }
+
+    .returns-panel {
+        padding: 18px;
+    }
+
+    .returns-table__header {
+        display: none;
+    }
+}
+
+@media (min-width: 761px) and (max-width: 1050px) {
+    .loan-layout {
+        grid-template-columns: 1fr;
     }
 }
