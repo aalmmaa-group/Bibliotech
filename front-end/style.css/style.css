@@ -35,6 +35,8 @@ body {
 
 button {
     font: inherit;
+    transition: color 220ms ease, background-color 220ms ease, border-color 220ms ease,
+        box-shadow 220ms ease, transform 220ms ease, opacity 220ms ease;
 }
 
 .sidebar {
@@ -70,12 +72,6 @@ button {
     width: min(166px, calc(100% - 46px));
     height: auto;
     filter: drop-shadow(0 5px 10px rgba(3, 16, 31, 0.34));
-    transition: filter 260ms ease, transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-.brand:hover .brand__wordmark {
-    filter: drop-shadow(0 7px 14px rgba(65, 211, 205, 0.22));
-    transform: translateY(-1px) scale(1.015);
 }
 
 .brand__icon {
@@ -547,6 +543,21 @@ button.is-pressed {
     line-height: 1.5;
 }
 
+.pending-notice {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 80;
+    max-width: min(360px, calc(100vw - 32px));
+    padding: 13px 16px;
+    color: #ffffff;
+    background: var(--nav-background);
+    border-radius: 8px;
+    box-shadow: 0 12px 28px rgba(19, 46, 65, 0.24);
+    font-size: 13px;
+    font-weight: 600;
+}
+
 .page-content {
     min-height: calc(100vh - var(--topbar-height));
 }
@@ -734,6 +745,11 @@ button.is-pressed {
     border-color: var(--primary);
 }
 
+/* Na tela de Gestão, o hover muda somente as cores, sem deslocar os botões. */
+.management-options button:hover {
+    transform: none;
+}
+
 .primary-action:not(.register-book-button) span,
 .panel-link span {
     display: inline-block;
@@ -855,23 +871,96 @@ button.is-pressed {
     line-height: 1.45;
 }
 
-.collection-search__form {
-    display: flex;
-    width: min(390px, 42%);
-    min-width: 270px;
-    min-height: 50px;
-    align-items: center;
+.collection-search__controls {
+    position: relative;
+    display: grid;
+    width: min(550px, 52%);
+    min-width: 400px;
+    grid-template-columns: 90px minmax(0, 1fr);
     gap: 10px;
-    padding: 0 15px;
+}
+
+.collection-search__filter {
+    position: relative;
+}
+
+.collection-search__filter-button,
+.collection-search__form {
+    min-height: 45px;
     background: #ffffff;
     border: 1px solid #d9e2e3;
     border-radius: 7px;
+}
+
+.collection-search__filter-button {
+    display: inline-flex;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    padding: 0 14px;
+    color: #56686a;
+    background: #ffffff;
+    border-color: #bfdcdd;
+    border-radius: 999px;
+    cursor: pointer;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.collection-search__filter-button:hover {
+    color: var(--primary-dark);
+    background: #f4fbfb;
+    border-color: #bfdcdd;
+    transform: none;
+}
+
+.collection-search__form {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 15px;
     transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 
+.collection-search__filter-button:focus-visible,
 .collection-search__form:focus-within {
     border-color: var(--primary);
     box-shadow: 0 0 0 3px rgba(7, 141, 135, 0.12);
+    outline: none;
+}
+
+.collection-search__filter-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    z-index: 30;
+    width: 142px;
+    padding: 5px;
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 12px 26px rgba(19, 46, 65, 0.16);
+}
+
+.collection-search__filter-menu button {
+    display: block;
+    width: 100%;
+    padding: 8px 9px;
+    color: var(--text);
+    background: transparent;
+    border: 0;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 13px;
+    text-align: left;
+}
+
+.collection-search__filter-menu button:hover,
+.collection-search__filter-menu button[aria-checked="true"] {
+    color: var(--primary-dark);
+    background: #e7f6f7;
+    transform: none;
 }
 
 .collection-search__form svg {
@@ -898,6 +987,53 @@ button.is-pressed {
 
 .collection-search__form input::placeholder {
     color: #97a4a6;
+}
+
+.collection-search__results {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    left: 0;
+    z-index: 25;
+    max-height: 260px;
+    overflow-y: auto;
+    padding: 6px;
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 14px 30px rgba(19, 46, 65, 0.16);
+}
+
+.collection-search__result,
+.collection-search__empty {
+    padding: 11px 12px;
+    border-radius: 6px;
+}
+
+.collection-search__result + .collection-search__result {
+    margin-top: 3px;
+}
+
+.collection-search__result:hover {
+    background: #f2fbfb;
+}
+
+.collection-search__result strong,
+.collection-search__result small {
+    display: block;
+}
+
+.collection-search__result strong {
+    color: var(--text);
+    font-size: 13px;
+}
+
+.collection-search__result small,
+.collection-search__empty {
+    margin-top: 3px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.4;
 }
 
 .sr-only {
@@ -1292,8 +1428,13 @@ button.is-pressed {
     }
 
     .collection-search__form {
+        min-width: 0;
+    }
+
+    .collection-search__controls {
         width: 100%;
         min-width: 0;
+        grid-template-columns: 106px minmax(0, 1fr);
     }
 
     .overview-lower {
@@ -1342,6 +1483,12 @@ button.is-pressed {
     *::after {
         scroll-behavior: auto !important;
         transition-duration: 0.01ms !important;
+    }
+
+    /* Mantém a resposta suave dos controles mesmo com as animações amplas reduzidas. */
+    button {
+        transition-duration: 200ms !important;
+        transition-timing-function: ease-in-out !important;
     }
 }
 
@@ -1397,7 +1544,7 @@ button.is-pressed {
 
 .management-options h2 {
     margin: 0;
-    font-family: Georgia, "Times New Roman", serif;
+    font-family: Inter, "Segoe UI", Arial, sans-serif;
     font-size: 19px;
 }
 
@@ -1424,18 +1571,19 @@ button.is-pressed {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 17px;
     margin-top: 26px;
-    padding: 24px;
+    padding: 30px 37px;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 12px;
     box-shadow: var(--shadow);
 }
 
-.book-form label {
+.book-form label,
+.book-form .form-field {
     display: grid;
     gap: 7px;
     color: var(--text);
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 700;
 }
 
@@ -1513,8 +1661,10 @@ button.is-pressed {
 }
 
 .book-form input,
+.book-form select,
 .book-form textarea {
     width: 100%;
+    max-width: 100%;
     padding: 10px 11px;
     background: #fbfdf9;
     border: 1px solid #ccd9cc;
@@ -1523,26 +1673,155 @@ button.is-pressed {
     font: inherit;
 }
 
+.book-form select {
+    color: #9aa5a6;
+    cursor: pointer;
+    font-weight: 400;
+}
+
+.book-form select:valid,
+.book-form select option {
+    color: var(--text);
+    font-weight: 400;
+}
+
+.genre-select {
+    position: relative;
+    min-width: 0;
+}
+
+.genre-select__trigger {
+    display: flex;
+    width: 100%;
+    min-height: 39px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    color: #9aa5a6;
+    background: #fbfdf9;
+    border: 1px solid #ccd9cc;
+    border-radius: 7px;
+    cursor: pointer;
+    font-weight: 400;
+    text-align: left;
+}
+
+.genre-select.has-value .genre-select__trigger {
+    color: var(--text);
+}
+
+.genre-select__trigger:focus-visible {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(7, 141, 135, 0.14);
+    outline: none;
+}
+
+.genre-select__arrow {
+    width: 9px;
+    height: 9px;
+    flex: 0 0 9px;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: translateY(-2px) rotate(45deg);
+}
+
+.genre-select.is-open .genre-select__arrow {
+    transform: translateY(2px) rotate(225deg);
+}
+
+.genre-select__options {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    left: 0;
+    z-index: 45;
+    max-height: 160px;
+    padding: 5px;
+    overflow-y: auto;
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 14px 30px rgba(19, 46, 65, 0.16);
+}
+
+.genre-select__options button {
+    display: block;
+    width: 100%;
+    padding: 9px 10px;
+    color: var(--text);
+    background: transparent;
+    border: 0;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 400;
+    text-align: left;
+}
+
+.genre-select__options button:hover,
+.genre-select__options button:focus-visible,
+.genre-select__options button[aria-selected="true"] {
+    color: var(--primary-dark);
+    background: #e7f6f7;
+    outline: none;
+    transform: none;
+}
+
+.book-form .genre-other-field {
+    gap: 6px;
+    margin-top: 2px;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.book-form textarea {
+    display: block;
+    min-width: 60%;
+    max-width: 100%;
+    min-height: 110px;
+    max-height: 240px;
+    resize: both;
+}
+
+.textarea-resize-boundary {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+}
+
 .book-form input:focus,
+.book-form select:focus,
 .book-form textarea:focus {
     border-color: var(--primary);
     box-shadow: 0 0 0 3px rgba(7, 141, 135, 0.14);
 }
 
 .book-form label.is-invalid input,
+.book-form label.is-invalid select,
 .book-form label.is-invalid textarea {
     background: #fff8f7;
     border-color: #d92d20;
     box-shadow: 0 0 0 3px rgba(217, 45, 32, 0.11);
 }
 
+.book-form .form-field.is-invalid .genre-select__trigger {
+    background: #fff8f7;
+    border-color: #d92d20;
+    box-shadow: 0 0 0 3px rgba(217, 45, 32, 0.11);
+}
+
 .book-form label.is-invalid input:focus,
+.book-form label.is-invalid select:focus,
 .book-form label.is-invalid textarea:focus {
     border-color: #b42318;
     box-shadow: 0 0 0 3px rgba(217, 45, 32, 0.17);
 }
 
-.book-form label small {
+.book-form label small,
+.book-form .form-field small {
     min-height: 12px;
     color: #b42318;
     font-size: 10px;
@@ -1579,8 +1858,21 @@ button.is-pressed {
     margin-top: 4px;
 }
 
+.form-actions > button {
+    min-height: 46px;
+    transition: color 200ms ease-in-out, background-color 200ms ease-in-out,
+        border-color 200ms ease-in-out, box-shadow 200ms ease-in-out,
+        transform 200ms ease-in-out;
+}
+
+.form-actions > button:hover {
+    transform: none;
+}
+
 .form-actions .primary-action {
-    border: 0;
+    background: transparent;
+    border: 1px solid #cfe3c7;
+    box-shadow: none;
 }
 
 @media (max-width: 760px) {

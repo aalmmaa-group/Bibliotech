@@ -12,8 +12,12 @@ const registrationPage = document.querySelector('#registrationPage');
 const pageTitle = document.querySelector('#pageTitle');
 const breadcrumbCurrent = document.querySelector('#breadcrumbCurrent');
 const bookForm = document.querySelector('#bookForm');
+const notificationButton = document.querySelector('#notificationButton');
+const notificationPanel = document.querySelector('#notificationPanel');
 let pendingMessageTimer;
 let formMessageTimer;
+let collectionSearchTimer;
+const sessionCollectionBooks = [];
 
 /**
  * Reinicia uma animação CSS aplicada por classe sem alterar o conteúdo da tela.
@@ -60,20 +64,175 @@ function openView(view) {
 }
 
 /**
- * Mostra uma mensagem temporária no painel de notificações.
+ * Mostra um aviso temporário sem interferir no painel de notificações.
  * @param {string} message Texto explicativo para o usuário.
  */
 function showPending(message) {
-  const panel = document.querySelector('#notificationPanel');
-  panel.querySelector('.notification-panel__empty strong').textContent = 'Em construção';
-  panel.querySelector('.notification-panel__empty p').textContent = message;
-  panel.hidden = false;
-  replayEntranceAnimation(panel);
+  let notice = document.querySelector('#pendingNotice');
+
+  if (!notice) {
+    notice = document.createElement('div');
+    notice.id = 'pendingNotice';
+    notice.className = 'pending-notice';
+    notice.setAttribute('role', 'status');
+    notice.setAttribute('aria-live', 'polite');
+    document.body.append(notice);
+  }
+
+  notice.textContent = message;
+  notice.hidden = false;
+  replayEntranceAnimation(notice);
 
   window.clearTimeout(pendingMessageTimer);
   pendingMessageTimer = window.setTimeout(() => {
-    panel.hidden = true;
+    notice.hidden = true;
   }, 3500);
+}
+
+/** Remove acentos para tornar a busca mais flexível. */
+function normalizeSearchText(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase('pt-BR');
+}
+
+/** Mostra os resultados retornados pela busca sem inserir conteúdo como HTML. */
+function renderCollectionResults(resultsElement, books, message = '') {
+  resultsElement.replaceChildren();
+  resultsElement.hidden = false;
+
+  if (message || books.length === 0) {
+    const empty = document.createElement('p');
+    empty.className = 'collection-search__empty';
+    empty.textContent = message || 'Nenhum livro encontrado.';
+    resultsElement.append(empty);
+    return;
+  }
+
+  books.forEach((book) => {
+    const result = document.createElement('article');
+    result.className = 'collection-search__result';
+
+    const title = document.createElement('strong');
+    title.textContent = book.title;
+    const details = document.createElement('small');
+    details.textContent = `${book.author} · ${book.genre} · ${book.available}/${book.total} disponível(is)`;
+
+    result.append(title, details);
+    resultsElement.append(result);
+  });
+}
+
+/** Mantém na interface os livros cadastrados durante a sessão atual. */
+function addBookToCollectionSearch(book) {
+  sessionCollectionBooks.push({
+    title: book.title,
+    author: book.author,
+    genre: book.genre,
+    available: book.quantity,
+    total: book.quantity
+  });
+}
+
+/** Configura busca por título, autor ou gênero dos livros cadastrados. */
+function setupCollectionSearch() {
+  const form = document.querySelector('.collection-search__form');
+  const input = document.querySelector('#collectionSearchInput');
+  const filterButton = document.querySelector('#collectionSearchFilter');
+  const filterMenu = document.querySelector('#collectionSearchFilterMenu');
+  const filterOptions = [...filterMenu.querySelectorAll('[data-filter]')];
+  const results = document.querySelector('#collectionSearchResults');
+  let activeFilter = 'title';
+  const placeholderByFilter = {
+    title: 'Buscar por título',
+    author: 'Buscar por autor',
+    genre: 'Buscar por gênero'
+  };
+  const fieldByFilter = {
+    title: 'title',
+    author: 'author',
+    genre: 'genre'
+  };
+
+  const closeResults = () => {
+    results.hidden = true;
+    results.replaceChildren();
+  };
+
+  const setFilterMenuOpen = (isOpen) => {
+    filterMenu.hidden = !isOpen;
+    filterButton.setAttribute('aria-expanded', String(isOpen));
+  };
+
+  const searchBooks = async () => {
+    const term = normalizeSearchText(input.value.trim());
+    if (!term) {
+      closeResults();
+      return;
+    }
+
+    const field = fieldByFilter[activeFilter];
+    const filteredBooks = sessionCollectionBooks.filter((book) => normalizeSearchText(book[field]).includes(term));
+    const emptyMessage = sessionCollectionBooks.length === 0
+      ? 'Nenhum livro cadastrado nesta sessão.'
+      : '';
+    renderCollectionResults(results, filteredBooks, emptyMessage);
+  };
+
+  form.addEventListener('submit', (event) => event.preventDefault());
+  input.addEventListener('input', () => {
+    window.clearTimeout(collectionSearchTimer);
+    collectionSearchTimer = window.setTimeout(searchBooks, 180);
+  });
+  filterButton.addEventListener('click', (event) => {
+    event.stopPropagation();
+    setFilterMenuOpen(filterMenu.hidden);
+  });
+  filterOptions.forEach((option) => {
+    option.addEventListener('click', () => {
+      activeFilter = option.dataset.filter;
+      filterOptions.forEach((item) => {
+        item.setAttribute('aria-checked', String(item === option));
+      });
+      input.placeholder = placeholderByFilter[activeFilter];
+      setFilterMenuOpen(false);
+      if (input.value.trim()) searchBooks();
+      input.focus();
+    });
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') setFilterMenuOpen(false);
+  });
+  document.addEventListener('click', (event) => {
+    if (!event.target.closest('.collection-search__controls')) {
+      setFilterMenuOpen(false);
+      closeResults();
+    }
+  });
+}
+
+/** Abre e fecha exclusivamente o painel acionado pelo botão de notificações. */
+function setupNotifications() {
+  const setPanelOpen = (isOpen) => {
+    notificationPanel.hidden = !isOpen;
+    notificationButton.setAttribute('aria-expanded', String(isOpen));
+
+    if (isOpen) replayEntranceAnimation(notificationPanel);
+  };
+
+  notificationButton.addEventListener('click', (event) => {
+    event.stopPropagation();
+    setPanelOpen(notificationPanel.hidden);
+  });
+
+  notificationPanel.addEventListener('click', (event) => event.stopPropagation());
+  document.addEventListener('click', () => setPanelOpen(false));
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape' || notificationPanel.hidden) return;
+    setPanelOpen(false);
+    notificationButton.focus();
+  });
 }
 
 /**
@@ -110,10 +269,13 @@ function validateBookField(input) {
     errorMessage = 'Informe uma quantidade inteira igual ou maior que 1.';
   }
 
-  const field = input.closest('label');
+  const field = input.closest('label, .form-field');
+  const validationControl = input.name === 'genre'
+    ? document.querySelector('#genreSelectButton')
+    : input;
   field.classList.toggle('is-invalid', Boolean(errorMessage));
   field.querySelector('small').textContent = errorMessage;
-  input.setAttribute('aria-invalid', String(Boolean(errorMessage)));
+  validationControl.setAttribute('aria-invalid', String(Boolean(errorMessage)));
   return !errorMessage;
 }
 
@@ -154,7 +316,7 @@ function clearBookFormErrors() {
   bookForm.querySelectorAll('[aria-invalid]').forEach((input) => {
     input.setAttribute('aria-invalid', 'false');
   });
-  bookForm.querySelectorAll('label small').forEach((message) => {
+  bookForm.querySelectorAll('label small, .form-field small').forEach((message) => {
     message.textContent = '';
   });
 }
@@ -164,9 +326,108 @@ function setupBookFormValidation() {
   bookForm.querySelectorAll('[required]').forEach((input) => {
     input.addEventListener('blur', () => validateBookField(input));
     input.addEventListener('input', () => {
-      if (input.closest('label').classList.contains('is-invalid')) validateBookField(input);
+      if (input.closest('label, .form-field').classList.contains('is-invalid')) validateBookField(input);
     });
   });
+}
+
+/** Configura o seletor personalizado e mantém seu valor sincronizado com o formulário. */
+function setupGenreSelect() {
+  const genreSelect = document.querySelector('#genreSelect');
+  const genreInput = document.querySelector('#genreInput');
+  const trigger = document.querySelector('#genreSelectButton');
+  const triggerText = trigger.querySelector('span');
+  const optionsPanel = document.querySelector('#genreOptions');
+  const options = [...optionsPanel.querySelectorAll('[role="option"]')];
+  const otherField = document.querySelector('#genreOtherField');
+  const otherInput = document.querySelector('#genreOtherInput');
+
+  const setOpen = (isOpen) => {
+    genreSelect.classList.toggle('is-open', isOpen);
+    optionsPanel.hidden = !isOpen;
+    trigger.setAttribute('aria-expanded', String(isOpen));
+  };
+
+  const selectGenre = (option) => {
+    options.forEach((item) => {
+      item.setAttribute('aria-selected', String(item === option));
+    });
+    genreInput.value = option.dataset.value;
+    triggerText.textContent = option.textContent;
+    genreSelect.classList.add('has-value');
+    const isOtherGenre = option.dataset.value === 'Outro';
+    otherField.hidden = !isOtherGenre;
+    otherInput.required = isOtherGenre;
+
+    if (!isOtherGenre) {
+      otherInput.value = '';
+      otherInput.closest('label').classList.remove('is-invalid');
+      otherInput.closest('label').querySelector('small').textContent = '';
+      otherInput.setAttribute('aria-invalid', 'false');
+    }
+
+    genreInput.dispatchEvent(new Event('input', { bubbles: true }));
+    setOpen(false);
+    (isOtherGenre ? otherInput : trigger).focus();
+  };
+
+  const resetGenre = () => {
+    genreInput.value = '';
+    triggerText.textContent = 'Selecione um gênero';
+    trigger.setAttribute('aria-invalid', 'false');
+    genreSelect.classList.remove('has-value');
+    options.forEach((option) => option.setAttribute('aria-selected', 'false'));
+    otherField.hidden = true;
+    otherInput.required = false;
+    otherInput.value = '';
+    otherInput.setAttribute('aria-invalid', 'false');
+    otherInput.closest('label').classList.remove('is-invalid');
+    otherInput.closest('label').querySelector('small').textContent = '';
+    setOpen(false);
+  };
+
+  trigger.addEventListener('click', (event) => {
+    event.stopPropagation();
+    setOpen(optionsPanel.hidden);
+  });
+
+  trigger.addEventListener('keydown', (event) => {
+    if (!['ArrowDown', 'ArrowUp'].includes(event.key)) return;
+    event.preventDefault();
+    setOpen(true);
+    const selectedOption = options.find((option) => option.getAttribute('aria-selected') === 'true');
+    (selectedOption || options[0]).focus();
+  });
+
+  options.forEach((option, index) => {
+    option.addEventListener('click', () => selectGenre(option));
+    option.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        setOpen(false);
+        trigger.focus();
+        return;
+      }
+
+      if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+      event.preventDefault();
+      const nextIndex = event.key === 'Home'
+        ? 0
+        : event.key === 'End'
+          ? options.length - 1
+          : (index + (event.key === 'ArrowDown' ? 1 : -1) + options.length) % options.length;
+      options[nextIndex].focus();
+    });
+  });
+
+  optionsPanel.addEventListener('click', (event) => event.stopPropagation());
+  document.addEventListener('click', () => setOpen(false));
+  otherInput.addEventListener('blur', () => {
+    if (otherInput.required) validateBookField(otherInput);
+  });
+  otherInput.addEventListener('input', () => {
+    if (otherInput.closest('label').classList.contains('is-invalid')) validateBookField(otherInput);
+  });
+  bookForm.addEventListener('reset', resetGenre);
 }
 
 /**
@@ -175,10 +436,12 @@ function setupBookFormValidation() {
  */
 function getBookPayload() {
   const formData = new FormData(bookForm);
+  const genre = formData.get('genre').trim();
+  const otherGenre = formData.get('genreOther').trim();
   return {
     title: formData.get('title').trim(),
     author: formData.get('author').trim(),
-    genre: formData.get('genre').trim(),
+    genre: genre === 'Outro' ? `Outro: ${otherGenre}` : genre,
     quantity: Number(formData.get('quantity')),
     notes: formData.get('notes').trim()
   };
@@ -291,6 +554,7 @@ async function handleBookSubmit(event) {
     }
 
     if (resultado.ok) {
+      addBookToCollectionSearch(bookData);
       setFormMessage(resultado.message, 'success');
       bookForm.reset();
       clearBookFormErrors();
@@ -307,7 +571,10 @@ async function handleBookSubmit(event) {
 /** Inicializa os eventos após o carregamento do HTML. */
 function initializeApp() {
   setupNavigation();
+  setupCollectionSearch();
+  setupNotifications();
   setupPendingActions();
+  setupGenreSelect();
   setupClickFeedback();
   setupBookFormValidation();
   bookForm.addEventListener('submit', handleBookSubmit);
