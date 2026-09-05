@@ -10,6 +10,7 @@ const overviewPage = document.querySelector('#overviewPage');
 const managementPage = document.querySelector('#managementPage');
 const loanPage = document.querySelector('#loanPage');
 const registrationPage = document.querySelector('#registrationPage');
+const collectionPage = document.querySelector('#collectionPage');
 const pageTitle = document.querySelector('#pageTitle');
 const breadcrumbCurrent = document.querySelector('#breadcrumbCurrent');
 const bookForm = document.querySelector('#bookForm');
@@ -34,18 +35,20 @@ function replayEntranceAnimation(element) {
 
 /**
  * Alterna a tela visível da aplicação.
- * @param {'inicio'|'gestao'|'emprestimos'|'cadastro'} view Tela que deve ser exibida.
+ * @param {'inicio'|'gestao'|'emprestimos'|'acervo'|'cadastro'} view Tela que deve ser exibida.
  */
 function openView(view) {
   overviewPage.hidden = view !== 'inicio';
   managementPage.hidden = view !== 'gestao';
   loanPage.hidden = view !== 'emprestimos';
+  collectionPage.hidden = view !== 'acervo';
   registrationPage.hidden = view !== 'cadastro';
 
   const titleByView = {
     inicio: 'Visão geral',
     gestao: 'Gestão',
     emprestimos: 'Empréstimos',
+    acervo: 'Acervo',
     cadastro: 'Cadastro de livro'
   };
   const title = titleByView[view];
@@ -59,6 +62,8 @@ function openView(view) {
     ? 'Visão geral'
     : view === 'emprestimos'
       ? 'Empréstimos'
+      : view === 'acervo'
+        ? 'Acervo'
       : 'Gestão';
   menuItems.forEach((item) => {
     item.classList.toggle('is-active', item.dataset.page === activePage);
@@ -68,6 +73,7 @@ function openView(view) {
     inicio: overviewPage,
     gestao: managementPage,
     emprestimos: loanPage,
+    acervo: collectionPage,
     cadastro: registrationPage
   };
   const visiblePage = pageByView[view];
@@ -144,6 +150,86 @@ function addBookToCollectionSearch(book) {
     available: book.quantity,
     total: book.quantity
   });
+  document.dispatchEvent(new Event('collection-updated'));
+}
+
+/** Renderiza o catálogo somente com livros incluídos durante a sessão atual. */
+function setupCollectionCatalog() {
+  const tableBody = document.querySelector('#catalogTableBody');
+  const empty = document.querySelector('#catalogEmpty');
+  const searchInput = document.querySelector('#catalogSearchInput');
+  const genreSelect = document.querySelector('#catalogGenreSelect');
+  const genreFilter = document.querySelector('#catalogGenreFilter');
+  const genreText = genreFilter.querySelector('span');
+  const genreOptionsPanel = document.querySelector('#catalogGenreOptions');
+  const genreOptions = [...genreOptionsPanel.querySelectorAll('[data-catalog-genre]')];
+  const count = document.querySelector('#catalogCount');
+  const total = document.querySelector('#catalogTotal');
+  const available = document.querySelector('#catalogAvailable');
+  const loaned = document.querySelector('#catalogLoaned');
+
+  const renderCatalog = () => {
+    const term = normalizeSearchText(searchInput.value.trim());
+    const genre = genreSelect.dataset.value || '';
+    const books = sessionCollectionBooks.filter((book) => {
+      const matchesTerm = !term || [book.title, book.author].some((value) => normalizeSearchText(value).includes(term));
+      return matchesTerm && (!genre || book.genre === genre);
+    });
+    const totalBooks = sessionCollectionBooks.reduce((sum, book) => sum + Number(book.total || 0), 0);
+    const availableBooks = sessionCollectionBooks.reduce((sum, book) => sum + Number(book.available || 0), 0);
+
+    total.textContent = String(totalBooks);
+    available.textContent = String(availableBooks);
+    loaned.textContent = String(Math.max(0, totalBooks - availableBooks));
+    count.textContent = `${books.length} ${books.length === 1 ? 'livro' : 'livros'}`;
+    tableBody.replaceChildren();
+    empty.hidden = books.length > 0;
+
+    books.forEach((book) => {
+      const row = document.createElement('tr');
+      const values = [book.title, book.author, book.genre, `${book.available}/${book.total} disponível(is)`];
+      values.forEach((value, index) => {
+        const cell = document.createElement('td');
+        cell.textContent = value;
+        if (index === 0) cell.className = 'catalog-table__title';
+        if (index === 3) cell.className = 'catalog-table__availability';
+        row.append(cell);
+      });
+      tableBody.append(row);
+    });
+  };
+
+  searchInput.addEventListener('input', renderCatalog);
+  const setGenreOptionsOpen = (isOpen) => {
+    genreSelect.classList.toggle('is-open', isOpen);
+    genreOptionsPanel.hidden = !isOpen;
+    genreFilter.setAttribute('aria-expanded', String(isOpen));
+  };
+
+  genreFilter.addEventListener('click', (event) => {
+    event.stopPropagation();
+    setGenreOptionsOpen(genreOptionsPanel.hidden);
+  });
+
+  genreOptions.forEach((option) => {
+    option.addEventListener('click', () => {
+      genreSelect.dataset.value = option.dataset.catalogGenre;
+      genreText.textContent = option.textContent;
+      genreOptions.forEach((item) => item.setAttribute('aria-selected', String(item === option)));
+      setGenreOptionsOpen(false);
+      renderCatalog();
+      genreFilter.focus();
+    });
+  });
+
+  document.addEventListener('click', (event) => {
+    if (!event.target.closest('#catalogGenreSelect')) setGenreOptionsOpen(false);
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') setGenreOptionsOpen(false);
+  });
+  document.addEventListener('collection-updated', renderCatalog);
+  renderCatalog();
 }
 
 /** Configura busca por título, autor ou gênero dos livros cadastrados. */
@@ -755,6 +841,7 @@ function setupNavigation() {
       if (page === 'Visão geral') return openView('inicio');
       if (page === 'Gestão') return openView('gestao');
       if (page === 'Empréstimos') return openView('emprestimos');
+      if (page === 'Acervo') return openView('acervo');
       showPending(`${page} será disponibilizado nas próximas etapas.`);
     });
   });
@@ -762,10 +849,9 @@ function setupNavigation() {
   document.querySelectorAll('[data-open-view]').forEach((button) => {
     button.addEventListener('click', () => {
       const targetView = button.dataset.openView;
-      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
       // O atalho de cadastro exibe o livro por um instante antes da navegação.
-      if (targetView === 'cadastro' && !reducedMotion) {
+      if (targetView === 'cadastro') {
         if (button.dataset.navigating === 'true') return;
 
         button.dataset.navigating = 'true';
@@ -784,7 +870,7 @@ function setupNavigation() {
       }
 
       // O atalho de empréstimos reforça visualmente a mudança de módulo.
-      if (targetView === 'emprestimos' && button.classList.contains('loan-launch-button') && !reducedMotion) {
+      if (targetView === 'emprestimos' && button.classList.contains('loan-launch-button')) {
         if (button.dataset.navigating === 'true') return;
 
         button.dataset.navigating = 'true';
@@ -795,6 +881,24 @@ function setupNavigation() {
 
         window.setTimeout(() => {
           button.classList.remove('is-loan-launch');
+          delete button.dataset.navigating;
+          button.removeAttribute('aria-busy');
+          openView(targetView);
+        }, 420);
+        return;
+      }
+
+      if (targetView === 'acervo' && button.classList.contains('catalog-launch-button')) {
+        if (button.dataset.navigating === 'true') return;
+
+        button.dataset.navigating = 'true';
+        button.setAttribute('aria-busy', 'true');
+        button.classList.remove('is-catalog-launch');
+        void button.offsetWidth;
+        button.classList.add('is-catalog-launch');
+
+        window.setTimeout(() => {
+          button.classList.remove('is-catalog-launch');
           delete button.dataset.navigating;
           button.removeAttribute('aria-busy');
           openView(targetView);
@@ -823,23 +927,19 @@ function setupPendingActions() {
   });
   document.querySelectorAll('.quick-action').forEach((button) => {
     button.addEventListener('click', () => {
-      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
       // Finaliza o efeito visual antes de abrir a tela ou mostrar o aviso.
       const openTarget = () => {
         delete button.dataset.navigating;
         button.removeAttribute('aria-busy');
         button.classList.remove('is-quick-launch');
 
-        button.dataset.targetPage === 'Acervo'
-          ? openView('cadastro')
-          : openView('emprestimos');
+        const targetView = button.dataset.targetPage === 'Acervo'
+          ? 'acervo'
+          : button.dataset.targetPage === 'Cadastro'
+            ? 'cadastro'
+            : 'emprestimos';
+        openView(targetView);
       };
-
-      if (reducedMotion) {
-        openTarget();
-        return;
-      }
 
       if (button.dataset.navigating === 'true') return;
       button.dataset.navigating = 'true';
@@ -892,6 +992,7 @@ async function handleBookSubmit(event) {
 function initializeApp() {
   setupNavigation();
   setupCollectionSearch();
+  setupCollectionCatalog();
   setupNotifications();
   setupPendingActions();
   setupGenreSelect();
