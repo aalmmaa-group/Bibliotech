@@ -260,13 +260,24 @@
                                 <span class="quick-action__arrow" aria-hidden="true">›</span>
                             </button>
 
-                            <button class="quick-action" type="button" data-target-page="Acervo">
+                            <button class="quick-action" type="button" data-target-page="Cadastro">
                                 <span class="quick-action__icon quick-action__icon--book" aria-hidden="true">
                                     <svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14"/></svg>
                                 </span>
                                 <span class="quick-action__text">
                                     <strong>Cadastrar livro</strong>
                                     <small>Adicionar ao acervo</small>
+                                </span>
+                                <span class="quick-action__arrow" aria-hidden="true">›</span>
+                            </button>
+
+                            <button class="quick-action" type="button" data-target-page="Acervo">
+                                <span class="quick-action__icon quick-action__icon--collection" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" fill="none"><path d="M5 5.5h10.5A2.5 2.5 0 0 1 18 8v11H7a2 2 0 0 1-2-2V5.5Zm0 0A2.5 2.5 0 0 1 7.5 8V19M9 10h6M9 13h5"/></svg>
+                                </span>
+                                <span class="quick-action__text">
+                                    <strong>Consultar acervo</strong>
+                                    <small>Ver livros cadastrados</small>
                                 </span>
                                 <span class="quick-action__arrow" aria-hidden="true">›</span>
                             </button>
@@ -290,7 +301,7 @@
                             <small>Registre saídas, prazos e retornos.</small>
                         </div>
                         <button class="loan-launch-button" type="button" data-open-view="emprestimos">
-                            <span>Abrir empréstimos</span>
+                            <span class="loan-launch-button__label">Abrir empréstimos</span>
                             <span class="loan-launch-button__icon" aria-hidden="true">↗</span>
                         </button>
                     </article>
@@ -305,6 +316,19 @@
                         <button class="register-book-button" type="button" data-open-view="cadastro">
                             <span class="register-book-button__label">Cadastrar livro</span>
                             <img class="register-book-button__icon" src="assets/icons/register-book.svg" alt="" aria-hidden="true">
+                        </button>
+                    </article>
+
+                    <article>
+                        <span aria-hidden="true">▤</span>
+                        <div>
+                            <p>CONSULTA DO CATÁLOGO</p>
+                            <h2>Catálogo de livros</h2>
+                            <small>Busque, filtre e acompanhe os livros do acervo.</small>
+                        </div>
+                        <button class="catalog-launch-button" type="button" data-open-view="acervo">
+                            <span class="catalog-launch-button__label">Abrir acervo</span>
+                            <span class="catalog-launch-button__icon" aria-hidden="true">↗</span>
                         </button>
                     </article>
                 </div>
@@ -391,7 +415,7 @@
                             <small></small>
                         </div>
 
-                        <label class="wide">
+                        <label class="wide loan-book-field">
                             <span class="field-label">
                                 Nome do livro
                                 <span class="required-marker" tabindex="0" aria-label="Campo obrigatório" data-tooltip="Campo obrigatório">*</span>
@@ -452,6 +476,100 @@
                             <strong>Nenhuma devolução carregada</strong>
                             <p>Os empréstimos ativos aparecerão nesta lista quando estiverem disponíveis.</p>
                         </div>
+                    </div>
+                </section>
+            </section>
+
+            <section class="page-intro catalog-page" id="collectionPage" hidden aria-labelledby="catalogPageTitle">
+                <div class="page-intro__top">
+                    <div>
+                        <p class="page-intro__eyebrow">Gestão do catálogo</p>
+                        <h1 id="catalogPageTitle">Acervo</h1>
+                        <p class="page-intro__description">Consulte os livros cadastrados e acompanhe a disponibilidade de cada exemplar.</p>
+                    </div>
+                    <button class="primary-action register-book-button catalog-register-button" type="button" data-open-view="cadastro">
+                        <span class="register-book-button__label">Cadastrar livro</span>
+                        <img class="register-book-button__icon" src="assets/icons/register-book.svg" alt="" aria-hidden="true">
+                    </button>
+                </div>
+
+                <section class="catalog-summary" aria-label="Resumo do acervo">
+                    <article>
+                        <span class="catalog-summary__icon" aria-hidden="true">▤</span>
+                        <div><small>Exemplares cadastrados</small><strong id="catalogTotal">0</strong></div>
+                    </article>
+                    <article>
+                        <span class="catalog-summary__icon catalog-summary__icon--available" aria-hidden="true">✓</span>
+                        <div><small>Disponíveis agora</small><strong id="catalogAvailable">0</strong></div>
+                    </article>
+                    <article>
+                        <span class="catalog-summary__icon catalog-summary__icon--loaned" aria-hidden="true">↔</span>
+                        <div><small>Em empréstimo</small><strong id="catalogLoaned">0</strong></div>
+                    </article>
+                </section>
+
+                <section class="catalog-list" aria-labelledby="catalogListTitle">
+                    <header class="catalog-list__header">
+                        <div>
+                            <h2 id="catalogListTitle">Catálogo de livros</h2>
+                            <p id="catalogListDescription">Os livros cadastrados nesta sessão aparecerão aqui.</p>
+                        </div>
+                        <span class="catalog-list__count" id="catalogCount">0 livros</span>
+                    </header>
+
+                    <div class="catalog-toolbar">
+                        <label class="catalog-search" for="catalogSearchInput">
+                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+                            <input id="catalogSearchInput" type="search" placeholder="Buscar por título ou autor" autocomplete="off">
+                        </label>
+                        <div class="catalog-select" id="catalogGenreSelect">
+                            <button class="catalog-select__trigger" id="catalogGenreFilter" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="catalogGenreOptions">
+                                <span>Todos os gêneros</span><i class="catalog-select__arrow" aria-hidden="true"></i>
+                            </button>
+                            <div class="catalog-select__options" id="catalogGenreOptions" role="listbox" aria-label="Filtrar por gênero" hidden>
+                                <button type="button" role="option" aria-selected="true" data-catalog-genre="">Todos os gêneros</button>
+                                <button type="button" role="option" aria-selected="false" data-catalog-genre="Ação">Ação</button>
+                                <button type="button" role="option" aria-selected="false" data-catalog-genre="Aventura">Aventura</button>
+                                <button type="button" role="option" aria-selected="false" data-catalog-genre="Autoajuda">Autoajuda</button>
+                                <button type="button" role="option" aria-selected="false" data-catalog-genre="Biografia e autobiografia">Biografia e autobiografia</button>
+                                <button type="button" role="option" aria-selected="false" data-catalog-genre="Ciência">Ciência</button>
+                                <button type="button" role="option" aria-selected="false" data-catalog-genre="Científico e acadêmico">Científico e acadêmico</button>
+                                <button type="button" role="option" aria-selected="false" data-catalog-genre="Clássico">Clássico</button>
+                                <button type="button" role="option" aria-selected="false" data-catalog-genre="Comédia">Comédia</button>
+                                <button type="button" role="option" aria-selected="false" data-catalog-genre="Conto">Conto</button>
+                                <button type="button" role="option" aria-selected="false" data-catalog-genre="Crônica">Crônica</button>
+                                <button type="button" role="option" aria-selected="false" data-catalog-genre="Didático">Didático</button>
+                                <button type="button" role="option" aria-selected="false" data-catalog-genre="Drama">Drama</button>
+                                <button type="button" role="option" aria-selected="false" data-catalog-genre="Fantasia">Fantasia</button>
+                                <button type="button" role="option" aria-selected="false" data-catalog-genre="Ficção científica">Ficção científica</button>
+                                <button type="button" role="option" aria-selected="false" data-catalog-genre="Filosofia">Filosofia</button>
+                                <button type="button" role="option" aria-selected="false" data-catalog-genre="História">História</button>
+                                <button type="button" role="option" aria-selected="false" data-catalog-genre="História em quadrinhos e mangá">História em quadrinhos e mangá</button>
+                                <button type="button" role="option" aria-selected="false" data-catalog-genre="Infantil">Infantil</button>
+                                <button type="button" role="option" aria-selected="false" data-catalog-genre="Juvenil">Juvenil</button>
+                                <button type="button" role="option" aria-selected="false" data-catalog-genre="Mistério">Mistério</button>
+                                <button type="button" role="option" aria-selected="false" data-catalog-genre="Poesia">Poesia</button>
+                                <button type="button" role="option" aria-selected="false" data-catalog-genre="Policial">Policial</button>
+                                <button type="button" role="option" aria-selected="false" data-catalog-genre="Religião e espiritualidade">Religião e espiritualidade</button>
+                                <button type="button" role="option" aria-selected="false" data-catalog-genre="Romance">Romance</button>
+                                <button type="button" role="option" aria-selected="false" data-catalog-genre="Suspense">Suspense</button>
+                                <button type="button" role="option" aria-selected="false" data-catalog-genre="Terror">Terror</button>
+                                <button type="button" role="option" aria-selected="false" data-catalog-genre="Outro">Outro</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="catalog-table-wrap">
+                        <table class="catalog-table">
+                            <thead><tr><th>Livro</th><th>Autor</th><th>Gênero</th><th>Disponibilidade</th></tr></thead>
+                            <tbody id="catalogTableBody"></tbody>
+                        </table>
+                        <section class="catalog-empty" id="catalogEmpty" aria-live="polite">
+                            <span class="catalog-empty__icon" aria-hidden="true">▤</span>
+                            <strong>Nenhum livro cadastrado</strong>
+                            <p>Quando um livro for cadastrado, ele aparecerá nesta lista.</p>
+                            <button type="button" data-open-view="cadastro">Cadastrar primeiro livro</button>
+                        </section>
                     </div>
                 </section>
             </section>
