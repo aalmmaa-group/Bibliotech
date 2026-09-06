@@ -142,7 +142,8 @@ function renderCollectionResults(resultsElement, books, message = '') {
   });
 }
 
-//Função que possibilita carregar os livros no acervo
+
+//Função que possibilita carregar os livros cadastrados no acervo
 async function loadCollectionBooks() {
   try{
     const resultado = await window.bibliotech?.books?.list();
@@ -1016,7 +1017,7 @@ async function handleBookSubmit(event) {
 
     if (resultado.ok) {
       //addBookToCollectionSearch(bookData); adiciona temporariamente
-      loadCollectionBooks(bookData); //altera 
+      loadCollectionBooks(bookData); //
       setFormMessage(resultado.message, 'success');
       bookForm.reset();
       clearBookFormErrors();
