@@ -21,7 +21,8 @@ let pendingMessageTimer;
 let formMessageTimer;
 let loanMessageTimer;
 let collectionSearchTimer;
-const sessionCollectionBooks = [];
+const sessionCollectionBooks = []; //Array que aguarda tempoririamente o cadastro dos livros
+
 
 /**
  * Reinicia uma animação CSS aplicada por classe sem alterar o conteúdo da tela.
@@ -141,17 +142,57 @@ function renderCollectionResults(resultsElement, books, message = '') {
   });
 }
 
+//Função que possibilita carregar os livros no acervo
+async function loadCollectionBooks() {
+  try{
+    const resultado = await window.bibliotech?.books?.list();
+    //validação se o resutaldo não existe
+    if (!resultado) {
+      return{
+        ok:false,
+        message: 'Não foi possivel obter os dados do acervo'
+      };
+    }
+
+    if (resultado.ok) {
+      sessionCollectionBooks.length = 0;
+      resultado.payload.forEach((livro) => {
+        sessionCollectionBooks.push({
+          id: livro.id_livro,
+          title: livro.nome,
+          author: livro.autor,
+          genre: livro.genero,
+          available: livro.quantidade_livros_disponiveis,
+          total: livro.quantidade_livros_total
+        });
+      });
+    }else{
+      return{
+        ok: false,
+        message: 'Erro ao carregar o acervo'
+      };
+    }
+  }catch(erro){
+      console.error(erro);
+      return{
+        ok:false,
+        message: 'Erro ao carregar o acervo'
+      }
+    }
+} 
+
+//Função a ser substituida
 /** Mantém na interface os livros cadastrados durante a sessão atual. */
-function addBookToCollectionSearch(book) {
-  sessionCollectionBooks.push({
-    title: book.title,
-    author: book.author,
-    genre: book.genre,
-    available: book.quantity,
-    total: book.quantity
-  });
-  document.dispatchEvent(new Event('collection-updated'));
-}
+//function addBookToCollectionSearch(book) {
+//  sessionCollectionBooks.push({
+//    title: book.title,
+//    author: book.author,
+//    genre: book.genre,
+//    available: book.quantity,
+//    total: book.quantity
+//  });
+//  document.dispatchEvent(new Event('collection-updated'));
+//}
 
 /** Renderiza o catálogo somente com livros incluídos durante a sessão atual. */
 function setupCollectionCatalog() {
@@ -974,7 +1015,8 @@ async function handleBookSubmit(event) {
     }
 
     if (resultado.ok) {
-      addBookToCollectionSearch(bookData);
+      //addBookToCollectionSearch(bookData); adiciona temporariamente
+      loadCollectionBooks(bookData); //altera 
       setFormMessage(resultado.message, 'success');
       bookForm.reset();
       clearBookFormErrors();
@@ -1001,6 +1043,7 @@ function initializeApp() {
   setupLoanCalendar();
   setupLoanForm();
   setupLoanTabs();
+  loadCollectionBooks();
   bookForm.addEventListener('submit', handleBookSubmit);
 }
 
