@@ -1626,7 +1626,8 @@ button.is-pressed {
     height: 20px;
     flex: 0 0 20px;
     place-items: center;
-    font-size: 16px;
+    font-size: 19px;
+    line-height: 1;
     transition: transform 200ms ease;
 }
 
@@ -1654,7 +1655,7 @@ button.is-pressed {
 }
 
 .catalog-launch-button.is-catalog-launch .catalog-launch-button__icon {
-    animation: loan-arrow-focus 420ms cubic-bezier(0.2, 0.9, 0.25, 1) both;
+    animation: catalog-books-focus 540ms cubic-bezier(0.2, 0.9, 0.25, 1) both;
 }
 
 /* Empréstimos reutiliza a base visual do cadastro e acrescenta orientação lateral. */
@@ -1677,7 +1678,8 @@ button.is-pressed {
     height: 20px;
     flex: 0 0 20px;
     place-items: center;
-    font-size: 16px;
+    font-size: 20px;
+    line-height: 1;
     transition: transform 200ms ease;
 }
 
@@ -1691,7 +1693,7 @@ button.is-pressed {
 }
 
 .loan-launch-button:hover .loan-launch-button__icon {
-    transform: translate(2px, -2px);
+    transform: scaleX(1.08);
 }
 
 .loan-launch-button.is-loan-launch {
@@ -1709,20 +1711,49 @@ button.is-pressed {
 }
 
 .loan-launch-button.is-loan-launch .loan-launch-button__icon {
-    animation: loan-arrow-focus 420ms cubic-bezier(0.2, 0.9, 0.25, 1) both;
+    animation: loan-transfer-focus 520ms cubic-bezier(0.2, 0.9, 0.25, 1) both;
 }
 
-@keyframes loan-arrow-focus {
+@keyframes loan-transfer-focus {
     0% {
-        transform: translate(0, 0) scale(1);
+        transform: translateX(0) scale(1);
     }
 
-    55% {
-        transform: translate(5px, -5px) scale(1.2);
+    32% {
+        transform: translateX(5px) scale(1.12);
+    }
+
+    66% {
+        transform: translateX(-4px) scale(1.12);
     }
 
     100% {
-        transform: translate(2px, -2px) scale(1);
+        transform: translateX(0) scale(1.06);
+    }
+}
+
+@keyframes catalog-books-focus {
+    0% {
+        transform: translateY(0) rotate(0) scale(1);
+    }
+
+    38% {
+        transform: translateY(-4px) rotate(-5deg) scale(1.08);
+    }
+
+    70% {
+        transform: translateY(2px) rotate(2deg) scale(1.14);
+    }
+
+    100% {
+        transform: translateY(0) rotate(0) scale(1.06);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .loan-launch-button.is-loan-launch .loan-launch-button__icon,
+    .catalog-launch-button.is-catalog-launch .catalog-launch-button__icon {
+        animation: none;
     }
 }
 

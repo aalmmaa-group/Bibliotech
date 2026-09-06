@@ -835,6 +835,8 @@ function setupLoanTabs() {
 
 /** Conecta botões do menu às telas disponíveis ou aos avisos de planejamento. */
 function setupNavigation() {
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
   menuItems.forEach((item) => {
     item.addEventListener('click', () => {
       const page = item.dataset.page;
@@ -871,6 +873,7 @@ function setupNavigation() {
 
       // O atalho de empréstimos reforça visualmente a mudança de módulo.
       if (targetView === 'emprestimos' && button.classList.contains('loan-launch-button')) {
+        if (reducedMotion) return openView(targetView);
         if (button.dataset.navigating === 'true') return;
 
         button.dataset.navigating = 'true';
@@ -884,11 +887,12 @@ function setupNavigation() {
           delete button.dataset.navigating;
           button.removeAttribute('aria-busy');
           openView(targetView);
-        }, 420);
+        }, 520);
         return;
       }
 
       if (targetView === 'acervo' && button.classList.contains('catalog-launch-button')) {
+        if (reducedMotion) return openView(targetView);
         if (button.dataset.navigating === 'true') return;
 
         button.dataset.navigating = 'true';
@@ -902,7 +906,7 @@ function setupNavigation() {
           delete button.dataset.navigating;
           button.removeAttribute('aria-busy');
           openView(targetView);
-        }, 420);
+        }, 540);
         return;
       }
 
