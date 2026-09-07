@@ -552,6 +552,13 @@ function getLocalDateValue(date = new Date()) {
   return `${year}-${month}-${day}`;
 }
 
+/** Converte o valor do campo de data sem aplicar deslocamento de fuso horário. */
+function parseLocalDateValue(value) {
+  if (!value) return null;
+  const [year, month, day] = value.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
+
 /** Valida os campos do empréstimo e mantém a indicação de erro acessível. */
 function validateLoanField(input) {
   const value = input.value.trim();
@@ -697,18 +704,7 @@ function setupLoanCalendar() {
   };
 
   const updateDateShortcuts = () => {
-    const selectedDate = returnDate.value
-      ? new Date(`${returnDate.value}T00:00:00`)
-      : null;
-
-    dateShortcutButtons.forEach((button) => {
-      const shortcutDate = new Date();
-      shortcutDate.setHours(0, 0, 0, 0);
-      shortcutDate.setDate(shortcutDate.getDate() + Number(button.dataset.returnDays));
-      const isSelected = returnDate.value === getLocalDateValue(shortcutDate);
-      button.classList.toggle('is-selected', isSelected);
-      button.setAttribute('aria-pressed', String(isSelected));
-    });
+    const selectedDate = parseLocalDateValue(returnDate.value);
 
     dateHelp.textContent = selectedDate
       ? `Devolução escolhida: ${formatLongDate(selectedDate)}.`
@@ -722,9 +718,7 @@ function setupLoanCalendar() {
 
   dateButton.addEventListener('click', (event) => {
     event.stopPropagation();
-    const selectedDate = returnDate.value
-      ? new Date(`${returnDate.value}T00:00:00`)
-      : today;
+    const selectedDate = parseLocalDateValue(returnDate.value) || today;
     calendarCursor = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
     renderCalendar();
     setCalendarOpen(calendar.hidden);
@@ -760,8 +754,11 @@ function setupLoanCalendar() {
 
   dateShortcutButtons.forEach((button) => {
     button.addEventListener('click', () => {
-      const shortcutDate = new Date();
-      shortcutDate.setHours(0, 0, 0, 0);
+      // Com uma data já escolhida, cada clique acrescenta um novo prazo.
+      const selectedDate = parseLocalDateValue(returnDate.value);
+      const shortcutDate = selectedDate && selectedDate >= today
+        ? new Date(selectedDate)
+        : new Date(today);
       shortcutDate.setDate(shortcutDate.getDate() + Number(button.dataset.returnDays));
       selectReturnDate(shortcutDate);
     });
@@ -835,6 +832,8 @@ function setupLoanTabs() {
 
 /** Conecta botões do menu às telas disponíveis ou aos avisos de planejamento. */
 function setupNavigation() {
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
   menuItems.forEach((item) => {
     item.addEventListener('click', () => {
       const page = item.dataset.page;
@@ -871,6 +870,7 @@ function setupNavigation() {
 
       // O atalho de empréstimos reforça visualmente a mudança de módulo.
       if (targetView === 'emprestimos' && button.classList.contains('loan-launch-button')) {
+        if (reducedMotion) return openView(targetView);
         if (button.dataset.navigating === 'true') return;
 
         button.dataset.navigating = 'true';
@@ -884,11 +884,12 @@ function setupNavigation() {
           delete button.dataset.navigating;
           button.removeAttribute('aria-busy');
           openView(targetView);
-        }, 420);
+        }, 520);
         return;
       }
 
       if (targetView === 'acervo' && button.classList.contains('catalog-launch-button')) {
+        if (reducedMotion) return openView(targetView);
         if (button.dataset.navigating === 'true') return;
 
         button.dataset.navigating = 'true';
@@ -902,7 +903,7 @@ function setupNavigation() {
           delete button.dataset.navigating;
           button.removeAttribute('aria-busy');
           openView(targetView);
-        }, 420);
+        }, 540);
         return;
       }
 
