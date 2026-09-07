@@ -4,6 +4,11 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('bibliotech', {
   books: {
     /** Encaminha ao processo principal os dados validados do livro. */
-    create: (book) => ipcRenderer.invoke('books:create', book)
+    create: (book) => ipcRenderer.invoke('books:create', book),
+    search: (termo) => ipcRenderer.invoke('books:search', termo)
+  },
+  loans: {
+    /** Encaminha ao processo principal os emprestimo. */
+    create: (data) => ipcRenderer.invoke('loans:create', data)  
   }
 });
