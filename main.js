@@ -176,6 +176,101 @@ function realizarEmprestimo(loanData) {
   }
 }
 
+// Função para registrar a devolução de um livro
+function realizarDevolucao(idEmprestimo) {
+  if (!db || !db.db) {
+    return { ok: false, message: 'O banco de dados está indisponível.' };
+  }
+
+  try {
+    const processarDevolucao = db.db.transaction(() => {
+      
+      // Busca qual é o livro que está amarrado a este empréstimo
+      const stmtBusca = db.db.prepare(`
+        SELECT id_livro, status_emprestimo 
+        FROM emprestimos 
+        WHERE id_emprestimo = ?
+      `);
+      const emprestimo = stmtBusca.get(idEmprestimo);
+
+      // Barreiras de segurança
+      if (!emprestimo) {
+        throw new Error("Empréstimo não encontrado no sistema.");
+      }
+      if (emprestimo.status_emprestimo === 'devolvido') {
+        throw new Error("Este livro já consta como devolvido.");
+      }
+
+      // Devolve o livro para o estoque (Soma +1)
+      const stmtEstoque = db.db.prepare(`
+        UPDATE livros 
+        SET quantidade_livros_disponiveis = quantidade_livros_disponiveis + 1 
+        WHERE id_livro = ?
+      `);
+      stmtEstoque.run(emprestimo.id_livro);
+
+      //  Atualiza o status para 'devolvido' e coloca a data de devolução
+      const stmtAtualizarEmprestimo = db.db.prepare(`
+        UPDATE emprestimos
+        SET status_emprestimo = 'devolvido',
+            data_devolucao_efetiva = datetime('now', 'localtime')
+        WHERE id_emprestimo = ?
+      `);
+      stmtAtualizarEmprestimo.run(idEmprestimo);
+      
+    });
+
+    // Executa a transação completa
+    processarDevolucao();
+
+    return { ok: true, message: "Livro devolvido com sucesso ao acervo!" };
+
+  } catch (erro) {
+    console.error("Erro ao registrar devolução:", erro);
+    return { ok: false, message: erro.message || "Erro interno ao processar a devolução." };
+  }
+}
+
+ipcMain.handle('loans:return', async (event, idEmprestimo) => {
+  return realizarDevolucao(idEmprestimo);
+});
+
+// Função para alterar a data de devolução de um empréstimo ativo
+function alterarDataDevolucao(idEmprestimo, novaData) {
+  if (!db || !db.db) {
+    return { ok: false, message: 'O banco de dados está indisponível.' };
+  }
+
+  try {
+    const stmt = db.db.prepare(`
+      UPDATE emprestimos 
+      SET data_devolucao_prevista = ? 
+      WHERE id_emprestimo = ? AND status_emprestimo = 'emprestado'
+    `);
+    
+    const info = stmt.run(novaData, idEmprestimo);
+
+    // Se nenhuma linha foi alterada (changes === 0), o ID não existe ou o livro já foi devolvido
+    if (info.changes === 0) {
+      return { 
+        ok: false, 
+        message: 'Não foi possível alterar. O empréstimo não existe ou o livro já foi devolvido.' 
+      };
+    }
+
+    return { ok: true, message: 'Data de devolução atualizada com sucesso!' };
+
+  } catch (erro) {
+    console.error("Erro ao alterar data de devolução:", erro);
+    return { ok: false, message: "Erro interno ao processar a renovação." };
+  }
+}
+
+// Crie o ouvinte para o front-end acessar
+ipcMain.handle('loans:updateDate', async (event, idEmprestimo, novaData) => {
+  return alterarDataDevolucao(idEmprestimo, novaData);
+});
+
 function buscarLivrosPorNome(termoBusca) {
   try {
     // Usamos LIKE %termo% para achar o livro mesmo se o usuário digitar só uma parte do nome
