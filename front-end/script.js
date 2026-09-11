@@ -12,6 +12,7 @@ const registrationPage = document.querySelector('#registrationPage');
 const collectionPage = document.querySelector('#collectionPage');
 const pageTitle = document.querySelector('#pageTitle');
 const breadcrumbCurrent = document.querySelector('#breadcrumbCurrent');
+const viewBackButton = document.querySelector('#viewBackButton');
 const bookForm = document.querySelector('#bookForm');
 const loanForm = document.querySelector('#loanForm');
 const notificationButton = document.querySelector('#notificationButton');
@@ -23,6 +24,7 @@ let collectionSearchTimer;
 const sessionCollectionBooks = []; //Array que aguarda tempoririamente o cadastro dos livros
 let collectionLoaded = false; //
 let renderCollectionCatalog = null;
+const viewHistory = ['inicio'];
 
 /**
  * Reinicia uma animação CSS aplicada por classe sem alterar o conteúdo da tela.
@@ -38,7 +40,13 @@ function replayEntranceAnimation(element) {
  * Alterna a tela visível da aplicação.
  * @param {'inicio'|'gestao'|'emprestimos'|'acervo'|'cadastro'} view Tela que deve ser exibida.
  */
-function openView(view) {
+function openView(view, { fromHistory = false, resetHistory = false } = {}) {
+  if (resetHistory) {
+    viewHistory.splice(0, viewHistory.length, 'inicio');
+  } else if (!fromHistory && viewHistory[viewHistory.length - 1] !== view) {
+    viewHistory.push(view);
+  }
+
   overviewPage.hidden = view !== 'inicio';
   managementPage.hidden = view !== 'gestao';
   loanPage.hidden = view !== 'emprestimos';
@@ -57,13 +65,12 @@ function openView(view) {
   pageTitle.textContent = title;
   breadcrumbCurrent.textContent = title;
   document.title = `${title} | Bibliotech`;
+  viewBackButton.hidden = viewHistory.length <= 1;
 
   // As telas filhas mantêm destacado o ponto de entrada correspondente no menu.
   const activePage = view === 'inicio'
     ? 'Visão geral'
-    : view === 'emprestimos'
-      ? 'Empréstimos'
-      : view === 'acervo'
+    : view === 'acervo'
         ? 'Acervo'
       : 'Gestão';
   menuItems.forEach((item) => {
@@ -79,6 +86,13 @@ function openView(view) {
   };
   const visiblePage = pageByView[view];
   replayEntranceAnimation(visiblePage);
+}
+
+/** Retorna à última tela visitada sem duplicá-la no histórico interno. */
+function goBack() {
+  if (viewHistory.length <= 1) return;
+  viewHistory.pop();
+  openView(viewHistory[viewHistory.length - 1], { fromHistory: true });
 }
 
 /**
@@ -883,9 +897,8 @@ function setupNavigation() {
   menuItems.forEach((item) => {
     item.addEventListener('click', () => {
       const page = item.dataset.page;
-      if (page === 'Visão geral') return openView('inicio');
+      if (page === 'Visão geral') return openView('inicio', { resetHistory: true });
       if (page === 'Gestão') return openView('gestao');
-      if (page === 'Empréstimos') return openView('emprestimos');
       if (page === 'Acervo') return openView('acervo');
       showPending(`${page} será disponibilizado nas próximas etapas.`);
     });
@@ -957,7 +970,9 @@ function setupNavigation() {
     });
   });
 
-  document.querySelector('#brandHome').addEventListener('click', () => openView('inicio'));
+  viewBackButton.addEventListener('click', goBack);
+  document.querySelector('#brandHome').addEventListener('click', () => openView('inicio', { resetHistory: true }));
+  document.querySelector('#breadcrumbHome').addEventListener('click', () => openView('inicio', { resetHistory: true }));
 }
 
 /** Configura comportamentos dos módulos ainda fora do escopo atual. */

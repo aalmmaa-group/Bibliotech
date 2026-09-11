@@ -30,11 +30,6 @@
                     <span>Gestão</span>
                 </button>
 
-                <button class="menu__item" type="button" data-page="Empréstimos">
-                    <img class="menu__icon" src="assets/icons/loans.svg" alt="" aria-hidden="true">
-                    <span>Empréstimos</span>
-                </button>
-
                 <button class="menu__item" type="button" data-page="Acervo">
                     <img class="menu__icon" src="assets/icons/collection.svg" alt="" aria-hidden="true">
                     <span>Acervo</span>
@@ -84,8 +79,14 @@
                 <span></span><span></span><span></span>
             </button>
 
+            <button class="view-back-button" id="viewBackButton" type="button" aria-label="Voltar para a tela anterior" hidden>
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="m15 6-6 6 6 6M9 12h10"/>
+                </svg>
+            </button>
+
             <nav class="breadcrumb" aria-label="Navegação estrutural">
-                <span>Bibliotech</span>
+                <button class="breadcrumb__home" id="breadcrumbHome" type="button">Bibliotech</button>
                 <span class="breadcrumb__separator" aria-hidden="true">/</span>
                 <strong id="breadcrumbCurrent" aria-current="page">Visão geral</strong>
             </nav>
@@ -130,10 +131,6 @@
                         <p class="page-intro__description" id="pageDescription">Acompanhe o que acontece no acervo hoje.</p>
                     </div>
 
-                    <button class="primary-action register-book-button overview-register-button" type="button" data-open-view="cadastro">
-                        <span class="register-book-button__label">Cadastrar livro</span>
-                        <img class="register-book-button__icon" src="assets/icons/register-book.svg" alt="" aria-hidden="true">
-                    </button>
                 </div>
 
                 <div class="stats-grid" aria-label="Resumo da biblioteca">
@@ -289,26 +286,14 @@
                 </div>
             </section>
 
-            <!-- Gestão concentra os dois fluxos operacionais principais. -->
-            <section class="page-intro management-page" id="managementPage" hidden>
+            <!-- Gestão funciona como ponto de entrada para as rotinas operacionais. -->
+            <section class="page-intro management-page" id="managementPage" hidden aria-labelledby="managementPageTitle">
                 <p class="page-intro__eyebrow">Área operacional</p>
-                <h1>Gestão</h1>
-                <p class="page-intro__description">Escolha a rotina que deseja organizar.</p>
+                <h1 id="managementPageTitle">Gestão</h1>
+                <p class="page-intro__description">Escolha a rotina que deseja acessar.</p>
 
-                <div class="management-options">
-                    <article>
-                        <span aria-hidden="true">↔</span>
-                        <div>
-                            <p>GESTÃO DE MOVIMENTAÇÕES</p>
-                            <h2>Empréstimos e devoluções</h2>
-                            <small>Registre saídas, prazos e retornos.</small>
-                        </div>
-                        <button class="loan-launch-button" type="button" data-open-view="emprestimos">
-                            <span class="loan-launch-button__label">Abrir empréstimos</span>
-                            <span class="material-symbols-outlined loan-launch-button__icon" aria-hidden="true">sync_alt</span>
-                        </button>
-                    </article>
-
+                <p class="management-section-label">Acessos de gestão</p>
+                <div class="management-options management-options--compact">
                     <article>
                         <span aria-hidden="true">＋</span>
                         <div>
@@ -334,13 +319,26 @@
                             <span class="material-symbols-outlined catalog-launch-button__icon" aria-hidden="true">library_books</span>
                         </button>
                     </article>
+
+                    <article>
+                        <span class="material-symbols-outlined" aria-hidden="true">sync_alt</span>
+                        <div>
+                            <p>GESTÃO DE MOVIMENTAÇÕES</p>
+                            <h2>Empréstimos</h2>
+                            <small>Registre retiradas, prazos e devoluções.</small>
+                        </div>
+                        <button class="loan-launch-button" type="button" data-open-view="emprestimos">
+                            <span class="loan-launch-button__label">Abrir empréstimos</span>
+                            <span class="material-symbols-outlined loan-launch-button__icon" aria-hidden="true">sync_alt</span>
+                        </button>
+                    </article>
                 </div>
             </section>
 
-            <!-- Estrutura visual da Sprint 2, preparada para a futura integração com o back-end. -->
-            <section class="page-intro loan-page" id="loanPage" hidden>
+            <!-- O fluxo mantém os mesmos campos e seletores previstos para a integração. -->
+            <section class="page-intro loan-page" id="loanPage" hidden aria-labelledby="loanPageTitle">
                 <p class="page-intro__eyebrow">Gestão de movimentações</p>
-                <h1>Empréstimos</h1>
+                <h1 id="loanPageTitle">Empréstimos</h1>
                 <p class="page-intro__description">Registre retiradas e acompanhe os livros que precisam ser devolvidos.</p>
 
                 <div class="loan-tabs" role="tablist" aria-label="Áreas de empréstimos">
