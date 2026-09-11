@@ -1,7 +1,6 @@
 /**
  * Controlador da interface.
  * Centraliza a navegação entre telas, os avisos de módulos futuros e o
- * formulário de cadastro, sem acessar Node.js ou o banco diretamente.
  */
 
 // --- Referências reutilizadas pela interface. ---
@@ -21,7 +20,9 @@ let pendingMessageTimer;
 let formMessageTimer;
 let loanMessageTimer;
 let collectionSearchTimer;
-const sessionCollectionBooks = [];
+const sessionCollectionBooks = []; //Array que aguarda tempoririamente o cadastro dos livros
+let collectionLoaded = false; //
+let renderCollectionCatalog = null;
 
 /**
  * Reinicia uma animação CSS aplicada por classe sem alterar o conteúdo da tela.
@@ -141,19 +142,63 @@ function renderCollectionResults(resultsElement, books, message = '') {
   });
 }
 
-/** Mantém na interface os livros cadastrados durante a sessão atual. */
-function addBookToCollectionSearch(book) {
-  sessionCollectionBooks.push({
-    title: book.title,
-    author: book.author,
-    genre: book.genre,
-    available: book.quantity,
-    total: book.quantity
-  });
+
+//Função que possibilita carregar os livros cadastrados no acervo a partir doo banco de dados
+async function loadCollectionBooks() {
+  const catalogEmpty = document.querySelector('#catalogEmpty');
+  if (catalogEmpty) catalogEmpty.hidden = true;
+  
+  
+  try{
+    const resultado = await window.bibliotech?.books?.list();
+    //validação se o resutaldo não existe
+    if (!resultado) {
+      notifyCollectionUpdated();
+      return{
+        ok:false,
+        message: 'Não foi possivel obter os dados do acervo'
+      };
+    }
+
+    if (resultado.ok) {
+      sessionCollectionBooks.length = 0;
+      resultado.payload.forEach((livro) => {
+        sessionCollectionBooks.push({
+          id: livro.id_livro,
+          title: livro.nome,
+          author: livro.autor,
+          genre: livro.genero,
+          available: livro.quantidade_livros_disponiveis,
+          total: livro.quantidade_livros_total
+        });
+      });
+    }else{
+      notifyCollectionUpdated();
+      return{
+        ok: false,
+        message: 'Erro ao carregar o acervo'
+      };
+    }
+  }catch(erro){
+      console.error(erro);
+      notifyCollectionUpdated();
+      return{
+        ok:false,
+        message: 'Erro ao carregar o acervo'
+      }
+    }
+    notifyCollectionUpdated();
+
+} 
+
+//refresh no acervo 
+function notifyCollectionUpdated() {
+  if (typeof renderCollectionCatalog === 'function') renderCollectionCatalog();
   document.dispatchEvent(new Event('collection-updated'));
 }
 
-/** Renderiza o catálogo somente com livros incluídos durante a sessão atual. */
+
+/** Renderiza o catálogo*/
 function setupCollectionCatalog() {
   const tableBody = document.querySelector('#catalogTableBody');
   const empty = document.querySelector('#catalogEmpty');
@@ -229,6 +274,7 @@ function setupCollectionCatalog() {
     if (event.key === 'Escape') setGenreOptionsOpen(false);
   });
   document.addEventListener('collection-updated', renderCatalog);
+  renderCollectionCatalog = renderCatalog;
   renderCatalog();
 }
 
@@ -975,7 +1021,8 @@ async function handleBookSubmit(event) {
     }
 
     if (resultado.ok) {
-      addBookToCollectionSearch(bookData);
+      //addBookToCollectionSearch(bookData); adiciona temporariamente
+      loadCollectionBooks(bookData); //
       setFormMessage(resultado.message, 'success');
       bookForm.reset();
       clearBookFormErrors();
@@ -991,17 +1038,18 @@ async function handleBookSubmit(event) {
 
 /** Inicializa os eventos após o carregamento do HTML. */
 function initializeApp() {
-  setupNavigation();
-  setupCollectionSearch();
-  setupCollectionCatalog();
-  setupNotifications();
-  setupPendingActions();
-  setupGenreSelect();
-  setupClickFeedback();
-  setupBookFormValidation();
-  setupLoanCalendar();
-  setupLoanForm();
-  setupLoanTabs();
+  setupNavigation(); // Controla a interface
+  setupCollectionCatalog();// Configura a tabela do acervo. Renderiza os livros, atualiza os totais de livros disponíveis e emprestados e permite filtrar por gênero.
+  setupCollectionSearch(); // Configura a busca de livros no acervo. Permite pesquisar por título, autor ou gênero e exibe os resultados encontrados. 
+  loadCollectionBooks(); //Busca os livros através da API disponibilizada pelo preload
+  setupNotifications(); //Controla o painel de notificações. Permite abrir, fechar, fechar ao clicar fora e fechar pressionando Escape.
+  setupPendingActions(); //Configura botões de funcionalidades que ainda estão em construção, exibindo mensagens temporárias ao usuário.
+  setupGenreSelect(); //Configura o seletor personalizado de gênero no formulário de cadastro. Também controla a opção “Outro”, exibindo um campo adicional quando necessário.
+  setupClickFeedback(); //Adiciona um efeito visual rápido aos botões quando o usuário pressiona algum deles. Respeita a preferência do sistema por reduzir animações.
+  setupBookFormValidation(); //Configura a validação progressiva do formulário de livros. Os campos são validados quando perdem o foco ou quando o usuário começa a editá-los
+  setupLoanCalendar();//Configura o calendário de data de devolução dos empréstimos. Permite escolher uma data, navegar entre meses, usar atalhos e impedir datas anteriores ao dia atual.
+  setupLoanForm(); //Configura a validação e o envio do formulário de empréstimo. Depois de validar os dados, exibe uma prévia do empréstimo preenchido.
+  setupLoanTabs(); //Controla as abas do módulo de empréstimos, alternando entre “Novo empréstimo” e “Devoluções”.
   bookForm.addEventListener('submit', handleBookSubmit);
 }
 

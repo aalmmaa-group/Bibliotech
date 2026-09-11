@@ -35,6 +35,8 @@ ipcMain.handle('books:create', async (_event, book) => {
 });
 
 
+
+
 // função de cadastrar os livros 
 function cadastrarLivro(bookData) {
   // Prevenção: verifica se o banco de dados carregou corretamente
@@ -85,6 +87,54 @@ function cadastrarLivro(bookData) {
       ok: false, 
       code: 'INSERT_ERROR',
       message: "Ocorreu um erro interno ao salvar o livro." 
+    };
+  }
+}
+
+
+
+//Retorna livros cadastrados
+ipcMain.handle('books:list', async () => {
+  return listarLivros();
+});
+
+// função de listar os livros cadastrados no acervo
+function listarLivros() {
+  if (!db || !db.db) {
+    return {
+      ok: false,
+      code: 'DB_UNAVAILABLE',
+      message: 'O banco de dados está indisponível nesta máquina.'
+    };
+  }
+
+  try {
+    const linhas = db.db.prepare(`
+      SELECT
+        id_livro,
+        nome,
+        autor,
+        genero,
+        quantidade_livros_total,
+        quantidade_livros_disponiveis,
+        data_cadastro,
+        observacao
+      FROM livros
+      ORDER BY nome COLLATE NOCASE
+    `).all();
+
+    return {
+      ok: true,
+      code: 'SUCCESS',
+      message: 'Acervo carregado com sucesso!',
+      payload: linhas
+    };
+  } catch (erro) {
+    console.error("Erro ao listar livros no SQLite:", erro);
+    return {
+      ok: false,
+      code: 'SELECT_ERROR',
+      message: "Ocorreu um erro interno ao carregar o acervo."
     };
   }
 }

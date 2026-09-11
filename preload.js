@@ -4,6 +4,9 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('bibliotech', {
   books: {
     /** Encaminha ao processo principal os dados validados do livro. */
-    create: (book) => ipcRenderer.invoke('books:create', book)
+    create: (book) => ipcRenderer.invoke('books:create', book),
+
+    list: () => ipcRenderer.invoke('books:list')
   }
+  
 });
