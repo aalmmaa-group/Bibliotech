@@ -363,8 +363,24 @@ button {
     font-size: 13px;
 }
 
-.breadcrumb span:first-child {
+.breadcrumb__home {
+    padding: 3px 0;
     color: #98a3a5;
+    background: transparent;
+    border: 0;
+    border-radius: 4px;
+    cursor: pointer;
+    font: inherit;
+}
+
+.breadcrumb__home:hover,
+.breadcrumb__home:focus-visible {
+    color: var(--primary-dark);
+    outline: none;
+}
+
+.breadcrumb__home:focus-visible {
+    box-shadow: 0 0 0 3px rgba(7, 141, 135, 0.15);
 }
 
 .breadcrumb__separator {
@@ -563,6 +579,8 @@ button.is-pressed {
 }
 
 .page-intro {
+    width: 100%;
+    max-width: none;
     padding: 36px 34px 32px;
     background: var(--background);
 }
@@ -663,16 +681,6 @@ button.is-pressed {
     gap: 7px;
     overflow: hidden;
     white-space: nowrap;
-}
-
-/* Mantém o novo atalho de cadastro com a presença visual do botão substituído. */
-.overview-register-button {
-    width: 210px;
-    min-height: 46px;
-}
-
-.overview-register-button .register-book-button__icon {
-    filter: brightness(0) invert(1);
 }
 
 .register-book-button__label {
@@ -1429,7 +1437,7 @@ button.is-pressed {
         flex: 1;
     }
 
-    .breadcrumb span:first-child,
+    .breadcrumb__home,
     .breadcrumb__separator {
         display: none;
     }
@@ -1552,6 +1560,20 @@ button.is-pressed {
     margin-top: 28px;
 }
 
+.management-section-label {
+    margin: 26px 0 0;
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.management-options--compact {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-top: 10px;
+}
+
 .management-options article {
     display: grid;
     grid-template-columns: 46px 1fr auto;
@@ -1608,6 +1630,12 @@ button.is-pressed {
 
 .management-options .register-book-button {
     width: 210px;
+}
+
+.management-options--compact .register-book-button,
+.management-options--compact .catalog-launch-button,
+.management-options--compact .loan-launch-button {
+    width: 176px;
 }
 
 .catalog-launch-button {
@@ -1765,6 +1793,13 @@ button.is-pressed {
     margin-top: 26px;
 }
 
+/* Em telas amplas, o formulário aproveita o espaço extra sem alargar demais o painel de apoio. */
+@media (min-width: 1400px) {
+    .loan-layout {
+        grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
+    }
+}
+
 .catalog-register-button {
     width: 210px;
     gap: 10px;
@@ -1780,10 +1815,6 @@ button.is-pressed {
 }
 
 /* Tela de consulta do acervo. */
-.catalog-page {
-    max-width: 1180px;
-}
-
 .catalog-summary {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2920,12 +2951,21 @@ button.is-pressed {
 }
 
 @media (max-width: 760px) {
+    .management-options--compact {
+        grid-template-columns: 1fr;
+    }
+
     .management-options article {
         grid-template-columns: 42px 1fr;
     }
 
     .management-options button {
         grid-column: 1 / -1;
+        width: 100%;
+    }
+
+    .management-options--compact .register-book-button,
+    .management-options--compact .catalog-launch-button {
         width: 100%;
     }
 
@@ -3005,8 +3045,22 @@ button.is-pressed {
     }
 }
 
-@media (min-width: 761px) and (max-width: 1050px) {
+@media (min-width: 761px) and (max-width: 1200px) {
+    .management-options--compact {
+        grid-template-columns: 1fr;
+    }
+
     .loan-layout {
         grid-template-columns: 1fr;
+    }
+}
+
+@media (min-width: 1201px) and (max-width: 1550px) {
+    .management-options--compact {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .management-options--compact article:last-child {
+        grid-column: 1 / -1;
     }
 }

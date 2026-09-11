@@ -61,9 +61,7 @@ function openView(view) {
   // As telas filhas mantêm destacado o ponto de entrada correspondente no menu.
   const activePage = view === 'inicio'
     ? 'Visão geral'
-    : view === 'emprestimos'
-      ? 'Empréstimos'
-      : view === 'acervo'
+    : view === 'acervo'
         ? 'Acervo'
       : 'Gestão';
   menuItems.forEach((item) => {
@@ -885,7 +883,6 @@ function setupNavigation() {
       const page = item.dataset.page;
       if (page === 'Visão geral') return openView('inicio');
       if (page === 'Gestão') return openView('gestao');
-      if (page === 'Empréstimos') return openView('emprestimos');
       if (page === 'Acervo') return openView('acervo');
       showPending(`${page} será disponibilizado nas próximas etapas.`);
     });
@@ -958,6 +955,7 @@ function setupNavigation() {
   });
 
   document.querySelector('#brandHome').addEventListener('click', () => openView('inicio'));
+  document.querySelector('#breadcrumbHome').addEventListener('click', () => openView('inicio'));
 }
 
 /** Configura comportamentos dos módulos ainda fora do escopo atual. */
