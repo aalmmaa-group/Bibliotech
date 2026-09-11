@@ -22,7 +22,7 @@ let loanMessageTimer;
 let collectionSearchTimer;
 const sessionCollectionBooks = []; //Array que aguarda tempoririamente o cadastro dos livros
 let collectionLoaded = false; //
-
+let renderCollectionCatalog = null;
 
 /**
  * Reinicia uma animação CSS aplicada por classe sem alterar o conteúdo da tela.
@@ -153,6 +153,7 @@ async function loadCollectionBooks() {
     const resultado = await window.bibliotech?.books?.list();
     //validação se o resutaldo não existe
     if (!resultado) {
+      notifyCollectionUpdated();
       return{
         ok:false,
         message: 'Não foi possivel obter os dados do acervo'
@@ -172,6 +173,7 @@ async function loadCollectionBooks() {
         });
       });
     }else{
+      notifyCollectionUpdated();
       return{
         ok: false,
         message: 'Erro ao carregar o acervo'
@@ -179,30 +181,27 @@ async function loadCollectionBooks() {
     }
   }catch(erro){
       console.error(erro);
+      notifyCollectionUpdated();
       return{
         ok:false,
         message: 'Erro ao carregar o acervo'
       }
     }
+    notifyCollectionUpdated();
+
 } 
 
-//Função temporaria a ser excluida
-/** Mantém na interface os livros cadastrados durante a sessão atual. */
-//function addBookToCollectionSearch(book) {
-//  sessionCollectionBooks.push({
-//    title: book.title,
-//    author: book.author,
-//    genre: book.genre,
-//    available: book.quantity,
-//    total: book.quantity
-//  });
-//  document.dispatchEvent(new Event('collection-updated'));
-//}
+//refresh no acervo 
+function notifyCollectionUpdated() {
+  if (typeof renderCollectionCatalog === 'function') renderCollectionCatalog();
+  document.dispatchEvent(new Event('collection-updated'));
+}
 
-/** Renderiza o catálogo somente com livros incluídos durante a sessão atual. */
+
+/** Renderiza o catálogo*/
 function setupCollectionCatalog() {
   const tableBody = document.querySelector('#catalogTableBody');
-  //const empty = document.querySelector('#catalogEmpty');
+  const empty = document.querySelector('#catalogEmpty');
   const searchInput = document.querySelector('#catalogSearchInput');
   const genreSelect = document.querySelector('#catalogGenreSelect');
   const genreFilter = document.querySelector('#catalogGenreFilter');
@@ -229,7 +228,7 @@ function setupCollectionCatalog() {
     loaned.textContent = String(Math.max(0, totalBooks - availableBooks));
     count.textContent = `${books.length} ${books.length === 1 ? 'livro' : 'livros'}`;
     tableBody.replaceChildren();
-    //empty.hidden = books.length > 0;
+    empty.hidden = books.length > 0;
 
     books.forEach((book) => {
       const row = document.createElement('tr');
@@ -275,6 +274,7 @@ function setupCollectionCatalog() {
     if (event.key === 'Escape') setGenreOptionsOpen(false);
   });
   document.addEventListener('collection-updated', renderCatalog);
+  renderCollectionCatalog = renderCatalog;
   renderCatalog();
 }
 
@@ -1038,9 +1038,9 @@ async function handleBookSubmit(event) {
 /** Inicializa os eventos após o carregamento do HTML. */
 function initializeApp() {
   setupNavigation(); // Controla a interface
-  loadCollectionBooks(); //Busca os livros através da API disponibilizada pelo preload
-  setupCollectionSearch(); // Configura a busca de livros no acervo. Permite pesquisar por título, autor ou gênero e exibe os resultados encontrados. 
   setupCollectionCatalog();// Configura a tabela do acervo. Renderiza os livros, atualiza os totais de livros disponíveis e emprestados e permite filtrar por gênero.
+  setupCollectionSearch(); // Configura a busca de livros no acervo. Permite pesquisar por título, autor ou gênero e exibe os resultados encontrados. 
+  loadCollectionBooks(); //Busca os livros através da API disponibilizada pelo preload
   setupNotifications(); //Controla o painel de notificações. Permite abrir, fechar, fechar ao clicar fora e fechar pressionando Escape.
   setupPendingActions(); //Configura botões de funcionalidades que ainda estão em construção, exibindo mensagens temporárias ao usuário.
   setupGenreSelect(); //Configura o seletor personalizado de gênero no formulário de cadastro. Também controla a opção “Outro”, exibindo um campo adicional quando necessário.
