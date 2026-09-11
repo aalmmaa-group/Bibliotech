@@ -5,6 +5,8 @@ contextBridge.exposeInMainWorld('bibliotech', {
   books: {
     /** Encaminha ao processo principal os dados validados do livro. */
     create: (book) => ipcRenderer.invoke('books:create', book),
+
+    list: () => ipcRenderer.invoke('books:list'),
     search: (termo) => ipcRenderer.invoke('books:search', termo)
   },
   loans: {
@@ -13,4 +15,5 @@ contextBridge.exposeInMainWorld('bibliotech', {
     return: (idEmprestimo) => ipcRenderer.invoke('loans:return', idEmprestimo),
     updateDate: (idEmprestimo, novaData) => ipcRenderer.invoke('loans:updateDate', idEmprestimo, novaData)
   }
+  
 });

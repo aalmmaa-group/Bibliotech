@@ -1,7 +1,6 @@
 /**
  * Controlador da interface.
  * Centraliza a navegação entre telas, os avisos de módulos futuros e o
- * formulário de cadastro, sem acessar Node.js ou o banco diretamente.
  */
 
 // --- Referências reutilizadas pela interface. ---
@@ -13,6 +12,7 @@ const registrationPage = document.querySelector('#registrationPage');
 const collectionPage = document.querySelector('#collectionPage');
 const pageTitle = document.querySelector('#pageTitle');
 const breadcrumbCurrent = document.querySelector('#breadcrumbCurrent');
+const viewBackButton = document.querySelector('#viewBackButton');
 const bookForm = document.querySelector('#bookForm');
 const loanForm = document.querySelector('#loanForm');
 const notificationButton = document.querySelector('#notificationButton');
@@ -21,7 +21,10 @@ let pendingMessageTimer;
 let formMessageTimer;
 let loanMessageTimer;
 let collectionSearchTimer;
-const sessionCollectionBooks = [];
+const sessionCollectionBooks = []; //Array que aguarda tempoririamente o cadastro dos livros
+let collectionLoaded = false; //
+let renderCollectionCatalog = null;
+const viewHistory = ['inicio'];
 
 /**
  * Reinicia uma animação CSS aplicada por classe sem alterar o conteúdo da tela.
@@ -37,7 +40,13 @@ function replayEntranceAnimation(element) {
  * Alterna a tela visível da aplicação.
  * @param {'inicio'|'gestao'|'emprestimos'|'acervo'|'cadastro'} view Tela que deve ser exibida.
  */
-function openView(view) {
+function openView(view, { fromHistory = false, resetHistory = false } = {}) {
+  if (resetHistory) {
+    viewHistory.splice(0, viewHistory.length, 'inicio');
+  } else if (!fromHistory && viewHistory[viewHistory.length - 1] !== view) {
+    viewHistory.push(view);
+  }
+
   overviewPage.hidden = view !== 'inicio';
   managementPage.hidden = view !== 'gestao';
   loanPage.hidden = view !== 'emprestimos';
@@ -56,13 +65,12 @@ function openView(view) {
   pageTitle.textContent = title;
   breadcrumbCurrent.textContent = title;
   document.title = `${title} | Bibliotech`;
+  viewBackButton.hidden = viewHistory.length <= 1;
 
   // As telas filhas mantêm destacado o ponto de entrada correspondente no menu.
   const activePage = view === 'inicio'
     ? 'Visão geral'
-    : view === 'emprestimos'
-      ? 'Empréstimos'
-      : view === 'acervo'
+    : view === 'acervo'
         ? 'Acervo'
       : 'Gestão';
   menuItems.forEach((item) => {
@@ -78,6 +86,13 @@ function openView(view) {
   };
   const visiblePage = pageByView[view];
   replayEntranceAnimation(visiblePage);
+}
+
+/** Retorna à última tela visitada sem duplicá-la no histórico interno. */
+function goBack() {
+  if (viewHistory.length <= 1) return;
+  viewHistory.pop();
+  openView(viewHistory[viewHistory.length - 1], { fromHistory: true });
 }
 
 /**
@@ -141,19 +156,63 @@ function renderCollectionResults(resultsElement, books, message = '') {
   });
 }
 
-/** Mantém na interface os livros cadastrados durante a sessão atual. */
-function addBookToCollectionSearch(book) {
-  sessionCollectionBooks.push({
-    title: book.title,
-    author: book.author,
-    genre: book.genre,
-    available: book.quantity,
-    total: book.quantity
-  });
+
+//Função que possibilita carregar os livros cadastrados no acervo a partir doo banco de dados
+async function loadCollectionBooks() {
+  const catalogEmpty = document.querySelector('#catalogEmpty');
+  if (catalogEmpty) catalogEmpty.hidden = true;
+  
+  
+  try{
+    const resultado = await window.bibliotech?.books?.list();
+    //validação se o resutaldo não existe
+    if (!resultado) {
+      notifyCollectionUpdated();
+      return{
+        ok:false,
+        message: 'Não foi possivel obter os dados do acervo'
+      };
+    }
+
+    if (resultado.ok) {
+      sessionCollectionBooks.length = 0;
+      resultado.payload.forEach((livro) => {
+        sessionCollectionBooks.push({
+          id: livro.id_livro,
+          title: livro.nome,
+          author: livro.autor,
+          genre: livro.genero,
+          available: livro.quantidade_livros_disponiveis,
+          total: livro.quantidade_livros_total
+        });
+      });
+    }else{
+      notifyCollectionUpdated();
+      return{
+        ok: false,
+        message: 'Erro ao carregar o acervo'
+      };
+    }
+  }catch(erro){
+      console.error(erro);
+      notifyCollectionUpdated();
+      return{
+        ok:false,
+        message: 'Erro ao carregar o acervo'
+      }
+    }
+    notifyCollectionUpdated();
+
+} 
+
+//refresh no acervo 
+function notifyCollectionUpdated() {
+  if (typeof renderCollectionCatalog === 'function') renderCollectionCatalog();
   document.dispatchEvent(new Event('collection-updated'));
 }
 
-/** Renderiza o catálogo somente com livros incluídos durante a sessão atual. */
+
+/** Renderiza o catálogo*/
 function setupCollectionCatalog() {
   const tableBody = document.querySelector('#catalogTableBody');
   const empty = document.querySelector('#catalogEmpty');
@@ -229,6 +288,7 @@ function setupCollectionCatalog() {
     if (event.key === 'Escape') setGenreOptionsOpen(false);
   });
   document.addEventListener('collection-updated', renderCatalog);
+  renderCollectionCatalog = renderCatalog;
   renderCatalog();
 }
 
@@ -552,6 +612,13 @@ function getLocalDateValue(date = new Date()) {
   return `${year}-${month}-${day}`;
 }
 
+/** Converte o valor do campo de data sem aplicar deslocamento de fuso horário. */
+function parseLocalDateValue(value) {
+  if (!value) return null;
+  const [year, month, day] = value.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
+
 /** Valida os campos do empréstimo e mantém a indicação de erro acessível. */
 function validateLoanField(input) {
   const value = input.value.trim();
@@ -697,18 +764,7 @@ function setupLoanCalendar() {
   };
 
   const updateDateShortcuts = () => {
-    const selectedDate = returnDate.value
-      ? new Date(`${returnDate.value}T00:00:00`)
-      : null;
-
-    dateShortcutButtons.forEach((button) => {
-      const shortcutDate = new Date();
-      shortcutDate.setHours(0, 0, 0, 0);
-      shortcutDate.setDate(shortcutDate.getDate() + Number(button.dataset.returnDays));
-      const isSelected = returnDate.value === getLocalDateValue(shortcutDate);
-      button.classList.toggle('is-selected', isSelected);
-      button.setAttribute('aria-pressed', String(isSelected));
-    });
+    const selectedDate = parseLocalDateValue(returnDate.value);
 
     dateHelp.textContent = selectedDate
       ? `Devolução escolhida: ${formatLongDate(selectedDate)}.`
@@ -722,9 +778,7 @@ function setupLoanCalendar() {
 
   dateButton.addEventListener('click', (event) => {
     event.stopPropagation();
-    const selectedDate = returnDate.value
-      ? new Date(`${returnDate.value}T00:00:00`)
-      : today;
+    const selectedDate = parseLocalDateValue(returnDate.value) || today;
     calendarCursor = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
     renderCalendar();
     setCalendarOpen(calendar.hidden);
@@ -760,8 +814,11 @@ function setupLoanCalendar() {
 
   dateShortcutButtons.forEach((button) => {
     button.addEventListener('click', () => {
-      const shortcutDate = new Date();
-      shortcutDate.setHours(0, 0, 0, 0);
+      // Com uma data já escolhida, cada clique acrescenta um novo prazo.
+      const selectedDate = parseLocalDateValue(returnDate.value);
+      const shortcutDate = selectedDate && selectedDate >= today
+        ? new Date(selectedDate)
+        : new Date(today);
       shortcutDate.setDate(shortcutDate.getDate() + Number(button.dataset.returnDays));
       selectReturnDate(shortcutDate);
     });
@@ -835,12 +892,13 @@ function setupLoanTabs() {
 
 /** Conecta botões do menu às telas disponíveis ou aos avisos de planejamento. */
 function setupNavigation() {
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
   menuItems.forEach((item) => {
     item.addEventListener('click', () => {
       const page = item.dataset.page;
-      if (page === 'Visão geral') return openView('inicio');
+      if (page === 'Visão geral') return openView('inicio', { resetHistory: true });
       if (page === 'Gestão') return openView('gestao');
-      if (page === 'Empréstimos') return openView('emprestimos');
       if (page === 'Acervo') return openView('acervo');
       showPending(`${page} será disponibilizado nas próximas etapas.`);
     });
@@ -871,6 +929,7 @@ function setupNavigation() {
 
       // O atalho de empréstimos reforça visualmente a mudança de módulo.
       if (targetView === 'emprestimos' && button.classList.contains('loan-launch-button')) {
+        if (reducedMotion) return openView(targetView);
         if (button.dataset.navigating === 'true') return;
 
         button.dataset.navigating = 'true';
@@ -884,11 +943,12 @@ function setupNavigation() {
           delete button.dataset.navigating;
           button.removeAttribute('aria-busy');
           openView(targetView);
-        }, 420);
+        }, 520);
         return;
       }
 
       if (targetView === 'acervo' && button.classList.contains('catalog-launch-button')) {
+        if (reducedMotion) return openView(targetView);
         if (button.dataset.navigating === 'true') return;
 
         button.dataset.navigating = 'true';
@@ -902,7 +962,7 @@ function setupNavigation() {
           delete button.dataset.navigating;
           button.removeAttribute('aria-busy');
           openView(targetView);
-        }, 420);
+        }, 540);
         return;
       }
 
@@ -910,7 +970,9 @@ function setupNavigation() {
     });
   });
 
-  document.querySelector('#brandHome').addEventListener('click', () => openView('inicio'));
+  viewBackButton.addEventListener('click', goBack);
+  document.querySelector('#brandHome').addEventListener('click', () => openView('inicio', { resetHistory: true }));
+  document.querySelector('#breadcrumbHome').addEventListener('click', () => openView('inicio', { resetHistory: true }));
 }
 
 /** Configura comportamentos dos módulos ainda fora do escopo atual. */
@@ -1065,7 +1127,8 @@ async function handleBookSubmit(event) {
     }
 
     if (resultado.ok) {
-      addBookToCollectionSearch(bookData);
+      //addBookToCollectionSearch(bookData); adiciona temporariamente
+      loadCollectionBooks(bookData); //
       setFormMessage(resultado.message, 'success');
       bookForm.reset();
       clearBookFormErrors();
@@ -1135,17 +1198,18 @@ async function handleLoanSubmit(event) {
 
 /** Inicializa os eventos após o carregamento do HTML. */
 function initializeApp() {
-  setupNavigation();
-  setupCollectionSearch();
-  setupCollectionCatalog();
-  setupNotifications();
-  setupPendingActions();
-  setupGenreSelect();
-  setupClickFeedback();
-  setupBookFormValidation();
-  setupLoanCalendar();
-  setupLoanForm();
-  setupLoanTabs();
+  setupNavigation(); // Controla a interface
+  setupCollectionCatalog();// Configura a tabela do acervo. Renderiza os livros, atualiza os totais de livros disponíveis e emprestados e permite filtrar por gênero.
+  setupCollectionSearch(); // Configura a busca de livros no acervo. Permite pesquisar por título, autor ou gênero e exibe os resultados encontrados. 
+  loadCollectionBooks(); //Busca os livros através da API disponibilizada pelo preload
+  setupNotifications(); //Controla o painel de notificações. Permite abrir, fechar, fechar ao clicar fora e fechar pressionando Escape.
+  setupPendingActions(); //Configura botões de funcionalidades que ainda estão em construção, exibindo mensagens temporárias ao usuário.
+  setupGenreSelect(); //Configura o seletor personalizado de gênero no formulário de cadastro. Também controla a opção “Outro”, exibindo um campo adicional quando necessário.
+  setupClickFeedback(); //Adiciona um efeito visual rápido aos botões quando o usuário pressiona algum deles. Respeita a preferência do sistema por reduzir animações.
+  setupBookFormValidation(); //Configura a validação progressiva do formulário de livros. Os campos são validados quando perdem o foco ou quando o usuário começa a editá-los
+  setupLoanCalendar();//Configura o calendário de data de devolução dos empréstimos. Permite escolher uma data, navegar entre meses, usar atalhos e impedir datas anteriores ao dia atual.
+  setupLoanForm(); //Configura a validação e o envio do formulário de empréstimo. Depois de validar os dados, exibe uma prévia do empréstimo preenchido.
+  setupLoanTabs(); //Controla as abas do módulo de empréstimos, alternando entre “Novo empréstimo” e “Devoluções”.
   setupBookAutocomplete();
   bookForm.addEventListener('submit', handleBookSubmit);
   loanForm.addEventListener('submit', handleLoanSubmit);
