@@ -363,6 +363,40 @@ button {
     font-size: 13px;
 }
 
+.view-back-button {
+    display: grid;
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
+    padding: 0;
+    color: var(--primary-dark);
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    place-items: center;
+}
+
+.view-back-button svg {
+    width: 19px;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+}
+
+.view-back-button:hover {
+    color: #ffffff;
+    background: var(--primary);
+    border-color: var(--primary);
+    transform: translateX(-2px);
+}
+
+.view-back-button:focus-visible {
+    outline: 3px solid rgba(7, 141, 135, 0.22);
+    outline-offset: 2px;
+}
+
 .breadcrumb__home {
     padding: 3px 0;
     color: #98a3a5;
