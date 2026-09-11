@@ -13,7 +13,8 @@ contextBridge.exposeInMainWorld('bibliotech', {
     /** Encaminha ao processo principal os emprestimo. */
     create: (data) => ipcRenderer.invoke('loans:create', data),
     return: (idEmprestimo) => ipcRenderer.invoke('loans:return', idEmprestimo),
-    updateDate: (idEmprestimo, novaData) => ipcRenderer.invoke('loans:updateDate', idEmprestimo, novaData)
+    updateDate: (idEmprestimo, novaData) => ipcRenderer.invoke('loans:updateDate', idEmprestimo, novaData),
+    listActive: () =>  ipcRenderer.invoke('loans:listActive')
   }
   
 });

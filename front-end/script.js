@@ -24,6 +24,8 @@ let collectionSearchTimer;
 const sessionCollectionBooks = []; //Array que aguarda tempoririamente o cadastro dos livros
 let collectionLoaded = false; //
 let renderCollectionCatalog = null;
+const sessionActiveLoans = [];
+let renderReturnsList = null;
 const viewHistory = ['inicio'];
 
 /**
@@ -227,6 +229,7 @@ function setupCollectionCatalog() {
   const available = document.querySelector('#catalogAvailable');
   const loaned = document.querySelector('#catalogLoaned');
 
+  
   const renderCatalog = () => {
     const term = normalizeSearchText(searchInput.value.trim());
     const genre = genreSelect.dataset.value || '';
@@ -617,6 +620,16 @@ function parseLocalDateValue(value) {
   if (!value) return null;
   const [year, month, day] = value.split('-').map(Number);
   return new Date(year, month - 1, day);
+}
+
+/** Formata a data prevista sem depender do fuso horário do navegador. */
+function formatShortDatePtBr(value) {
+  if (!value) return '—';
+  const dateValue = String(value).slice(0, 10);
+  const date = parseLocalDateValue(dateValue);
+  return date && !Number.isNaN(date.getTime())
+    ? new Intl.DateTimeFormat('pt-BR').format(date)
+    : '—';
 }
 
 /** Valida os campos do empréstimo e mantém a indicação de erro acessível. */
@@ -1105,6 +1118,110 @@ function setupBookAutocomplete() {
   });
 }
 
+
+//Configuração da tabela de devolução
+function setupReturnsList() {
+  const tableBody = document.querySelector('#returnsTableBody');
+  const empty = document.querySelector('#returnsEmpty');
+  if (!tableBody || !empty) return;
+
+  const renderReturns = () => {
+    tableBody.replaceChildren();
+    empty.hidden = sessionActiveLoans.length > 0;
+
+    sessionActiveLoans.forEach((emprestimo) => {
+      const row = document.createElement('div');
+      row.className = 'returns-table__row';
+
+      const bookCell = document.createElement('span');
+      bookCell.textContent = emprestimo.bookTitle;
+
+      const studentCell = document.createElement('span');
+      studentCell.textContent = emprestimo.studentName || '—';
+
+      const classroomCell = document.createElement('span');
+      classroomCell.textContent = emprestimo.classroom || '—';
+
+      const dueDateCell = document.createElement('span');
+      dueDateCell.textContent = formatShortDatePtBr(emprestimo.expectedReturnDate);
+
+      const actionCell = document.createElement('span');
+      const actionButton = document.createElement('button');
+      actionButton.type = 'button';
+      actionButton.className = 'returns-table__action';
+      actionButton.textContent = 'Registrar devolução';
+      actionButton.dataset.loanId = emprestimo.id;
+      // Adiciona a ação de clique ao botão
+      actionButton.addEventListener('click', async () => {
+        // Pede confirmação para evitar cliques acidentais
+        if (confirm("Confirmar devolução do livro ao acervo?")) {
+          
+          // Manda a ordem para o SQLite usando o ID do empréstimo
+          const resultado = await window.bibliotech.loans.return(emprestimo.id);
+          
+          if (resultado.ok) {
+            // Recarrega a tabela para o livro sumir da tela
+            renderReturns(); 
+          } else {
+            alert("Erro ao devolver: " + resultado.message);
+          }
+        }
+      });
+      actionCell.appendChild(actionButton);
+
+      row.append(bookCell, studentCell, classroomCell, dueDateCell, actionCell);
+      tableBody.appendChild(row);
+    });
+  };
+
+  renderReturnsList = renderReturns;
+  renderReturns();
+}
+
+/** Garante que a lista de devoluções seja redesenhada assim que os dados
+ * chegarem, mesmo que setupReturnsList ainda não tenha rodado. */
+function notifyReturnsUpdated() {
+  if (typeof renderReturnsList === 'function') renderReturnsList();
+}
+
+/** Busca no banco de dados (via preload.js) os empréstimos ainda não
+ * devolvidos na tabela emprestimos, para exibir na tela de devoluções. */
+async function loadActiveLoans() {
+  try {
+    const resultado = await window.bibliotech?.loans?.listActive();
+
+    if (!resultado) {
+      // Fora do Electron (ex.: abrindo o HTML direto no navegador) não há dados reais.
+      notifyReturnsUpdated();
+      return;
+    }
+
+    if (resultado.ok) {
+      sessionActiveLoans.length = 0;
+      resultado.payload.forEach((emprestimo) => {
+        sessionActiveLoans.push({
+          id: emprestimo.id_emprestimo,
+          bookId: emprestimo.id_livro,
+          bookTitle: emprestimo.nome_livro,
+          studentName: emprestimo.nome_aluno,
+          classroom: emprestimo.turma_serie,
+          loanDate: emprestimo.data_emprestimo,
+          expectedReturnDate: emprestimo.data_devolucao_prevista,
+          actualReturnDate: emprestimo.data_devolucao_efetiva,
+          status: emprestimo.status_emprestimo
+        });
+      });
+    } else {
+      console.error('Erro ao carregar devoluções pendentes:', resultado.message);
+    }
+  } catch (erro) {
+    console.error('Erro na comunicação ao carregar devoluções pendentes:', erro);
+  }
+
+  notifyReturnsUpdated();
+}
+  
+
 /** Valida e encaminha o livro pela API segura exposta em preload.js. */
 async function handleBookSubmit(event) {
   event.preventDefault();
@@ -1210,6 +1327,8 @@ function initializeApp() {
   setupLoanCalendar();//Configura o calendário de data de devolução dos empréstimos. Permite escolher uma data, navegar entre meses, usar atalhos e impedir datas anteriores ao dia atual.
   setupLoanForm(); //Configura a validação e o envio do formulário de empréstimo. Depois de validar os dados, exibe uma prévia do empréstimo preenchido.
   setupLoanTabs(); //Controla as abas do módulo de empréstimos, alternando entre “Novo empréstimo” e “Devoluções”.
+  setupReturnsList(); //Configura a renderização da lista de devoluções pendentes
+  loadActiveLoans(); //Busca na tabela emprestimos os empréstimos ainda não devolvidos, através da API disponibilizada pelo preload
   setupBookAutocomplete();
   bookForm.addEventListener('submit', handleBookSubmit);
   loanForm.addEventListener('submit', handleLoanSubmit);
