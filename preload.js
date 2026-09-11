@@ -7,6 +7,11 @@ contextBridge.exposeInMainWorld('bibliotech', {
     create: (book) => ipcRenderer.invoke('books:create', book),
 
     list: () => ipcRenderer.invoke('books:list')
-  }
+  },
+
+  loans: {
+    //Exibe lista dos livros emprestados
+      listActive: () =>  ipcRenderer.invoke('loans:listActive')
+    }
   
 });

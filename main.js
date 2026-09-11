@@ -35,7 +35,9 @@ ipcMain.handle('books:create', async (_event, book) => {
 });
 
 
-
+ipcMain.handle('loans:listActive', async() => {
+  return listarEmprestimosAtivos(); 
+})
 
 // função de cadastrar os livros 
 function cadastrarLivro(bookData) {
@@ -138,6 +140,52 @@ function listarLivros() {
     };
   }
 }
+
+
+// função de buscar os empréstimos 
+function listarEmprestimosAtivos() {
+  if (!db || !db.db) {
+    return {
+      ok: false,
+      code: 'DB_UNAVAILABLE',
+      message: 'O banco de dados está indisponível nesta máquina.'
+    };
+  }
+
+  try {
+    const linhas = db.db.prepare(`
+      SELECT
+        e.id_emprestimo,
+        e.id_livro,
+        l.nome AS nome_livro,
+        e.nome_aluno,
+        e.turma_serie,
+        e.data_emprestimo,
+        e.data_devolucao_prevista,
+        e.data_devolucao_efetiva,
+        e.status_emprestimo
+      FROM emprestimos e
+      JOIN livros l ON l.id_livro = e.id_livro
+      WHERE e.status_emprestimo IN ('emprestado', 'devolução pendente')
+      ORDER BY e.data_devolucao_prevista ASC
+    `).all();
+
+    return {
+      ok: true,
+      code: 'SUCCESS',
+      message: 'Devoluções pendentes carregadas com sucesso!',
+      payload: linhas
+    };
+  } catch (erro) {
+    console.error("Erro ao listar empréstimos ativos no SQLite:", erro);
+    return {
+      ok: false,
+      code: 'SELECT_ERROR',
+      message: "Ocorreu um erro interno ao carregar as devoluções pendentes."
+    };
+  }
+}
+
 
 
 /** Inicializa dependências locais e abre a primeira janela do aplicativo. */
