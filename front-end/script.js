@@ -12,6 +12,7 @@ const registrationPage = document.querySelector('#registrationPage');
 const collectionPage = document.querySelector('#collectionPage');
 const pageTitle = document.querySelector('#pageTitle');
 const breadcrumbCurrent = document.querySelector('#breadcrumbCurrent');
+const viewBackButton = document.querySelector('#viewBackButton');
 const bookForm = document.querySelector('#bookForm');
 const loanForm = document.querySelector('#loanForm');
 const notificationButton = document.querySelector('#notificationButton');
@@ -25,6 +26,7 @@ let collectionLoaded = false; //
 let renderCollectionCatalog = null;
 const sessionActiveLoans = [];
 let renderReturnsList = null;
+const viewHistory = ['inicio'];
 
 /**
  * Reinicia uma animação CSS aplicada por classe sem alterar o conteúdo da tela.
@@ -40,7 +42,13 @@ function replayEntranceAnimation(element) {
  * Alterna a tela visível da aplicação.
  * @param {'inicio'|'gestao'|'emprestimos'|'acervo'|'cadastro'} view Tela que deve ser exibida.
  */
-function openView(view) {
+function openView(view, { fromHistory = false, resetHistory = false } = {}) {
+  if (resetHistory) {
+    viewHistory.splice(0, viewHistory.length, 'inicio');
+  } else if (!fromHistory && viewHistory[viewHistory.length - 1] !== view) {
+    viewHistory.push(view);
+  }
+
   overviewPage.hidden = view !== 'inicio';
   managementPage.hidden = view !== 'gestao';
   loanPage.hidden = view !== 'emprestimos';
@@ -59,13 +67,12 @@ function openView(view) {
   pageTitle.textContent = title;
   breadcrumbCurrent.textContent = title;
   document.title = `${title} | Bibliotech`;
+  viewBackButton.hidden = viewHistory.length <= 1;
 
   // As telas filhas mantêm destacado o ponto de entrada correspondente no menu.
   const activePage = view === 'inicio'
     ? 'Visão geral'
-    : view === 'emprestimos'
-      ? 'Empréstimos'
-      : view === 'acervo'
+    : view === 'acervo'
         ? 'Acervo'
       : 'Gestão';
   menuItems.forEach((item) => {
@@ -81,6 +88,13 @@ function openView(view) {
   };
   const visiblePage = pageByView[view];
   replayEntranceAnimation(visiblePage);
+}
+
+/** Retorna à última tela visitada sem duplicá-la no histórico interno. */
+function goBack() {
+  if (viewHistory.length <= 1) return;
+  viewHistory.pop();
+  openView(viewHistory[viewHistory.length - 1], { fromHistory: true });
 }
 
 /**
@@ -896,9 +910,8 @@ function setupNavigation() {
   menuItems.forEach((item) => {
     item.addEventListener('click', () => {
       const page = item.dataset.page;
-      if (page === 'Visão geral') return openView('inicio');
+      if (page === 'Visão geral') return openView('inicio', { resetHistory: true });
       if (page === 'Gestão') return openView('gestao');
-      if (page === 'Empréstimos') return openView('emprestimos');
       if (page === 'Acervo') return openView('acervo');
       showPending(`${page} será disponibilizado nas próximas etapas.`);
     });
@@ -970,7 +983,9 @@ function setupNavigation() {
     });
   });
 
-  document.querySelector('#brandHome').addEventListener('click', () => openView('inicio'));
+  viewBackButton.addEventListener('click', goBack);
+  document.querySelector('#brandHome').addEventListener('click', () => openView('inicio', { resetHistory: true }));
+  document.querySelector('#breadcrumbHome').addEventListener('click', () => openView('inicio', { resetHistory: true }));
 }
 
 /** Configura comportamentos dos módulos ainda fora do escopo atual. */
@@ -1011,6 +1026,97 @@ function setupPendingActions() {
     });
   });
 }
+/**
+ * Função responsável por criar o Autocomplete (pesquisa) de livros no formulário de empréstimos.
+ * O CSS desta lista suspensa foi feito inline via JavaScript apenas para testes rápidos.
+ * Pode trocar 'style.cssText' e deixar bonito (se quiser tbm).
+ * Apenas mantenha a lógica de injeção do `data-book-id` ao clicar em uma opção
+ */
+function setupBookAutocomplete() {
+  // Captura o campo de texto onde o usuário digita o nome do livro
+  const bookInput = document.querySelector('input[name="bookName"]');
+  if (!bookInput) return;
+
+  // Cria a tag <ul> 
+  const resultList = document.createElement('ul');
+  
+  // Front-end: Mover esses estilos para o arquivo .css principal
+  resultList.style.cssText = `
+    position: absolute; background: white; border: 1px solid #ccc; 
+    border-radius: 4px; list-style: none; padding: 0; margin-top: 5px; 
+    width: 100%; max-height: 150px; overflow-y: auto; z-index: 1000; display: none;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  `;
+  
+  // Anexa a lista logo abaixo do campo de input no HTML
+  bookInput.parentNode.style.position = 'relative';
+  bookInput.parentNode.appendChild(resultList);
+
+  //  Dispara toda vez que o usuário digita ou apaga uma letra
+  bookInput.addEventListener('input', async (e) => {
+    const termo = e.target.value.trim();
+    
+    // Se o usuário voltar a digitar, apagamos o ID do livro anterior 
+    // para evitar que ele salve o livro errado se não clicar na lista novamente.
+    bookInput.setAttribute('data-book-id', ''); 
+
+    // Só faz a requisição ao banco se tiver pelo menos 2 letras (evita travar o sistema)
+    if (termo.length < 2) {
+      resultList.style.display = 'none';
+      return;
+    }
+
+    // Chama a função no Back-end que faz o SELECT no SQLite
+    const response = await window.bibliotech.books.search(termo);
+    
+    // Se a busca deu certo e encontrou livros no estoque
+    if (response.ok && response.data.length > 0) {
+      resultList.innerHTML = ''; // Limpa a busca anterior
+      
+      // Para cada livro encontrado, cria um item <li> na lista
+      response.data.forEach(livro => {
+        const li = document.createElement('li');
+        // Front-end: Substituir por classes CSS
+        li.style.cssText = 'padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 14px;';
+        
+        // Texto que aparece para o usuário (Título + Quantidade)
+        li.textContent = `${livro.nome} (Disponível: ${livro.quantidade_livros_disponiveis})`;
+        
+        // O que ocorre quando clica no livro da lista
+        li.addEventListener('click', () => {
+          // Preenche o input visível com o nome do livro
+          bookInput.value = livro.nome; 
+          
+          // injeta o id numérico no atributo invisível (isso aqui é oq pega o id do livro tem que ter isso)
+          bookInput.setAttribute('data-book-id', livro.id_livro); 
+          
+          // Esconde a lista após a escolha
+          resultList.style.display = 'none'; 
+        });
+
+        // Front-end: Substituir por :hover no CSS
+        li.addEventListener('mouseover', () => li.style.background = '#f5f7fa');
+        li.addEventListener('mouseout', () => li.style.background = 'white');
+
+        // Adiciona a linha (li) dentro da lista (ul)
+        resultList.appendChild(li);
+      });
+      
+      // Torna a lista visível
+      resultList.style.display = 'block';
+    } else {
+      // Esconde a lista se não achar nada
+      resultList.style.display = 'none';
+    }
+  });
+
+  // Se o usuário clicar em qualquer outro lugar da tela, fecha a lista
+  document.addEventListener('click', (e) => {
+    if (e.target !== bookInput) {
+      resultList.style.display = 'none';
+    }
+  });
+}
 
 
 //Configuração da tabela de devolução
@@ -1045,7 +1151,22 @@ function setupReturnsList() {
       actionButton.className = 'returns-table__action';
       actionButton.textContent = 'Registrar devolução';
       actionButton.dataset.loanId = emprestimo.id;
-      // A ação de registrar a devolução (Update) ainda não está implementada.
+      // Adiciona a ação de clique ao botão
+      actionButton.addEventListener('click', async () => {
+        // Pede confirmação para evitar cliques acidentais
+        if (confirm("Confirmar devolução do livro ao acervo?")) {
+          
+          // Manda a ordem para o SQLite usando o ID do empréstimo
+          const resultado = await window.bibliotech.loans.return(emprestimo.id);
+          
+          if (resultado.ok) {
+            // Recarrega a tabela para o livro sumir da tela
+            renderReturns(); 
+          } else {
+            alert("Erro ao devolver: " + resultado.message);
+          }
+        }
+      });
       actionCell.appendChild(actionButton);
 
       row.append(bookCell, studentCell, classroomCell, dueDateCell, actionCell);
@@ -1137,6 +1258,60 @@ async function handleBookSubmit(event) {
     setFormMessage('Ocorreu um erro inesperado ao tentar salvar o livro.');
   }
 }
+/** Valida e encaminha o emprestimo pela API segura exposta em preload.js. */
+async function handleLoanSubmit(event) {
+  event.preventDefault(); // Evita recarregar a tela
+
+  const loanForm = document.getElementById('loanForm');
+  const loanFormMessage = document.getElementById('loanFormMessage');
+
+  // Puxa os textos digitados
+  const studentName = loanForm.elements['studentName'].value;
+  const classroom = loanForm.elements['classroom'].value;
+  const expectedReturnDate = loanForm.elements['returnDate'].value;
+
+  // Puxa o ID numérico do livro
+  const bookInput = loanForm.elements['bookName'];
+  const bookId = bookInput.getAttribute('data-book-id');
+
+  // Barreira de segurança para campos vazios
+  if (!bookId || !studentName || !classroom || !expectedReturnDate) {
+    loanFormMessage.textContent = "Por favor, preencha todos os campos e selecione um livro válido.";
+    loanFormMessage.style.color = "red";
+    setTimeout(() => { loanFormMessage.textContent = ""; }, 4000);
+    return;
+  }
+
+  // Prepara o pacote de dados
+  const loanData = {
+    bookId: Number(bookId),
+    studentName: studentName,
+    classroom: classroom,
+    expectedReturnDate: expectedReturnDate
+  };
+
+  try {
+    // Manda para o Back-end
+    const resultado = await window.bibliotech.loans.create(loanData);
+
+    if (resultado.ok) {
+      loanFormMessage.textContent = resultado.message;
+      loanFormMessage.style.color = "green";
+      
+      loanForm.reset(); 
+      bookInput.setAttribute('data-book-id', ''); // Limpa o ID escondido
+      loanForm.querySelector('[name="studentName"]').focus(); 
+    } else {
+      loanFormMessage.textContent = "Erro ao emprestar: " + resultado.message;
+      loanFormMessage.style.color = "red";
+    }
+
+    setTimeout(() => { loanFormMessage.textContent = ""; }, 4000);
+
+  } catch (erro) {
+    console.error("Erro no front-end ao emprestar:", erro);
+  }
+}
 
 /** Inicializa os eventos após o carregamento do HTML. */
 function initializeApp() {
@@ -1154,8 +1329,9 @@ function initializeApp() {
   setupLoanTabs(); //Controla as abas do módulo de empréstimos, alternando entre “Novo empréstimo” e “Devoluções”.
   setupReturnsList(); //Configura a renderização da lista de devoluções pendentes
   loadActiveLoans(); //Busca na tabela emprestimos os empréstimos ainda não devolvidos, através da API disponibilizada pelo preload
- 
+  setupBookAutocomplete();
   bookForm.addEventListener('submit', handleBookSubmit);
+  loanForm.addEventListener('submit', handleLoanSubmit);
 }
 
 initializeApp();

@@ -6,12 +6,15 @@ contextBridge.exposeInMainWorld('bibliotech', {
     /** Encaminha ao processo principal os dados validados do livro. */
     create: (book) => ipcRenderer.invoke('books:create', book),
 
-    list: () => ipcRenderer.invoke('books:list')
+    list: () => ipcRenderer.invoke('books:list'),
+    search: (termo) => ipcRenderer.invoke('books:search', termo)
   },
-
   loans: {
-    //Exibe lista dos livros emprestados
-      listActive: () =>  ipcRenderer.invoke('loans:listActive')
-    }
+    /** Encaminha ao processo principal os emprestimo. */
+    create: (data) => ipcRenderer.invoke('loans:create', data),
+    return: (idEmprestimo) => ipcRenderer.invoke('loans:return', idEmprestimo),
+    updateDate: (idEmprestimo, novaData) => ipcRenderer.invoke('loans:updateDate', idEmprestimo, novaData),
+    listActive: () =>  ipcRenderer.invoke('loans:listActive')
+  }
   
 });
