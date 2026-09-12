@@ -481,6 +481,17 @@ function clearBookFormErrors() {
   });
 }
 
+/** Limpa o cadastro em andamento quando a pessoa decide cancelar. */
+function setupBookFormCancel() {
+  const cancelButton = bookForm.querySelector('[data-open-view="gestao"]');
+
+  cancelButton.addEventListener('click', () => {
+    bookForm.reset();
+    clearBookFormErrors();
+    setFormMessage('');
+  });
+}
+
 /** Revalida um campo destacado assim que o usuário começa a corrigi-lo. */
 function setupBookFormValidation() {
   bookForm.querySelectorAll('[required]').forEach((input) => {
@@ -1145,14 +1156,31 @@ function setupReturnsList() {
       const dueDateCell = document.createElement('span');
       dueDateCell.textContent = formatShortDatePtBr(emprestimo.expectedReturnDate);
 
-      const actionCell = document.createElement('span');
-      const actionButton = document.createElement('button');
-      actionButton.type = 'button';
-      actionButton.className = 'returns-table__action';
-      actionButton.textContent = 'Registrar devolução';
-      actionButton.dataset.loanId = emprestimo.id;
+      const actionsCell = document.createElement('span');
+      actionsCell.className = 'returns-table__actions';
+
+      // Identificadores explícitos para o back-end conectar a extensão de prazo.
+      const extendDeadlineButton = document.createElement('button');
+      extendDeadlineButton.type = 'button';
+      extendDeadlineButton.className = 'returns-table__action returns-table__action--extend';
+      extendDeadlineButton.textContent = 'Estender prazo';
+      extendDeadlineButton.dataset.loanId = emprestimo.id;
+      extendDeadlineButton.dataset.currentDueDate = emprestimo.expectedReturnDate;
+      extendDeadlineButton.addEventListener('click', () => {
+        alert('Prévia da interface: o back-end receberá o ID do empréstimo e a data atual do prazo para registrar a extensão.');
+      });
+
+      const returnBookButton = document.createElement('button');
+      returnBookButton.type = 'button';
+      returnBookButton.className = 'returns-table__action returns-table__action--return';
+      returnBookButton.textContent = 'Registrar devolução';
+      returnBookButton.dataset.loanId = emprestimo.id;
       // Adiciona a ação de clique ao botão
-      actionButton.addEventListener('click', async () => {
+      returnBookButton.addEventListener('click', async () => {
+        if (!window.bibliotech?.loans?.return) {
+          alert('Prévia da interface: a devolução real estará disponível ao abrir o projeto pelo Electron.');
+          return;
+        }
         // Pede confirmação para evitar cliques acidentais
         if (confirm("Confirmar devolução do livro ao acervo?")) {
           
@@ -1167,9 +1195,9 @@ function setupReturnsList() {
           }
         }
       });
-      actionCell.appendChild(actionButton);
+      actionsCell.append(extendDeadlineButton, returnBookButton);
 
-      row.append(bookCell, studentCell, classroomCell, dueDateCell, actionCell);
+      row.append(bookCell, studentCell, classroomCell, dueDateCell, actionsCell);
       tableBody.appendChild(row);
     });
   };
@@ -1324,6 +1352,7 @@ function initializeApp() {
   setupGenreSelect(); //Configura o seletor personalizado de gênero no formulário de cadastro. Também controla a opção “Outro”, exibindo um campo adicional quando necessário.
   setupClickFeedback(); //Adiciona um efeito visual rápido aos botões quando o usuário pressiona algum deles. Respeita a preferência do sistema por reduzir animações.
   setupBookFormValidation(); //Configura a validação progressiva do formulário de livros. Os campos são validados quando perdem o foco ou quando o usuário começa a editá-los
+  setupBookFormCancel();
   setupLoanCalendar();//Configura o calendário de data de devolução dos empréstimos. Permite escolher uma data, navegar entre meses, usar atalhos e impedir datas anteriores ao dia atual.
   setupLoanForm(); //Configura a validação e o envio do formulário de empréstimo. Depois de validar os dados, exibe uma prévia do empréstimo preenchido.
   setupLoanTabs(); //Controla as abas do módulo de empréstimos, alternando entre “Novo empréstimo” e “Devoluções”.
