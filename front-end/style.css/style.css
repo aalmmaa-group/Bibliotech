@@ -2647,7 +2647,7 @@ button.is-pressed {
 
 .returns-table__header {
     display: grid;
-    grid-template-columns: 1.5fr 1.2fr 0.7fr 0.8fr 0.7fr;
+    grid-template-columns: 1.5fr 1.2fr 0.7fr 0.8fr 1.4fr;
     gap: 12px;
     padding: 11px 16px;
     color: var(--muted);
@@ -2658,6 +2658,21 @@ button.is-pressed {
     letter-spacing: 0.05em;
     text-transform: uppercase;
 }
+
+.returns-table__header span:last-child {
+    justify-self: center;
+}
+
+.returns-table__body { display: grid; }
+.returns-table__row { display: grid; grid-template-columns: 1.5fr 1.2fr 0.7fr 0.8fr 1.4fr; gap: 12px; align-items: center; padding: 14px 16px; color: var(--text); border-bottom: 1px solid var(--border); font-size: 13px; font-weight: 600; }
+.returns-table__row:last-child { border-bottom: 0; }
+.returns-table__actions { display: flex; flex-wrap: wrap; gap: 7px; }
+.returns-table__action { min-height: 33px; padding: 7px 10px; border: 1px solid var(--border); border-radius: 7px; background: #ffffff; color: var(--primary); cursor: pointer; font: inherit; font-size: 11px; font-weight: 800; transition: background 160ms ease, transform 160ms ease; }
+.returns-table__action:hover { transform: translateY(-1px); }
+.returns-table__action--extend { border-color: #abdeda; background: #effaf8; }
+.returns-table__action--extend:hover { background: #dff4ef; }
+.returns-table__action--return { border-color: #e8cd9d; background: #fff7e7; color: #8b6416; }
+.returns-table__action--return:hover { background: #f9e9ca; }
 
 /* Formulário de cadastro e estados de validação. */
 .book-form {
@@ -3077,6 +3092,9 @@ button.is-pressed {
     .returns-table__header {
         display: none;
     }
+
+    .returns-table__row { grid-template-columns: 1fr; gap: 8px; }
+    .returns-table__actions { margin-top: 4px; }
 }
 
 @media (min-width: 761px) and (max-width: 1200px) {
