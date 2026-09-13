@@ -4,7 +4,7 @@
  */
 
 // --- Referências reutilizadas pela interface. ---
-const menuItems = document.querySelectorAll('.menu__item');
+const menuItems = document.querySelectorAll('.menu__item, .sidebar-about');
 const overviewPage = document.querySelector('#overviewPage');
 const managementPage = document.querySelector('#managementPage');
 const loanPage = document.querySelector('#loanPage');
@@ -173,12 +173,13 @@ async function loadCollectionBooks() {
   
   try{
     const resultado = await window.bibliotech?.books?.list();
-    //validação se o resutaldo não existe
+    // Fora do Electron não há dados reais disponíveis para listar.
     if (!resultado) {
+      sessionCollectionBooks.length = 0;
       notifyCollectionUpdated();
       return{
-        ok:false,
-        message: 'Não foi possivel obter os dados do acervo'
+        ok: false,
+        message: 'Não foi possível obter os dados do acervo fora do Electron.'
       };
     }
 
@@ -191,7 +192,9 @@ async function loadCollectionBooks() {
           author: livro.autor,
           genre: livro.genero,
           available: livro.quantidade_livros_disponiveis,
-          total: livro.quantidade_livros_total
+          total: livro.quantidade_livros_total,
+          // Campo já retornado pelo cadastro/listagem para a interface exibir no acervo.
+          notes: livro.observacao
         });
       });
     }else{
@@ -234,6 +237,22 @@ function setupCollectionCatalog() {
   const total = document.querySelector('#catalogTotal');
   const available = document.querySelector('#catalogAvailable');
   const loaned = document.querySelector('#catalogLoaned');
+  const noteDialog = document.createElement('dialog');
+  const noteDialogTitle = document.createElement('h2');
+  const noteDialogText = document.createElement('p');
+  const noteDialogClose = document.createElement('button');
+
+  noteDialog.className = 'catalog-note-dialog';
+  noteDialogTitle.textContent = 'Observação do livro';
+  noteDialogText.className = 'catalog-note-dialog__text';
+  noteDialogClose.type = 'button';
+  noteDialogClose.textContent = 'Fechar';
+  noteDialogClose.addEventListener('click', () => noteDialog.close());
+  noteDialog.addEventListener('click', (event) => {
+    if (event.target === noteDialog) noteDialog.close();
+  });
+  noteDialog.append(noteDialogTitle, noteDialogText, noteDialogClose);
+  document.body.append(noteDialog);
 
   
   const renderCatalog = () => {
@@ -258,8 +277,32 @@ function setupCollectionCatalog() {
       const values = [book.title, book.author, book.genre, `${book.available}/${book.total} disponível(is)`];
       values.forEach((value, index) => {
         const cell = document.createElement('td');
-        cell.textContent = value;
-        if (index === 0) cell.className = 'catalog-table__title';
+        if (index === 0) {
+          cell.className = 'catalog-table__title';
+
+          const title = document.createElement('span');
+          title.textContent = value;
+          cell.append(title);
+
+          if (book.notes?.trim()) {
+            const noteButton = document.createElement('button');
+            noteButton.type = 'button';
+            noteButton.className = 'catalog-note';
+            noteButton.setAttribute('aria-label', `Ver observação do livro ${book.title}`);
+            noteButton.title = `Observação: ${book.notes}`;
+            const noteIcon = document.createElement('span');
+            noteIcon.setAttribute('aria-hidden', 'true');
+            noteIcon.textContent = 'i';
+            noteButton.append(noteIcon);
+            noteButton.addEventListener('click', () => {
+              noteDialogText.textContent = book.notes;
+              noteDialog.showModal();
+            });
+            cell.append(noteButton);
+          }
+        } else {
+          cell.textContent = value;
+        }
         if (index === 3) cell.className = 'catalog-table__availability';
         row.append(cell);
       });
@@ -663,7 +706,9 @@ function validateLoanField(input) {
   const field = input.closest('label, .form-field');
   const validationControl = input.name === 'returnDate'
     ? document.querySelector('#returnDateButton')
-    : input;
+    : input.name === 'classroom'
+      ? document.querySelector('#classroomSelectButton')
+      : input;
   field.classList.toggle('is-invalid', Boolean(errorMessage));
   field.querySelector('small').textContent = errorMessage;
   validationControl.setAttribute('aria-invalid', String(Boolean(errorMessage)));
@@ -695,7 +740,7 @@ function setLoanMessage(message, tone = 'error') {
 /**
  * Converte os dados digitados no contrato esperado pela futura integração.
  * O identificador do livro será preenchido quando a busca do acervo vier do banco.
- * @returns {{bookId:number|null, bookName:string, studentName:string, classroom:string, expectedReturnDate:string}}
+ * @returns {{bookId:number|null, bookName:string, studentName:string, classroom:string, borrowerType:string, expectedReturnDate:string}}
  */
 function getLoanPayload() {
   const formData = new FormData(loanForm);
@@ -706,8 +751,81 @@ function getLoanPayload() {
     bookName: formData.get('bookName').trim(),
     studentName: formData.get('studentName').trim(),
     classroom: formData.get('classroom').trim(),
+    borrowerType: formData.get('borrowerType'),
     expectedReturnDate: formData.get('returnDate')
   };
+}
+
+/** Configura as turmas e diferencia aluno de outros responsáveis pelo empréstimo. */
+function setupLoanBorrowerType() {
+  const classroomInput = loanForm.querySelector('[name="classroom"]');
+  const classroomField = loanForm.querySelector('.loan-classroom-field');
+  const classroomSelect = document.querySelector('#classroomSelect');
+  const classroomButton = document.querySelector('#classroomSelectButton');
+  const classroomText = classroomButton.querySelector('span');
+  const classroomOptions = document.querySelector('#classroomOptions');
+  const nameLabel = loanForm.querySelector('[data-borrower-name-label]');
+  const nameInput = loanForm.querySelector('[name="studentName"]');
+  const typeInputs = [...loanForm.querySelectorAll('[name="borrowerType"]')];
+
+  for (let grade = 1; grade <= 9; grade += 1) {
+    for (const letter of ['A', 'B', 'C', 'D']) {
+      const option = document.createElement('button');
+      option.type = 'button';
+      option.setAttribute('role', 'option');
+      option.dataset.value = `${grade}º ${letter}`;
+      option.textContent = `${grade}º ${letter}`;
+      option.setAttribute('aria-selected', 'false');
+      classroomOptions.append(option);
+    }
+  }
+
+  const updateBorrowerType = () => {
+    const isStudent = loanForm.elements.borrowerType.value === 'student';
+    loanForm.classList.toggle('is-non-student', !isStudent);
+    classroomField.hidden = !isStudent;
+    nameLabel.textContent = isStudent ? 'Nome do aluno' : 'Nome';
+    nameInput.placeholder = isStudent ? 'Digite o nome completo' : 'Digite o nome completo';
+
+    if (isStudent) {
+      classroomInput.value = '';
+      classroomText.textContent = 'Selecione a sala ou turma';
+      classroomSelect.classList.remove('has-value');
+    } else {
+      classroomInput.value = 'Não se aplica';
+      classroomText.textContent = 'Não se aplica';
+      classroomSelect.classList.add('has-value');
+    }
+    classroomInput.dispatchEvent(new Event('input', { bubbles: true }));
+  };
+
+  const setOpen = (isOpen) => {
+    classroomSelect.classList.toggle('is-open', isOpen);
+    classroomOptions.hidden = !isOpen;
+    classroomButton.setAttribute('aria-expanded', String(isOpen));
+  };
+  classroomButton.addEventListener('click', (event) => {
+    event.stopPropagation();
+    setOpen(classroomOptions.hidden);
+  });
+  classroomOptions.addEventListener('click', (event) => {
+    const option = event.target.closest('[role="option"]');
+    if (!option) return;
+    classroomInput.value = option.dataset.value;
+    classroomText.textContent = option.textContent;
+    classroomSelect.classList.add('has-value');
+    classroomOptions.querySelectorAll('[role="option"]').forEach((item) => item.setAttribute('aria-selected', String(item === option)));
+    classroomInput.dispatchEvent(new Event('input', { bubbles: true }));
+    setOpen(false);
+    classroomButton.focus();
+  });
+  document.addEventListener('click', (event) => {
+    if (!event.target.closest('#classroomSelect')) setOpen(false);
+  });
+
+  typeInputs.forEach((input) => input.addEventListener('change', updateBorrowerType));
+  loanForm.addEventListener('reset', () => window.setTimeout(updateBorrowerType));
+  updateBorrowerType();
 }
 
 /** Configura a seleção manual e os atalhos da data de devolução. */
@@ -1288,6 +1406,7 @@ async function handleLoanSubmit(event) {
     bookId: Number(bookId),
     studentName: studentName,
     classroom: classroom,
+    borrowerType: loanForm.elements['borrowerType'].value,
     expectedReturnDate: expectedReturnDate
   };
 
@@ -1327,6 +1446,7 @@ function initializeApp() {
   setupBookFormValidation(); //Configura a validação progressiva do formulário de livros. Os campos são validados quando perdem o foco ou quando o usuário começa a editá-los
   setupBookFormCancel();
   setupLoanCalendar();//Configura o calendário de data de devolução dos empréstimos. Permite escolher uma data, navegar entre meses, usar atalhos e impedir datas anteriores ao dia atual.
+  setupLoanBorrowerType(); // Preenche as turmas e controla a opção "Não é aluno".
   setupLoanForm(); //Configura a validação e o envio do formulário de empréstimo. Depois de validar os dados, exibe uma prévia do empréstimo preenchido.
   setupLoanTabs(); //Controla as abas do módulo de empréstimos, alternando entre “Novo empréstimo” e “Devoluções”.
   setupReturnsList(); //Configura a renderização da lista de devoluções pendentes
