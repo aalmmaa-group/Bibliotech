@@ -10,6 +10,7 @@ const managementPage = document.querySelector('#managementPage');
 const loanPage = document.querySelector('#loanPage');
 const registrationPage = document.querySelector('#registrationPage');
 const collectionPage = document.querySelector('#collectionPage');
+const aboutPage = document.querySelector('#aboutPage');
 const pageTitle = document.querySelector('#pageTitle');
 const breadcrumbCurrent = document.querySelector('#breadcrumbCurrent');
 const viewBackButton = document.querySelector('#viewBackButton');
@@ -40,7 +41,7 @@ function replayEntranceAnimation(element) {
 
 /**
  * Alterna a tela visível da aplicação.
- * @param {'inicio'|'gestao'|'emprestimos'|'acervo'|'cadastro'} view Tela que deve ser exibida.
+ * @param {'inicio'|'gestao'|'emprestimos'|'acervo'|'cadastro'|'sobre'} view Tela que deve ser exibida.
  */
 function openView(view, { fromHistory = false, resetHistory = false } = {}) {
   if (resetHistory) {
@@ -54,13 +55,15 @@ function openView(view, { fromHistory = false, resetHistory = false } = {}) {
   loanPage.hidden = view !== 'emprestimos';
   collectionPage.hidden = view !== 'acervo';
   registrationPage.hidden = view !== 'cadastro';
+  aboutPage.hidden = view !== 'sobre';
 
   const titleByView = {
     inicio: 'Visão geral',
     gestao: 'Gestão',
     emprestimos: 'Empréstimos',
     acervo: 'Acervo',
-    cadastro: 'Cadastro de livro'
+    cadastro: 'Cadastro de livro',
+    sobre: 'Sobre'
   };
   const title = titleByView[view];
 
@@ -73,8 +76,10 @@ function openView(view, { fromHistory = false, resetHistory = false } = {}) {
   const activePage = view === 'inicio'
     ? 'Visão geral'
     : view === 'acervo'
-        ? 'Acervo'
-      : 'Gestão';
+      ? 'Acervo'
+      : view === 'sobre'
+        ? 'Sobre'
+        : 'Gestão';
   menuItems.forEach((item) => {
     item.classList.toggle('is-active', item.dataset.page === activePage);
   });
@@ -84,7 +89,8 @@ function openView(view, { fromHistory = false, resetHistory = false } = {}) {
     gestao: managementPage,
     emprestimos: loanPage,
     acervo: collectionPage,
-    cadastro: registrationPage
+    cadastro: registrationPage,
+    sobre: aboutPage
   };
   const visiblePage = pageByView[view];
   replayEntranceAnimation(visiblePage);
@@ -924,6 +930,7 @@ function setupNavigation() {
       if (page === 'Visão geral') return openView('inicio', { resetHistory: true });
       if (page === 'Gestão') return openView('gestao');
       if (page === 'Acervo') return openView('acervo');
+      if (page === 'Sobre') return openView('sobre');
       showPending(`${page} será disponibilizado nas próximas etapas.`);
     });
   });
@@ -1037,94 +1044,60 @@ function setupPendingActions() {
     });
   });
 }
-/**
- * Função responsável por criar o Autocomplete (pesquisa) de livros no formulário de empréstimos.
- * O CSS desta lista suspensa foi feito inline via JavaScript apenas para testes rápidos.
- * Pode trocar 'style.cssText' e deixar bonito (se quiser tbm).
- * Apenas mantenha a lógica de injeção do `data-book-id` ao clicar em uma opção
- */
+/** Cria o autocomplete de livros e preserva o ID selecionado para o empréstimo. */
 function setupBookAutocomplete() {
-  // Captura o campo de texto onde o usuário digita o nome do livro
   const bookInput = document.querySelector('input[name="bookName"]');
   if (!bookInput) return;
 
-  // Cria a tag <ul> 
   const resultList = document.createElement('ul');
-  
-  // Front-end: Mover esses estilos para o arquivo .css principal
-  resultList.style.cssText = `
-    position: absolute; background: white; border: 1px solid #ccc; 
-    border-radius: 4px; list-style: none; padding: 0; margin-top: 5px; 
-    width: 100%; max-height: 150px; overflow-y: auto; z-index: 1000; display: none;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-  `;
-  
-  // Anexa a lista logo abaixo do campo de input no HTML
-  bookInput.parentNode.style.position = 'relative';
-  bookInput.parentNode.appendChild(resultList);
+  resultList.className = 'book-autocomplete';
+  resultList.setAttribute('role', 'listbox');
+  resultList.setAttribute('aria-label', 'Livros disponíveis');
+  resultList.hidden = true;
 
-  //  Dispara toda vez que o usuário digita ou apaga uma letra
+  bookInput.parentElement.classList.add('loan-book-autocomplete');
+  bookInput.parentElement.appendChild(resultList);
+
   bookInput.addEventListener('input', async (e) => {
     const termo = e.target.value.trim();
-    
-    // Se o usuário voltar a digitar, apagamos o ID do livro anterior 
-    // para evitar que ele salve o livro errado se não clicar na lista novamente.
-    bookInput.setAttribute('data-book-id', ''); 
 
-    // Só faz a requisição ao banco se tiver pelo menos 2 letras (evita travar o sistema)
-    if (termo.length < 2) {
-      resultList.style.display = 'none';
+    // Uma nova digitação invalida a seleção anterior até que outro livro seja escolhido.
+    bookInput.setAttribute('data-book-id', '');
+
+    if (termo.length < 2 || !window.bibliotech?.books?.search) {
+      resultList.hidden = true;
       return;
     }
 
-    // Chama a função no Back-end que faz o SELECT no SQLite
     const response = await window.bibliotech.books.search(termo);
-    
-    // Se a busca deu certo e encontrou livros no estoque
+
     if (response.ok && response.data.length > 0) {
-      resultList.innerHTML = ''; // Limpa a busca anterior
-      
-      // Para cada livro encontrado, cria um item <li> na lista
+      resultList.replaceChildren();
+
       response.data.forEach(livro => {
         const li = document.createElement('li');
-        // Front-end: Substituir por classes CSS
-        li.style.cssText = 'padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 14px;';
-        
-        // Texto que aparece para o usuário (Título + Quantidade)
+        li.className = 'book-autocomplete__option';
+        li.setAttribute('role', 'option');
         li.textContent = `${livro.nome} (Disponível: ${livro.quantidade_livros_disponiveis})`;
-        
-        // O que ocorre quando clica no livro da lista
+
         li.addEventListener('click', () => {
-          // Preenche o input visível com o nome do livro
-          bookInput.value = livro.nome; 
-          
-          // injeta o id numérico no atributo invisível (isso aqui é oq pega o id do livro tem que ter isso)
-          bookInput.setAttribute('data-book-id', livro.id_livro); 
-          
-          // Esconde a lista após a escolha
-          resultList.style.display = 'none'; 
+          bookInput.value = livro.nome;
+          bookInput.setAttribute('data-book-id', livro.id_livro);
+          resultList.hidden = true;
         });
 
-        // Front-end: Substituir por :hover no CSS
-        li.addEventListener('mouseover', () => li.style.background = '#f5f7fa');
-        li.addEventListener('mouseout', () => li.style.background = 'white');
-
-        // Adiciona a linha (li) dentro da lista (ul)
         resultList.appendChild(li);
       });
-      
-      // Torna a lista visível
-      resultList.style.display = 'block';
+
+      resultList.hidden = false;
     } else {
-      // Esconde a lista se não achar nada
-      resultList.style.display = 'none';
+      resultList.hidden = true;
     }
   });
 
-  // Se o usuário clicar em qualquer outro lugar da tela, fecha a lista
   document.addEventListener('click', (e) => {
     if (e.target !== bookInput) {
-      resultList.style.display = 'none';
+      resultList.hidden = true;
     }
   });
 }
