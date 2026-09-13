@@ -237,23 +237,6 @@ function setupCollectionCatalog() {
   const total = document.querySelector('#catalogTotal');
   const available = document.querySelector('#catalogAvailable');
   const loaned = document.querySelector('#catalogLoaned');
-  const noteDialog = document.createElement('dialog');
-  const noteDialogTitle = document.createElement('h2');
-  const noteDialogText = document.createElement('p');
-  const noteDialogClose = document.createElement('button');
-
-  noteDialog.className = 'catalog-note-dialog';
-  noteDialogTitle.textContent = 'Observação do livro';
-  noteDialogText.className = 'catalog-note-dialog__text';
-  noteDialogClose.type = 'button';
-  noteDialogClose.textContent = 'Fechar';
-  noteDialogClose.addEventListener('click', () => noteDialog.close());
-  noteDialog.addEventListener('click', (event) => {
-    if (event.target === noteDialog) noteDialog.close();
-  });
-  noteDialog.append(noteDialogTitle, noteDialogText, noteDialogClose);
-  document.body.append(noteDialog);
-
   
   const renderCatalog = () => {
     const term = normalizeSearchText(searchInput.value.trim());
@@ -289,15 +272,14 @@ function setupCollectionCatalog() {
             noteButton.type = 'button';
             noteButton.className = 'catalog-note';
             noteButton.setAttribute('aria-label', `Ver observação do livro ${book.title}`);
-            noteButton.title = `Observação: ${book.notes}`;
             const noteIcon = document.createElement('span');
             noteIcon.setAttribute('aria-hidden', 'true');
             noteIcon.textContent = 'i';
-            noteButton.append(noteIcon);
-            noteButton.addEventListener('click', () => {
-              noteDialogText.textContent = book.notes;
-              noteDialog.showModal();
-            });
+            const noteTooltip = document.createElement('span');
+            noteTooltip.className = 'catalog-note__tooltip';
+            noteTooltip.setAttribute('role', 'tooltip');
+            noteTooltip.textContent = `Observação: ${book.notes}`;
+            noteButton.append(noteIcon, noteTooltip);
             cell.append(noteButton);
           }
         } else {
