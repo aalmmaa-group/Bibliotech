@@ -40,12 +40,19 @@
                     <span>Relatórios</span>
                 </button>
 
-                <button class="menu__item" type="button" data-page="Sobre">
-                    <img class="menu__icon" src="assets/icons/about.svg" alt="" aria-hidden="true">
-                    <span>Sobre</span>
-                </button>
             </nav>
         </div>
+
+        <button class="sidebar-about" type="button" data-page="Sobre" aria-label="Abrir informações sobre o Bibliotech">
+            <span class="sidebar-about__icon" aria-hidden="true">
+                <img src="assets/icons/about.svg" alt="">
+            </span>
+            <span class="sidebar-about__text">
+                <strong>Sobre</strong>
+                <small>Conheça o projeto</small>
+            </span>
+            <span class="sidebar-about__arrow" aria-hidden="true">›</span>
+        </button>
 
     </aside>
 
@@ -336,23 +343,42 @@
                             </span>
                         </header>
 
-                        <label class="wide">
+                        <fieldset class="loan-borrower-type wide">
+                            <legend>Quem vai levar o livro?</legend>
+                            <label>
+                                <input type="radio" name="borrowerType" value="student" checked>
+                                <span>Aluno</span>
+                            </label>
+                            <label>
+                                <input type="radio" name="borrowerType" value="non_student">
+                                <span>Não é aluno</span>
+                            </label>
+                        </fieldset>
+
+                        <label class="wide loan-borrower-name-field">
                             <span class="field-label">
-                                Nome do aluno
+                                <span data-borrower-name-label>Nome do aluno</span>
                                 <span class="required-marker" tabindex="0" aria-label="Campo obrigatório" data-tooltip="Campo obrigatório">*</span>
                             </span>
                             <input name="studentName" autocomplete="name" required maxlength="120" placeholder="Digite o nome completo">
                             <small></small>
                         </label>
 
-                        <label>
+                        <div class="form-field loan-classroom-field">
                             <span class="field-label">
                                 Sala ou turma
                                 <span class="required-marker" tabindex="0" aria-label="Campo obrigatório" data-tooltip="Campo obrigatório">*</span>
                             </span>
-                            <input name="classroom" required maxlength="50" placeholder="Ex.: 8º A">
+                            <input id="classroomInput" name="classroom" type="hidden" required>
+                            <div class="genre-select loan-classroom-select" id="classroomSelect">
+                                <button class="genre-select__trigger" id="classroomSelectButton" type="button" aria-haspopup="listbox" aria-controls="classroomOptions" aria-expanded="false">
+                                    <span>Selecione a sala ou turma</span>
+                                    <span class="genre-select__arrow" aria-hidden="true"></span>
+                                </button>
+                                <div class="genre-select__options" id="classroomOptions" role="listbox" aria-label="Sala ou turma" hidden></div>
+                            </div>
                             <small></small>
-                        </label>
+                        </div>
 
                         <div class="form-field loan-date-field">
                             <label class="field-label" for="returnDate">
