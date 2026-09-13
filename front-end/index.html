@@ -39,6 +39,11 @@
                     <img class="menu__icon" src="assets/icons/reports.svg" alt="" aria-hidden="true">
                     <span>Relatórios</span>
                 </button>
+
+                <button class="menu__item" type="button" data-page="Sobre">
+                    <img class="menu__icon" src="assets/icons/about.svg" alt="" aria-hidden="true">
+                    <span>Sobre</span>
+                </button>
             </nav>
         </div>
 
@@ -645,6 +650,142 @@
                         <button class="primary-action" id="btnCadastrar" type="submit">Validar e enviar cadastro</button>
                     </div>
                 </form>
+            </section>
+
+            <!-- Créditos da Sprint 3: apresenta o projeto, a instituição e a equipe. -->
+            <section class="page-intro about-page" id="aboutPage" hidden aria-labelledby="aboutPageTitle">
+                <div class="about-hero">
+                    <div class="about-hero__content">
+                        <p class="page-intro__eyebrow">Projeto acadêmico</p>
+                        <h1 id="aboutPageTitle">Sobre o Bibliotech</h1>
+                        <p class="page-intro__description">
+                            Uma solução desktop criada para tornar o cuidado com a sala de leitura
+                            mais simples, organizado e acessível.
+                        </p>
+
+                        <div class="about-hero__signature" aria-label="Identidade do projeto">
+                            <img src="assets/bibliotech-logo.svg" alt="">
+                            <div>
+                                <strong>Bibliotech</strong>
+                                <span>Tecnologia a serviço da leitura</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <aside class="institution-card" aria-label="Instituição de ensino">
+                        <img src="assets/institution/cruzeiro-do-sul.png" alt="Símbolo da Universidade Cruzeiro do Sul">
+                        <div>
+                            <span>Desenvolvido no curso de</span>
+                            <strong>Análise e Desenvolvimento de Sistemas</strong>
+                            <small>Universidade Cruzeiro do Sul</small>
+                        </div>
+                    </aside>
+                </div>
+
+                <section class="team-section" aria-labelledby="teamTitle">
+                    <header class="team-section__header">
+                        <div>
+                            <p class="page-intro__eyebrow">Créditos</p>
+                            <h2 id="teamTitle">Equipe do projeto</h2>
+                        </div>
+                        <p>Planejamento, desenvolvimento e qualidade reunidos para construir o Bibliotech.</p>
+                    </header>
+
+                    <div class="team-grid">
+                        <article class="team-card">
+                            <span class="team-card__avatar">
+                                <img class="team-card__avatar--aaron" src="assets/team/aaron.jpeg" alt="Aaron Soncini Estevam" loading="lazy">
+                            </span>
+                            <div class="team-card__content">
+                                <span class="team-card__area">Produto</span>
+                                <h3>Aaron Soncini Estevam</h3>
+                                <p>Product Owner (PO)</p>
+                            </div>
+                        </article>
+
+                        <article class="team-card">
+                            <span class="team-card__avatar">
+                                <img class="team-card__avatar--ana" src="assets/team/ana-beatriz.jpg" alt="Ana Beatriz Morais Duarte dos Santos" loading="lazy">
+                            </span>
+                            <div class="team-card__content">
+                                <span class="team-card__area">Agilidade</span>
+                                <h3>Ana Beatriz Morais Duarte dos Santos</h3>
+                                <p>Scrum Master</p>
+                            </div>
+                        </article>
+
+                        <article class="team-card">
+                            <span class="team-card__avatar">
+                                <img class="team-card__avatar--alini" src="assets/team/alini.jpg" alt="Alini Darci da Silva" loading="lazy">
+                            </span>
+                            <div class="team-card__content">
+                                <span class="team-card__area">Dados</span>
+                                <h3>Alini Darci da Silva</h3>
+                                <p>Desenvolvedora Back-End e Banco de Dados</p>
+                            </div>
+                        </article>
+
+                        <article class="team-card">
+                            <span class="team-card__avatar">
+                                <img class="team-card__avatar--arthur" src="assets/team/arthur.jpeg" alt="Arthur Oliveira dos Reis" loading="lazy">
+                            </span>
+                            <div class="team-card__content">
+                                <span class="team-card__area">Back-End</span>
+                                <h3>Arthur Oliveira dos Reis</h3>
+                                <p>Desenvolvedor Back-End</p>
+                            </div>
+                        </article>
+
+                        <article class="team-card">
+                            <span class="team-card__avatar">
+                                <img class="team-card__avatar--livia" src="assets/team/livia.jpg" alt="Livia Marques Carrilho" loading="lazy">
+                            </span>
+                            <div class="team-card__content">
+                                <span class="team-card__area">Front-End</span>
+                                <h3>Livia Marques Carrilho</h3>
+                                <p>Desenvolvedora Front-End</p>
+                            </div>
+                        </article>
+
+                        <article class="team-card">
+                            <span class="team-card__avatar">
+                                <img class="team-card__avatar--matheus" src="assets/team/matheus.jpg" alt="Matheus Simões Mota" loading="lazy">
+                            </span>
+                            <div class="team-card__content">
+                                <span class="team-card__area">Front-End</span>
+                                <h3>Matheus Simões Mota</h3>
+                                <p>Desenvolvedor Front-End</p>
+                            </div>
+                        </article>
+
+                        <article class="team-card">
+                            <span class="team-card__avatar">
+                                <img class="team-card__avatar--maria" src="assets/team/maria.jpg" alt="Maria Eduarda de Sousa Melo" loading="lazy">
+                            </span>
+                            <div class="team-card__content">
+                                <span class="team-card__area">Qualidade</span>
+                                <h3>Maria Eduarda de Sousa Melo</h3>
+                                <p>QA Tester — Garantia da Qualidade</p>
+                            </div>
+                        </article>
+
+                        <article class="team-card team-card--coordinator">
+                            <span class="team-card__avatar">
+                                <img class="team-card__avatar--joao" src="assets/team/joao.png" alt="Joao Roberto Ursino Da Cruz" loading="lazy">
+                            </span>
+                            <div class="team-card__content">
+                                <span class="team-card__area">Coordenação</span>
+                                <h3>Joao Roberto Ursino Da Cruz</h3>
+                                <p>Professor e Coordenador do Projeto</p>
+                            </div>
+                        </article>
+                    </div>
+                </section>
+
+                <footer class="about-footer">
+                    <span>Bibliotech</span>
+                    <p>Tecnologia, colaboração e leitura em um só projeto</p>
+                </footer>
             </section>
         </main>
     </div>

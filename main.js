@@ -13,6 +13,7 @@ function createWindow() {
     minWidth: 1000,
     minHeight: 680,
     autoHideMenuBar: true,
+    icon: path.join(__dirname, 'build', 'icon.png'),
     webPreferences: {
       // A interface não recebe Node.js diretamente; usa somente o preload.
       preload: path.join(__dirname, 'preload.js'),
