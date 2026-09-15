@@ -27,7 +27,7 @@ setUpDataBase(){
             id_livro INTEGER NOT NULL REFERENCES livros(id_livro) ON DELETE RESTRICT,
             turma_serie TEXT,
             nome_solicitante TEXT,
-            tipo_solicitante TEXT NOT NULL DEFAULT 'aluno' CHECK (tipo_solicitante IN ('aluno', 'professor')),
+            tipo_solicitante TEXT NOT NULL DEFAULT 'aluno' CHECK (tipo_solicitante IN ('aluno', 'nao aluno')),
             data_emprestimo TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
             data_devolucao_prevista TEXT NOT NULL,
             data_devolucao_efetiva TEXT,
