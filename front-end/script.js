@@ -427,8 +427,7 @@ function setupNotifications() {
 }
 
 /**
- * Adiciona uma resposta breve de clique aos botões da interface.
- * A classe é removida automaticamente para não interferir no hover.
+ * Adiciona uma resposta breve de clique aos botões da interface. A classe é removida automaticamente para não interferir no hover.
  */
 function setupClickFeedback() {
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1279,20 +1278,17 @@ function setupReturnsList() {
   renderReturns();
 }
 
-/** Garante que a lista de devoluções seja redesenhada assim que os dados
- * chegarem, mesmo que setupReturnsList ainda não tenha rodado. */
+/** Garante que a lista de devoluções seja redesenhada assim que os dados chegarem, mesmo que setupReturnsList ainda não tenha rodado. */
 function notifyReturnsUpdated() {
   if (typeof renderReturnsList === 'function') renderReturnsList();
 }
 
-/** Busca no banco de dados (via preload.js) os empréstimos ainda não
- * devolvidos na tabela emprestimos, para exibir na tela de devoluções. */
+/** Busca no banco de dados (via preload.js) os empréstimos ainda nãodevolvidos na tabela emprestimos, para exibir na tela de devoluções. */
 async function loadActiveLoans() {
   try {
     const resultado = await window.bibliotech?.loans?.listActive();
 
     if (!resultado) {
-      // Fora do Electron (ex.: abrindo o HTML direto no navegador) não há dados reais.
       notifyReturnsUpdated();
       return;
     }
@@ -1399,7 +1395,7 @@ async function handleLoanSubmit(event) {
     if (resultado.ok) {
       loanFormMessage.textContent = resultado.message;
       loanFormMessage.style.color = "green";
-      
+      await loadActiveLoans();//atualiza lista de devoluções apos o emprestimo
       loanForm.reset(); 
       bookInput.setAttribute('data-book-id', ''); // Limpa o ID escondido
       loanForm.querySelector('[name="studentName"]').focus(); 
