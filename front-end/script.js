@@ -1300,7 +1300,7 @@ async function loadActiveLoans() {
           id: emprestimo.id_emprestimo,
           bookId: emprestimo.id_livro,
           bookTitle: emprestimo.nome_livro,
-          studentName: emprestimo.nome_aluno,
+          studentName: emprestimo.nome_solicitante,
           classroom: emprestimo.turma_serie,
           loanDate: emprestimo.data_emprestimo,
           expectedReturnDate: emprestimo.data_devolucao_prevista,
