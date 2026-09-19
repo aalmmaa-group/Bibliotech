@@ -56,8 +56,6 @@ migrarTabelaEmprestimos(){
             ADD COLUMN tipo_solicitante TEXT NOT NULL DEFAULT 'aluno' CHECK (tipo_solicitante IN ('aluno', 'nao_aluno'))
         `);
     }
-
-    this.corrigirValorProfessor();
 }
 }
 
