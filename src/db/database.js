@@ -53,7 +53,7 @@ migrarTabelaEmprestimos(){
     if (!colunasAtualizadas.includes('tipo_solicitante')) {
         this.db.exec(`
             ALTER TABLE emprestimos
-            ADD COLUMN tipo_solicitante TEXT NOT NULL DEFAULT 'aluno' CHECK (tipo_solicitante IN ('aluno', 'nao_aluno'))
+            ADD COLUMN tipo_solicitante TEXT NOT NULL DEFAULT 'aluno' CHECK (tipo_solicitante IN ('aluno', 'nao aluno'))
         `);
     }
 }
