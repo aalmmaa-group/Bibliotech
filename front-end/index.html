@@ -578,6 +578,155 @@
                 </section>
             </section>
 
+            <!-- Estrutura visual da tela de relatórios. -->
+            <section class="page-intro reports-page" id="reportsPage" hidden aria-labelledby="reportsPageTitle">
+                <header class="reports-header">
+                    <div>
+                        <p class="page-intro__eyebrow">Análise da biblioteca</p>
+                        <h1 id="reportsPageTitle">Relatórios</h1>
+                        <p class="page-intro__description">
+                            Acompanhe o cenário atual do acervo, dos empréstimos e dos prazos de devolução.
+                        </p>
+                    </div>
+
+                </header>
+
+                <div class="reports-scope" aria-label="Escopo do relatório">
+                    <span class="reports-scope__item is-active">Visão atual</span>
+                    <label class="reports-scope__filter">
+                        <span class="sr-only">Filtrar por gênero</span>
+                        <select id="reportsGenreFilter" aria-label="Filtrar relatório por gênero" disabled>
+                            <option value="all">Todos os gêneros</option>
+                        </select>
+                    </label>
+                    <label class="reports-scope__filter">
+                        <span class="sr-only">Filtrar por turma</span>
+                        <select id="reportsClassFilter" aria-label="Filtrar relatório por turma" disabled>
+                            <option value="all">Todas as turmas</option>
+                        </select>
+                    </label>
+                </div>
+
+                <section class="reports-metrics" aria-label="Indicadores da biblioteca">
+                    <article class="report-metric-card">
+                        <header>
+                            <span>Acervo total</span>
+                            <span class="material-symbols-outlined" aria-hidden="true">menu_book</span>
+                        </header>
+                        <div><strong id="reportMetricTotal">—</strong><small>Aguardando dados</small></div>
+                    </article>
+
+                    <article class="report-metric-card report-metric-card--available">
+                        <header>
+                            <span>Disponíveis</span>
+                            <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
+                        </header>
+                        <div><strong id="reportMetricAvailable">—</strong><small>Aguardando dados</small></div>
+                    </article>
+
+                    <article class="report-metric-card report-metric-card--loaned">
+                        <header>
+                            <span>Em empréstimo</span>
+                            <span class="material-symbols-outlined" aria-hidden="true">swap_horiz</span>
+                        </header>
+                        <div><strong id="reportMetricLoaned">—</strong><small>Aguardando dados</small></div>
+                    </article>
+
+                    <article class="report-metric-card report-metric-card--attention">
+                        <header>
+                            <span>Atrasados</span>
+                            <span class="material-symbols-outlined" aria-hidden="true">warning</span>
+                        </header>
+                        <div><strong id="reportMetricOverdue">—</strong><small>Aguardando dados</small></div>
+                    </article>
+                </section>
+
+                <div class="reports-grid reports-grid--overview">
+                    <article class="report-panel report-availability" aria-labelledby="availabilityReportTitle">
+                        <header class="report-panel__header">
+                            <div>
+                                <h2 id="availabilityReportTitle">Disponibilidade do acervo</h2>
+                                <p>Situação atual dos exemplares</p>
+                            </div>
+                        </header>
+
+                        <div class="report-availability__content">
+                            <div class="report-donut is-empty" id="reportAvailabilityChart" role="img" aria-label="Disponibilidade ainda não carregada">
+                                <div><strong id="reportAvailabilityPercentage">—</strong><span>disponibilidade</span></div>
+                            </div>
+                            <dl class="report-legend">
+                                <div><dt><i></i>Disponíveis</dt><dd id="reportAvailableCount">—</dd></div>
+                                <div><dt><i></i>Em empréstimo</dt><dd id="reportLoanedCount">—</dd></div>
+                            </dl>
+                        </div>
+                    </article>
+
+                    <article class="report-panel report-deadlines" aria-labelledby="deadlinesReportTitle">
+                        <header class="report-panel__header">
+                            <div>
+                                <h2 id="deadlinesReportTitle">Prazos de devolução</h2>
+                                <p>Quantidade de empréstimos por urgência</p>
+                            </div>
+                        </header>
+
+                        <div class="report-bars">
+                            <div class="report-bar report-bar--danger">
+                                <span>Atrasados</span><i><b id="reportOverdueBar" style="--bar-size: 0%;"></b></i><strong id="reportOverdueCount">—</strong>
+                            </div>
+                            <div class="report-bar report-bar--today">
+                                <span>Vencem hoje</span><i><b id="reportTodayBar" style="--bar-size: 0%;"></b></i><strong id="reportTodayCount">—</strong>
+                            </div>
+                            <div class="report-bar report-bar--soon">
+                                <span>Próximos 7 dias</span><i><b id="reportSoonBar" style="--bar-size: 0%;"></b></i><strong id="reportSoonCount">—</strong>
+                            </div>
+                            <div class="report-bar report-bar--safe">
+                                <span>Depois de 7 dias</span><i><b id="reportLaterBar" style="--bar-size: 0%;"></b></i><strong id="reportLaterCount">—</strong>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+
+                <div class="reports-grid reports-grid--details">
+                    <article class="report-panel report-genres" aria-labelledby="genresReportTitle">
+                        <header class="report-panel__header">
+                            <div>
+                                <h2 id="genresReportTitle">Distribuição por gênero</h2>
+                                <p>Exemplares cadastrados no acervo</p>
+                            </div>
+                        </header>
+
+                        <div class="report-genre-list" id="reportsGenreList"></div>
+                        <div class="report-data-empty" id="reportsGenresEmpty" role="status">
+                            <span class="material-symbols-outlined" aria-hidden="true">bar_chart</span>
+                            <strong>Nenhum dado por gênero carregado</strong>
+                        </div>
+                    </article>
+
+                    <article class="report-panel report-attention" aria-labelledby="attentionReportTitle">
+                        <header class="report-panel__header">
+                            <div>
+                                <h2 id="attentionReportTitle">Empréstimos que exigem atenção</h2>
+                                <p>Prioridade para acompanhamento da equipe</p>
+                            </div>
+                        </header>
+
+                        <div class="report-attention__table" role="table" aria-label="Empréstimos que exigem atenção">
+                            <div class="report-attention__head" role="row">
+                                <span role="columnheader">Livro</span>
+                                <span role="columnheader">Leitor</span>
+                                <span role="columnheader">Prazo</span>
+                                <span role="columnheader">Status</span>
+                            </div>
+                            <div id="reportsAttentionBody" role="rowgroup"></div>
+                            <div class="report-data-empty report-data-empty--table" id="reportsAttentionEmpty" role="status">
+                                <span class="material-symbols-outlined" aria-hidden="true">event_available</span>
+                                <strong>Nenhum empréstimo carregado</strong>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+            </section>
+
             <!-- Formulário alinhado aos atributos previstos no banco SQLite. -->
             <section class="page-intro registration-page" id="registrationPage" hidden>
                 <p class="page-intro__eyebrow">Gestão do catálogo</p>
