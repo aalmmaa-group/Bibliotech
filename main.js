@@ -146,7 +146,7 @@ function realizarEmprestimo(loanData) {
         INSERT INTO emprestimos (
           id_livro, 
           turma_serie, 
-          nome_aluno, 
+          nome_solicitante, 
           data_devolucao_prevista
         ) VALUES (?, ?, ?, ?)
       `);
@@ -360,7 +360,8 @@ function listarEmprestimosAtivos() {
         e.id_emprestimo,
         e.id_livro,
         l.nome AS nome_livro,
-        e.nome_aluno,
+        e.nome_solicitante,
+        e.tipo_solicitante,
         e.turma_serie,
         e.data_emprestimo,
         e.data_devolucao_prevista,
