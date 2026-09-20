@@ -76,10 +76,8 @@ const MENU_EMOJI_DIRECTIONS = [
 const ABOUT_TRANSITION_REVEAL_DELAY = 900;
 const ABOUT_TRANSITION_CLEANUP_DELAY = 1520;
 
-/** Mantém o tema escolhido pelo usuário entre as aberturas do aplicativo. */
+/** Sempre inicia no tema claro e permite alternar o tema durante a sessão. */
 function setupThemeToggle() {
-  const storageKey = 'bibliotech-theme';
-
   const applyTheme = (theme) => {
     const isDark = theme === 'dark';
     const actionLabel = isDark ? 'Ativar modo claro' : 'Ativar modo escuro';
@@ -90,25 +88,11 @@ function setupThemeToggle() {
     themeToggle.title = actionLabel;
   };
 
-  let savedTheme = 'light';
-
-  try {
-    savedTheme = localStorage.getItem(storageKey) === 'dark' ? 'dark' : 'light';
-  } catch (error) {
-    console.warn('Não foi possível recuperar o tema salvo.', error);
-  }
-
-  applyTheme(savedTheme);
+  applyTheme('light');
 
   themeToggle.addEventListener('click', () => {
     const nextTheme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
     applyTheme(nextTheme);
-
-    try {
-      localStorage.setItem(storageKey, nextTheme);
-    } catch (error) {
-      console.warn('Não foi possível salvar o tema escolhido.', error);
-    }
   });
 }
 
