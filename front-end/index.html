@@ -77,6 +77,16 @@
             <div class="topbar-actions">
                 <button class="help-button" id="helpButton" type="button">Ajuda</button>
 
+                <button class="theme-toggle" id="themeToggle" type="button" aria-label="Ativar modo escuro" aria-pressed="false" title="Ativar modo escuro">
+                    <svg class="theme-toggle__icon theme-toggle__icon--moon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M20 15.2A8.5 8.5 0 0 1 8.8 4 8.5 8.5 0 1 0 20 15.2Z"/>
+                    </svg>
+                    <svg class="theme-toggle__icon theme-toggle__icon--sun" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <circle cx="12" cy="12" r="3.5"/>
+                        <path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.65 17.65l1.42 1.42M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.65 6.35l1.42-1.42"/>
+                    </svg>
+                </button>
+
                 <div class="notification-area">
                     <button class="notification" id="notificationButton" type="button" aria-label="Abrir notificações" aria-controls="notificationPanel" aria-expanded="false" aria-haspopup="true">
                         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -427,20 +437,12 @@
                             <small></small>
                         </label>
 
-                        <section class="loan-preview wide" id="loanPreview" aria-live="polite" hidden>
-                            <span class="loan-preview__status" aria-hidden="true">✓</span>
-                            <div>
-                                <strong>Empréstimo validado</strong>
-                                <p id="loanPreviewSummary"></p>
-                            </div>
-                        </section>
-
                         <p class="form-message wide" id="loanFormMessage" role="status" aria-live="polite"></p>
 
                         <div class="form-actions wide">
                             <button type="button" data-open-view="gestao">Cancelar</button>
                             <button class="primary-action loan-submit-button" type="submit">
-                                <span>Validar empréstimo</span>
+                                <span>Registrar empréstimo</span>
                                 <span aria-hidden="true">→</span>
                             </button>
                         </div>
@@ -469,8 +471,10 @@
                     <div class="returns-table" aria-label="Lista de devoluções pendentes">
                         <div class="returns-table__header" aria-hidden="true">
                             <span>Livro</span>
-                            <span>Aluno</span>
+                            <span>Leitor</span>
+                            <span>Tipo de leitor</span>
                             <span>Turma</span>
+                            <span>Emprestado em</span>
                             <span>Prazo</span>
                             <span>Ação</span>
                         </div>
@@ -964,6 +968,89 @@
             </section>
         </main>
     </div>
+
+    <dialog class="deadline-modal" id="deadlineModal" aria-labelledby="deadlineModalTitle">
+        <form class="deadline-modal__card" id="deadlineForm" method="dialog">
+            <header class="deadline-modal__header">
+                <span class="deadline-modal__icon" aria-hidden="true">edit_calendar</span>
+                <div>
+                    <p>AJUSTE DE PRAZO</p>
+                    <h2 id="deadlineModalTitle">Estender prazo</h2>
+                </div>
+                <button class="deadline-modal__close" type="button" data-deadline-close aria-label="Fechar">close</button>
+            </header>
+
+            <div class="deadline-modal__loan">
+                <span>Empréstimo selecionado</span>
+                <strong id="deadlineBookTitle">Livro</strong>
+                <small>Prazo atual: <time id="deadlineCurrentDate">—</time></small>
+            </div>
+
+            <div class="deadline-modal__shortcuts" role="group" aria-label="Prazos rápidos">
+                <span>Estender rapidamente</span>
+                <button type="button" data-deadline-days="7">+7 dias</button>
+                <button type="button" data-deadline-days="14">+14 dias</button>
+                <button type="button" data-deadline-days="30">+30 dias</button>
+            </div>
+
+            <label class="deadline-modal__date" for="deadlineDate">
+                <span>Ou escolha uma data no calendário</span>
+                <span class="deadline-modal__date-control">
+                    <input id="deadlineDate" name="deadlineDate" type="date" required>
+                    <span aria-hidden="true">calendar_month</span>
+                </span>
+                <small id="deadlineDateHelp">A nova data precisa ser posterior ao prazo atual.</small>
+            </label>
+
+            <footer class="deadline-modal__actions">
+                <button class="deadline-modal__cancel" type="button" data-deadline-close>Cancelar</button>
+                <button class="deadline-modal__confirm" type="submit">Confirmar novo prazo</button>
+            </footer>
+        </form>
+    </dialog>
+
+    <dialog class="deadline-modal return-modal" id="returnModal" aria-labelledby="returnModalTitle">
+        <form class="deadline-modal__card return-modal__card" id="returnForm" method="dialog">
+            <header class="deadline-modal__header">
+                <span class="deadline-modal__icon return-modal__icon" aria-hidden="true">assignment_return</span>
+                <div>
+                    <p>CONFIRMAÇÃO DE RETORNO</p>
+                    <h2 id="returnModalTitle">Registrar devolução</h2>
+                </div>
+                <button class="deadline-modal__close" type="button" data-return-close aria-label="Fechar">close</button>
+            </header>
+
+            <div class="deadline-modal__loan return-modal__loan">
+                <span>Livro selecionado</span>
+                <strong id="returnBookTitle">Livro</strong>
+                <dl class="return-modal__details">
+                    <div>
+                        <dt>Leitor</dt>
+                        <dd id="returnReaderName">—</dd>
+                    </div>
+                    <div>
+                        <dt>Prazo</dt>
+                        <dd><time id="returnDueDate">—</time></dd>
+                    </div>
+                </dl>
+            </div>
+
+            <div class="return-modal__notice">
+                <span aria-hidden="true">info</span>
+                <p>Ao confirmar, o exemplar voltará a ficar disponível no acervo.</p>
+            </div>
+
+            <p class="return-modal__message" id="returnModalMessage" role="status" aria-live="polite"></p>
+
+            <footer class="deadline-modal__actions">
+                <button class="deadline-modal__cancel" type="button" data-return-close>Cancelar</button>
+                <button class="deadline-modal__confirm return-modal__confirm" type="submit">
+                    <span aria-hidden="true">assignment_return</span>
+                    <span>Confirmar devolução</span>
+                </button>
+            </footer>
+        </form>
+    </dialog>
 
     <div class="sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
     <script src="script.js"></script>

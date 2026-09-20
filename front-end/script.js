@@ -19,6 +19,7 @@ const bookForm = document.querySelector('#bookForm');
 const loanForm = document.querySelector('#loanForm');
 const notificationButton = document.querySelector('#notificationButton');
 const notificationPanel = document.querySelector('#notificationPanel');
+const themeToggle = document.querySelector('#themeToggle');
 let pendingMessageTimer;
 let formMessageTimer;
 let loanMessageTimer;
@@ -28,7 +29,34 @@ let collectionLoaded = false; //
 let renderCollectionCatalog = null;
 const sessionActiveLoans = [];
 let renderReturnsList = null;
+let openDeadlineModal = null;
+let openReturnModal = null;
 const viewHistory = ['inicio'];
+
+// Exemplos visuais exibidos somente quando não há empréstimos ativos no banco.
+// Assim que o back-end retornar um registro real, esta prévia deixa de aparecer.
+const RETURNS_LAYOUT_EXAMPLES = [
+  {
+    id: 'layout-example-student',
+    bookTitle: 'O Pequeno Príncipe',
+    studentName: 'Ana Souza',
+    borrowerType: 'student',
+    classroom: '8º A',
+    loanDate: '2026-09-15',
+    expectedReturnDate: '2026-09-29',
+    isLayoutExample: true
+  },
+  {
+    id: 'layout-example-non-student',
+    bookTitle: 'Dom Casmurro',
+    studentName: 'Marcos Oliveira',
+    borrowerType: 'non_student',
+    classroom: '',
+    loanDate: '2026-09-18',
+    expectedReturnDate: '2026-10-02',
+    isLayoutExample: true
+  }
+];
 
 // --- Configurações das microinterações do menu lateral. ---
 const MENU_EMOJIS_BY_PAGE = {
@@ -47,6 +75,42 @@ const MENU_EMOJI_DIRECTIONS = [
 ];
 const ABOUT_TRANSITION_REVEAL_DELAY = 900;
 const ABOUT_TRANSITION_CLEANUP_DELAY = 1520;
+
+/** Mantém o tema escolhido pelo usuário entre as aberturas do aplicativo. */
+function setupThemeToggle() {
+  const storageKey = 'bibliotech-theme';
+
+  const applyTheme = (theme) => {
+    const isDark = theme === 'dark';
+    const actionLabel = isDark ? 'Ativar modo claro' : 'Ativar modo escuro';
+
+    document.documentElement.dataset.theme = theme;
+    themeToggle.setAttribute('aria-pressed', String(isDark));
+    themeToggle.setAttribute('aria-label', actionLabel);
+    themeToggle.title = actionLabel;
+  };
+
+  let savedTheme = 'light';
+
+  try {
+    savedTheme = localStorage.getItem(storageKey) === 'dark' ? 'dark' : 'light';
+  } catch (error) {
+    console.warn('Não foi possível recuperar o tema salvo.', error);
+  }
+
+  applyTheme(savedTheme);
+
+  themeToggle.addEventListener('click', () => {
+    const nextTheme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    applyTheme(nextTheme);
+
+    try {
+      localStorage.setItem(storageKey, nextTheme);
+    } catch (error) {
+      console.warn('Não foi possível salvar o tema escolhido.', error);
+    }
+  });
+}
 
 /**
  * Reinicia uma animação CSS aplicada por classe sem alterar o conteúdo da tela.
@@ -980,7 +1044,7 @@ function setupLoanCalendar() {
   returnDate.addEventListener('change', updateDateShortcuts);
 }
 
-/** Prepara a validação progressiva e o resumo do novo empréstimo. */
+/** Prepara a validação progressiva do novo empréstimo. */
 function setupLoanForm() {
   loanForm.querySelectorAll('[required]').forEach((input) => {
     if (input.type !== 'hidden') input.addEventListener('blur', () => validateLoanField(input));
@@ -988,27 +1052,6 @@ function setupLoanForm() {
     input.addEventListener(validationEvent, () => {
       if (input.closest('label, .form-field').classList.contains('is-invalid')) validateLoanField(input);
     });
-  });
-
-  loanForm.addEventListener('submit', (event) => {
-    event.preventDefault();
-    const preview = document.querySelector('#loanPreview');
-    preview.hidden = true;
-
-    if (!validateLoanForm()) {
-      setLoanMessage('Preencha corretamente os campos obrigatórios destacados em vermelho.');
-      loanForm.querySelector('[aria-invalid="true"]')?.focus();
-      return;
-    }
-
-    const loanData = getLoanPayload();
-    const returnDateText = new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' })
-      .format(new Date(`${loanData.expectedReturnDate}T00:00:00Z`));
-    document.querySelector('#loanPreviewSummary').textContent =
-      `${loanData.bookName} para ${loanData.studentName} (${loanData.classroom}), devolução em ${returnDateText}.`;
-    preview.hidden = false;
-    replayEntranceAnimation(preview);
-    setLoanMessage('Dados do empréstimo validados com sucesso.', 'success');
   });
 }
 
@@ -1352,6 +1395,190 @@ function setupBookAutocomplete() {
 }
 
 
+/** Configura a mini tela usada para escolher e confirmar um novo prazo. */
+function setupDeadlineExtensionModal() {
+  const modal = document.querySelector('#deadlineModal');
+  const form = document.querySelector('#deadlineForm');
+  const bookTitle = document.querySelector('#deadlineBookTitle');
+  const currentDate = document.querySelector('#deadlineCurrentDate');
+  const dateInput = document.querySelector('#deadlineDate');
+  const dateHelp = document.querySelector('#deadlineDateHelp');
+  const shortcutButtons = [...modal.querySelectorAll('[data-deadline-days]')];
+  const closeButtons = [...modal.querySelectorAll('[data-deadline-close]')];
+  let selectedLoan = null;
+  let triggerButton = null;
+
+  const closeModal = () => {
+    if (modal.open) modal.close();
+  };
+
+  const selectDate = (date, selectedShortcut = null) => {
+    dateInput.value = getLocalDateValue(date);
+    dateInput.setCustomValidity('');
+    dateHelp.textContent = `Novo prazo selecionado: ${formatShortDatePtBr(dateInput.value)}.`;
+    shortcutButtons.forEach((button) => {
+      const isSelected = button === selectedShortcut;
+      button.classList.toggle('is-selected', isSelected);
+      button.setAttribute('aria-pressed', String(isSelected));
+    });
+  };
+
+  openDeadlineModal = (loan, button) => {
+    selectedLoan = loan;
+    triggerButton = button;
+    const today = parseLocalDateValue(getLocalDateValue());
+    const loanDeadline = parseLocalDateValue(loan.expectedReturnDate) || today;
+    const extensionBase = loanDeadline > today ? loanDeadline : today;
+    const firstAvailableDate = new Date(extensionBase);
+    firstAvailableDate.setDate(firstAvailableDate.getDate() + 1);
+
+    form.reset();
+    bookTitle.textContent = loan.bookTitle || 'Livro';
+    currentDate.dateTime = loan.expectedReturnDate || '';
+    currentDate.textContent = formatShortDatePtBr(loan.expectedReturnDate);
+    dateInput.min = getLocalDateValue(firstAvailableDate);
+    dateHelp.textContent = 'A nova data precisa ser posterior ao prazo atual.';
+    shortcutButtons.forEach((shortcut) => {
+      shortcut.classList.remove('is-selected');
+      shortcut.setAttribute('aria-pressed', 'false');
+    });
+
+    modal.showModal();
+    dateInput.focus();
+  };
+
+  shortcutButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      if (!selectedLoan) return;
+      const today = parseLocalDateValue(getLocalDateValue());
+      const currentDeadline = parseLocalDateValue(selectedLoan.expectedReturnDate) || today;
+      const shortcutDate = new Date(currentDeadline > today ? currentDeadline : today);
+      shortcutDate.setDate(shortcutDate.getDate() + Number(button.dataset.deadlineDays));
+      selectDate(shortcutDate, button);
+    });
+  });
+
+  dateInput.addEventListener('change', () => {
+    dateInput.setCustomValidity('');
+    shortcutButtons.forEach((button) => {
+      button.classList.remove('is-selected');
+      button.setAttribute('aria-pressed', 'false');
+    });
+    dateHelp.textContent = dateInput.value
+      ? `Novo prazo selecionado: ${formatShortDatePtBr(dateInput.value)}.`
+      : 'A nova data precisa ser posterior ao prazo atual.';
+  });
+
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    if (!selectedLoan || !dateInput.value) {
+      dateInput.setCustomValidity('Escolha uma nova data para continuar.');
+      dateInput.reportValidity();
+      return;
+    }
+
+    selectedLoan.expectedReturnDate = dateInput.value;
+    notifyReturnsUpdated();
+    closeModal();
+  });
+
+  closeButtons.forEach((button) => button.addEventListener('click', closeModal));
+  modal.addEventListener('click', (event) => {
+    if (event.target === modal) closeModal();
+  });
+  modal.addEventListener('close', () => {
+    selectedLoan = null;
+    triggerButton?.focus();
+    triggerButton = null;
+  });
+}
+
+/** Substitui a confirmação nativa pela caixa de devolução do Bibliotech. */
+function setupReturnConfirmationModal() {
+  const modal = document.querySelector('#returnModal');
+  const form = document.querySelector('#returnForm');
+  const bookTitle = document.querySelector('#returnBookTitle');
+  const readerName = document.querySelector('#returnReaderName');
+  const dueDate = document.querySelector('#returnDueDate');
+  const message = document.querySelector('#returnModalMessage');
+  const confirmButton = form.querySelector('.return-modal__confirm');
+  const confirmLabel = confirmButton.querySelector('span:last-child');
+  const closeButtons = [...modal.querySelectorAll('[data-return-close]')];
+  let selectedLoan = null;
+  let triggerButton = null;
+
+  const setBusy = (isBusy) => {
+    confirmButton.disabled = isBusy;
+    closeButtons.forEach((button) => { button.disabled = isBusy; });
+    confirmButton.setAttribute('aria-busy', String(isBusy));
+    confirmLabel.textContent = isBusy ? 'Registrando...' : 'Confirmar devolução';
+  };
+
+  const closeModal = () => {
+    if (modal.open) modal.close();
+  };
+
+  openReturnModal = (loan, button) => {
+    selectedLoan = loan;
+    triggerButton = button;
+    bookTitle.textContent = loan.bookTitle || 'Livro';
+    readerName.textContent = loan.studentName || '—';
+    dueDate.dateTime = loan.expectedReturnDate || '';
+    dueDate.textContent = formatShortDatePtBr(loan.expectedReturnDate);
+    message.textContent = '';
+    message.classList.remove('is-error');
+    setBusy(false);
+    modal.showModal();
+    confirmButton.focus();
+  };
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!selectedLoan) return;
+
+    if (!selectedLoan.isLayoutExample && !window.bibliotech?.loans?.return) {
+      message.textContent = 'Abra o projeto pelo Electron para concluir a devolução.';
+      message.classList.add('is-error');
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const result = selectedLoan.isLayoutExample
+        ? { ok: true }
+        : await window.bibliotech.loans.return(selectedLoan.id);
+
+      if (!result.ok) {
+        message.textContent = result.message || 'Não foi possível registrar a devolução.';
+        message.classList.add('is-error');
+        return;
+      }
+
+      const returnedLoanIndex = sessionActiveLoans.findIndex((loan) => loan.id === selectedLoan.id);
+      if (returnedLoanIndex >= 0) sessionActiveLoans.splice(returnedLoanIndex, 1);
+      notifyReturnsUpdated();
+      closeModal();
+    } catch (error) {
+      console.error('Erro ao registrar a devolução:', error);
+      message.textContent = 'Ocorreu um erro inesperado ao registrar a devolução.';
+      message.classList.add('is-error');
+    } finally {
+      setBusy(false);
+    }
+  });
+
+  closeButtons.forEach((button) => button.addEventListener('click', closeModal));
+  modal.addEventListener('click', (event) => {
+    if (event.target === modal) closeModal();
+  });
+  modal.addEventListener('close', () => {
+    selectedLoan = null;
+    triggerButton?.focus();
+    triggerButton = null;
+    message.textContent = '';
+  });
+}
+
 //Configuração da tabela de devolução
 function setupReturnsList() {
   const tableBody = document.querySelector('#returnsTableBody');
@@ -1372,8 +1599,16 @@ function setupReturnsList() {
       const studentCell = document.createElement('span');
       studentCell.textContent = emprestimo.studentName || '—';
 
+      const borrowerTypeCell = document.createElement('span');
+      borrowerTypeCell.className = 'returns-table__borrower-type';
+      borrowerTypeCell.dataset.borrowerType = emprestimo.borrowerType;
+      borrowerTypeCell.textContent = emprestimo.borrowerType === 'student' ? 'Aluno' : 'Não é aluno';
+
       const classroomCell = document.createElement('span');
       classroomCell.textContent = emprestimo.classroom || '—';
+
+      const loanDateCell = document.createElement('span');
+      loanDateCell.textContent = formatShortDatePtBr(emprestimo.loanDate);
 
       const dueDateCell = document.createElement('span');
       dueDateCell.textContent = formatShortDatePtBr(emprestimo.expectedReturnDate);
@@ -1388,8 +1623,9 @@ function setupReturnsList() {
       extendDeadlineButton.textContent = 'Estender prazo';
       extendDeadlineButton.dataset.loanId = emprestimo.id;
       extendDeadlineButton.dataset.currentDueDate = emprestimo.expectedReturnDate;
+      extendDeadlineButton.setAttribute('aria-haspopup', 'dialog');
       extendDeadlineButton.addEventListener('click', () => {
-        alert('Prévia da interface: o back-end receberá o ID do empréstimo e a data atual do prazo para registrar a extensão.');
+        openDeadlineModal?.(emprestimo, extendDeadlineButton);
       });
 
       const returnBookButton = document.createElement('button');
@@ -1397,29 +1633,21 @@ function setupReturnsList() {
       returnBookButton.className = 'returns-table__action returns-table__action--return';
       returnBookButton.textContent = 'Registrar devolução';
       returnBookButton.dataset.loanId = emprestimo.id;
-      // Adiciona a ação de clique ao botão
-      returnBookButton.addEventListener('click', async () => {
-        if (!window.bibliotech?.loans?.return) {
-          alert('Prévia da interface: a devolução real estará disponível ao abrir o projeto pelo Electron.');
-          return;
-        }
-        // Pede confirmação para evitar cliques acidentais
-        if (confirm("Confirmar devolução do livro ao acervo?")) {
-          
-          // Manda a ordem para o SQLite usando o ID do empréstimo
-          const resultado = await window.bibliotech.loans.return(emprestimo.id);
-          
-          if (resultado.ok) {
-            // Recarrega a tabela para o livro sumir da tela
-            renderReturns(); 
-          } else {
-            alert("Erro ao devolver: " + resultado.message);
-          }
-        }
+      returnBookButton.setAttribute('aria-haspopup', 'dialog');
+      returnBookButton.addEventListener('click', () => {
+        openReturnModal?.(emprestimo, returnBookButton);
       });
       actionsCell.append(extendDeadlineButton, returnBookButton);
 
-      row.append(bookCell, studentCell, classroomCell, dueDateCell, actionsCell);
+      row.append(
+        bookCell,
+        studentCell,
+        borrowerTypeCell,
+        classroomCell,
+        loanDateCell,
+        dueDateCell,
+        actionsCell
+      );
       tableBody.appendChild(row);
     });
   };
@@ -1439,6 +1667,7 @@ async function loadActiveLoans() {
     const resultado = await window.bibliotech?.loans?.listActive();
 
     if (!resultado) {
+      sessionActiveLoans.splice(0, sessionActiveLoans.length, ...RETURNS_LAYOUT_EXAMPLES);
       notifyReturnsUpdated();
       return;
     }
@@ -1446,18 +1675,34 @@ async function loadActiveLoans() {
     if (resultado.ok) {
       sessionActiveLoans.length = 0;
       resultado.payload.forEach((emprestimo) => {
+        const classroom = String(emprestimo.turma_serie || '').trim();
+        const normalizedClassroom = classroom
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .toLocaleLowerCase('pt-BR');
+        const inferredBorrowerType = !classroom || normalizedClassroom === 'nao se aplica'
+          ? 'non_student'
+          : 'student';
+
         sessionActiveLoans.push({
           id: emprestimo.id_emprestimo,
           bookId: emprestimo.id_livro,
           bookTitle: emprestimo.nome_livro,
           studentName: emprestimo.nome_aluno,
-          classroom: emprestimo.turma_serie,
+          // Compatível com a futura coluna do banco e com registros atuais.
+          borrowerType: emprestimo.tipo_leitor
+            || emprestimo.borrowerType
+            || inferredBorrowerType,
+          classroom,
           loanDate: emprestimo.data_emprestimo,
           expectedReturnDate: emprestimo.data_devolucao_prevista,
           actualReturnDate: emprestimo.data_devolucao_efetiva,
           status: emprestimo.status_emprestimo
         });
       });
+      if (sessionActiveLoans.length === 0) {
+        sessionActiveLoans.push(...RETURNS_LAYOUT_EXAMPLES);
+      }
     } else {
       console.error('Erro ao carregar devoluções pendentes:', resultado.message);
     }
@@ -1505,64 +1750,75 @@ async function handleBookSubmit(event) {
     setFormMessage('Ocorreu um erro inesperado ao tentar salvar o livro.');
   }
 }
-/** Valida e encaminha o emprestimo pela API segura exposta em preload.js. */
+/** Limpa dados, avisos e controles visuais depois de um empréstimo registrado. */
+function clearLoanFormAfterSubmit() {
+  const bookInput = loanForm.elements.bookName;
+  const returnDate = loanForm.elements.returnDate;
+  const autocomplete = loanForm.querySelector('.book-autocomplete');
+
+  loanForm.reset();
+  bookInput.dataset.bookId = '';
+  returnDate.value = '';
+  autocomplete?.replaceChildren();
+  if (autocomplete) autocomplete.hidden = true;
+
+  loanForm.querySelectorAll('[data-return-days]').forEach((button) => {
+    button.classList.remove('is-selected');
+    button.setAttribute('aria-pressed', 'false');
+  });
+
+  loanForm.querySelectorAll('.is-invalid').forEach((field) => field.classList.remove('is-invalid'));
+  loanForm.querySelectorAll('[aria-invalid]').forEach((control) => control.setAttribute('aria-invalid', 'false'));
+  loanForm.querySelectorAll('label > small, .form-field > small').forEach((message) => {
+    message.textContent = '';
+  });
+
+  // O campo de data é oculto; o evento também restaura o texto e o calendário visíveis.
+  returnDate.dispatchEvent(new Event('change', { bubbles: true }));
+  window.setTimeout(() => loanForm.elements.studentName.focus());
+}
+
+/** Valida e encaminha o empréstimo pela API segura exposta em preload.js. */
 async function handleLoanSubmit(event) {
-  event.preventDefault(); // Evita recarregar a tela
+  event.preventDefault();
 
-  const loanForm = document.getElementById('loanForm');
-  const loanFormMessage = document.getElementById('loanFormMessage');
-
-  // Puxa os textos digitados
-  const studentName = loanForm.elements['studentName'].value;
-  const classroom = loanForm.elements['classroom'].value;
-  const expectedReturnDate = loanForm.elements['returnDate'].value;
-
-  // Puxa o ID numérico do livro
-  const bookInput = loanForm.elements['bookName'];
-  const bookId = bookInput.getAttribute('data-book-id');
-
-  // Barreira de segurança para campos vazios
-  if (!bookId || !studentName || !classroom || !expectedReturnDate) {
-    loanFormMessage.textContent = "Por favor, preencha todos os campos e selecione um livro válido.";
-    loanFormMessage.style.color = "red";
-    setTimeout(() => { loanFormMessage.textContent = ""; }, 4000);
+  if (!validateLoanForm()) {
+    setLoanMessage('Preencha corretamente os campos obrigatórios destacados em vermelho.');
+    loanForm.querySelector('[aria-invalid="true"]')?.focus();
     return;
   }
 
-  // Prepara o pacote de dados
-  const loanData = {
-    bookId: Number(bookId),
-    studentName: studentName,
-    classroom: classroom,
-    borrowerType: loanForm.elements['borrowerType'].value,
-    expectedReturnDate: expectedReturnDate
-  };
+  const loanData = getLoanPayload();
+  if (!loanData.bookId) {
+    setLoanMessage('Selecione um livro válido na lista de sugestões.');
+    loanForm.elements.bookName.focus();
+    return;
+  }
+
+  if (!window.bibliotech?.loans?.create) {
+    setLoanMessage('Abra o projeto pelo Electron para registrar o empréstimo.');
+    return;
+  }
 
   try {
-    // Manda para o Back-end
     const resultado = await window.bibliotech.loans.create(loanData);
 
     if (resultado.ok) {
-      loanFormMessage.textContent = resultado.message;
-      loanFormMessage.style.color = "green";
-      await loadActiveLoans();//atualiza lista de devoluções apos o emprestimo
-      loanForm.reset(); 
-      bookInput.setAttribute('data-book-id', ''); // Limpa o ID escondido
-      loanForm.querySelector('[name="studentName"]').focus(); 
+      clearLoanFormAfterSubmit();
+      setLoanMessage(resultado.message, 'success');
+      await loadActiveLoans();
     } else {
-      loanFormMessage.textContent = "Erro ao emprestar: " + resultado.message;
-      loanFormMessage.style.color = "red";
+      setLoanMessage(`Erro ao emprestar: ${resultado.message}`);
     }
-
-    setTimeout(() => { loanFormMessage.textContent = ""; }, 4000);
-
   } catch (erro) {
     console.error("Erro no front-end ao emprestar:", erro);
+    setLoanMessage('Ocorreu um erro inesperado ao registrar o empréstimo.');
   }
 }
 
 /** Inicializa os eventos após o carregamento do HTML. */
 function initializeApp() {
+  setupThemeToggle(); // Alterna entre os temas claro e escuro e salva a preferência.
   setupNavigation(); // Controla a interface
   setupCollectionCatalog();// Configura a tabela do acervo. Renderiza os livros, atualiza os totais de livros disponíveis e emprestados e permite filtrar por gênero.
   setupCollectionSearch(); // Configura a busca de livros no acervo. Permite pesquisar por título, autor ou gênero e exibe os resultados encontrados. 
@@ -1577,6 +1833,8 @@ function initializeApp() {
   setupLoanBorrowerType(); // Preenche as turmas e controla a opção "Não é aluno".
   setupLoanForm(); //Configura a validação e o envio do formulário de empréstimo. Depois de validar os dados, exibe uma prévia do empréstimo preenchido.
   setupLoanTabs(); //Controla as abas do módulo de empréstimos, alternando entre “Novo empréstimo” e “Devoluções”.
+  setupDeadlineExtensionModal(); // Controla a mini tela de extensão do prazo.
+  setupReturnConfirmationModal(); // Controla a confirmação personalizada da devolução.
   setupReturnsList(); //Configura a renderização da lista de devoluções pendentes
   loadActiveLoans(); //Busca na tabela emprestimos os empréstimos ainda não devolvidos, através da API disponibilizada pelo preload
   setupBookAutocomplete();
