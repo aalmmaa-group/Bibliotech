@@ -10,6 +10,7 @@ const managementPage = document.querySelector('#managementPage');
 const loanPage = document.querySelector('#loanPage');
 const registrationPage = document.querySelector('#registrationPage');
 const collectionPage = document.querySelector('#collectionPage');
+const reportsPage = document.querySelector('#reportsPage');
 const aboutPage = document.querySelector('#aboutPage');
 const pageTitle = document.querySelector('#pageTitle');
 const breadcrumbCurrent = document.querySelector('#breadcrumbCurrent');
@@ -29,6 +30,24 @@ const sessionActiveLoans = [];
 let renderReturnsList = null;
 const viewHistory = ['inicio'];
 
+// --- Configurações das microinterações do menu lateral. ---
+const MENU_EMOJIS_BY_PAGE = {
+  'Visão geral': ['📊', '✨', '📚'],
+  Gestão: ['⚙️', '🛠️', '📚'],
+  Acervo: ['📚', '📖', '🔖'],
+  Relatórios: ['📈', '📊', '✨'],
+};
+const MENU_EMOJI_DIRECTIONS = [
+  [-58, -13],
+  [-35, -18],
+  [-12, -14],
+  [12, -17],
+  [35, -19],
+  [58, -13],
+];
+const ABOUT_TRANSITION_REVEAL_DELAY = 900;
+const ABOUT_TRANSITION_CLEANUP_DELAY = 1520;
+
 /**
  * Reinicia uma animação CSS aplicada por classe sem alterar o conteúdo da tela.
  * @param {HTMLElement} element Elemento que deve receber a animação.
@@ -41,7 +60,7 @@ function replayEntranceAnimation(element) {
 
 /**
  * Alterna a tela visível da aplicação.
- * @param {'inicio'|'gestao'|'emprestimos'|'acervo'|'cadastro'|'sobre'} view Tela que deve ser exibida.
+ * @param {'inicio'|'gestao'|'emprestimos'|'acervo'|'cadastro'|'relatorios'|'sobre'} view Tela que deve ser exibida.
  */
 function openView(view, { fromHistory = false, resetHistory = false } = {}) {
   if (resetHistory) {
@@ -55,6 +74,7 @@ function openView(view, { fromHistory = false, resetHistory = false } = {}) {
   loanPage.hidden = view !== 'emprestimos';
   collectionPage.hidden = view !== 'acervo';
   registrationPage.hidden = view !== 'cadastro';
+  reportsPage.hidden = view !== 'relatorios';
   aboutPage.hidden = view !== 'sobre';
 
   const titleByView = {
@@ -63,6 +83,7 @@ function openView(view, { fromHistory = false, resetHistory = false } = {}) {
     emprestimos: 'Empréstimos',
     acervo: 'Acervo',
     cadastro: 'Cadastro de livro',
+    relatorios: 'Relatórios',
     sobre: 'Sobre'
   };
   const title = titleByView[view];
@@ -77,6 +98,8 @@ function openView(view, { fromHistory = false, resetHistory = false } = {}) {
     ? 'Visão geral'
     : view === 'acervo'
       ? 'Acervo'
+      : view === 'relatorios'
+        ? 'Relatórios'
       : view === 'sobre'
         ? 'Sobre'
         : 'Gestão';
@@ -90,6 +113,7 @@ function openView(view, { fromHistory = false, resetHistory = false } = {}) {
     emprestimos: loanPage,
     acervo: collectionPage,
     cadastro: registrationPage,
+    relatorios: reportsPage,
     sobre: aboutPage
   };
   const visiblePage = pageByView[view];
@@ -1019,17 +1043,143 @@ function setupLoanTabs() {
   });
 }
 
+/**
+ * Lança uma reação curta com símbolos relacionados à área escolhida.
+ * @param {HTMLElement} item Item do menu acionado.
+ */
+function launchMenuEmojiBurst(item) {
+  const bounds = item.getBoundingClientRect();
+  const originX = bounds.left + bounds.width / 2;
+  const originY = bounds.bottom - 15;
+  const emojis = MENU_EMOJIS_BY_PAGE[item.dataset.page] || ['✨'];
+  const burst = document.createElement('span');
+
+  burst.className = 'menu-emoji-burst';
+  burst.setAttribute('aria-hidden', 'true');
+  burst.style.left = `${originX}px`;
+  burst.style.top = `${originY}px`;
+
+  MENU_EMOJI_DIRECTIONS.forEach(([x, y], index) => {
+    const particle = document.createElement('span');
+    particle.className = 'menu-emoji-particle';
+    particle.textContent = emojis[index % emojis.length];
+    particle.style.setProperty('--emoji-x', `${x}px`);
+    particle.style.setProperty('--emoji-y', `${y}px`);
+    particle.style.setProperty('--emoji-rotation', `${index % 2 === 0 ? -5 : 5}deg`);
+    particle.style.setProperty('--emoji-scale', `${0.82 + (index % 3) * 0.07}`);
+    particle.style.setProperty('--emoji-delay', `${index * 45}ms`);
+    burst.appendChild(particle);
+
+    if (index === MENU_EMOJI_DIRECTIONS.length - 1) {
+      particle.addEventListener('animationend', () => burst.remove(), { once: true });
+    }
+  });
+
+  document.body.appendChild(burst);
+}
+
+/**
+ * Transforma o botão Sobre numa onda antes de revelar a página de créditos.
+ * @param {HTMLElement} item Botão Sobre.
+ */
+function launchAboutTransition(item) {
+  if (item.dataset.navigating === 'true') return;
+
+  const icon = item.querySelector('.sidebar-about__icon');
+  const buttonBounds = item.getBoundingClientRect();
+  const iconBounds = icon.getBoundingClientRect();
+  const originX = iconBounds.left + iconBounds.width / 2;
+  const originY = iconBounds.top + iconBounds.height / 2;
+  const waveOriginX = buttonBounds.left + buttonBounds.width / 2;
+  const waveOriginY = buttonBounds.top + buttonBounds.height / 2;
+  const travelX = window.innerWidth / 2 - originX;
+  const travelY = window.innerHeight / 2 - originY;
+  const farthestX = Math.max(waveOriginX, window.innerWidth - waveOriginX);
+  const farthestY = Math.max(waveOriginY, window.innerHeight - waveOriginY);
+  const fillRadius = Math.hypot(farthestX, farthestY) * 1.05;
+  const transition = document.createElement('span');
+
+  transition.className = 'about-nav-transition';
+  transition.setAttribute('aria-hidden', 'true');
+  transition.style.setProperty('--about-origin-x', `${originX}px`);
+  transition.style.setProperty('--about-origin-y', `${originY}px`);
+  transition.style.setProperty('--about-wave-origin-x', `${waveOriginX}px`);
+  transition.style.setProperty('--about-wave-origin-y', `${waveOriginY}px`);
+  transition.style.setProperty('--about-start-radius-x', `${buttonBounds.width / 2}px`);
+  transition.style.setProperty('--about-start-radius-y', `${buttonBounds.height / 2}px`);
+  transition.style.setProperty('--about-travel-x', `${travelX}px`);
+  transition.style.setProperty('--about-travel-y', `${travelY}px`);
+  transition.style.setProperty('--about-fill-radius', `${fillRadius}px`);
+  transition.innerHTML = `
+    <span class="about-nav-transition__surface"></span>
+    <span class="about-nav-transition__circle"></span>
+    <span class="about-nav-transition__icon"><img src="assets/icons/about.svg" alt=""></span>
+  `;
+
+  item.dataset.navigating = 'true';
+  item.setAttribute('aria-busy', 'true');
+  item.classList.add('is-launching-about');
+  document.body.appendChild(transition);
+
+  window.setTimeout(() => openView('sobre'), ABOUT_TRANSITION_REVEAL_DELAY);
+  window.setTimeout(() => {
+    transition.remove();
+    item.classList.remove('is-launching-about');
+    item.removeAttribute('aria-busy');
+    delete item.dataset.navigating;
+  }, ABOUT_TRANSITION_CLEANUP_DELAY);
+}
+
+/**
+ * Reinicia o efeito de toque no ponto exato acionado pelo mouse ou teclado.
+ * @param {HTMLElement} item Item principal do menu.
+ * @param {MouseEvent} event Evento que iniciou a navegação.
+ */
+function launchMenuRipple(item, event) {
+  const bounds = item.getBoundingClientRect();
+  const fromKeyboard = event.detail === 0;
+  const rippleX = fromKeyboard ? bounds.width / 2 : event.clientX - bounds.left;
+  const rippleY = fromKeyboard ? bounds.height / 2 : event.clientY - bounds.top;
+
+  item.style.setProperty('--menu-ripple-x', `${rippleX}px`);
+  item.style.setProperty('--menu-ripple-y', `${rippleY}px`);
+  item.classList.remove('is-rippling');
+  void item.offsetWidth;
+  item.classList.add('is-rippling');
+
+  const clearRipple = (animationEvent) => {
+    if (animationEvent.animationName !== 'menu-ripple') return;
+    item.classList.remove('is-rippling');
+    item.removeEventListener('animationend', clearRipple);
+  };
+  item.addEventListener('animationend', clearRipple);
+}
+
 /** Conecta botões do menu às telas disponíveis ou aos avisos de planejamento. */
 function setupNavigation() {
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   menuItems.forEach((item) => {
-    item.addEventListener('click', () => {
+    item.addEventListener('click', (event) => {
       const page = item.dataset.page;
+
+      if (page === 'Sobre') {
+        if (!aboutPage.hidden) return;
+        if (reducedMotion) return openView('sobre');
+        launchAboutTransition(item);
+        return;
+      }
+
+      if (!reducedMotion) launchMenuEmojiBurst(item);
+
+      if (!reducedMotion && item.classList.contains('menu__item')) {
+        launchMenuRipple(item, event);
+      }
+
       if (page === 'Visão geral') return openView('inicio', { resetHistory: true });
       if (page === 'Gestão') return openView('gestao');
       if (page === 'Acervo') return openView('acervo');
-      if (page === 'Sobre') return openView('sobre');
+      if (page === 'Relatórios') return openView('relatorios');
       showPending(`${page} será disponibilizado nas próximas etapas.`);
     });
   });
