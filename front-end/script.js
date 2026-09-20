@@ -20,6 +20,8 @@ const loanForm = document.querySelector('#loanForm');
 const notificationButton = document.querySelector('#notificationButton');
 const notificationPanel = document.querySelector('#notificationPanel');
 const themeToggle = document.querySelector('#themeToggle');
+const sidebar = document.querySelector('#sidebar');
+const sidebarToggle = document.querySelector('#sidebarToggle');
 let pendingMessageTimer;
 let formMessageTimer;
 let loanMessageTimer;
@@ -59,20 +61,6 @@ const RETURNS_LAYOUT_EXAMPLES = [
 ];
 
 // --- Configurações das microinterações do menu lateral. ---
-const MENU_EMOJIS_BY_PAGE = {
-  'Visão geral': ['📊', '✨', '📚'],
-  Gestão: ['⚙️', '🛠️', '📚'],
-  Acervo: ['📚', '📖', '🔖'],
-  Relatórios: ['📈', '📊', '✨'],
-};
-const MENU_EMOJI_DIRECTIONS = [
-  [-58, -13],
-  [-35, -18],
-  [-12, -14],
-  [12, -17],
-  [35, -19],
-  [58, -13],
-];
 const ABOUT_TRANSITION_REVEAL_DELAY = 900;
 const ABOUT_TRANSITION_CLEANUP_DELAY = 1520;
 
@@ -1071,41 +1059,6 @@ function setupLoanTabs() {
 }
 
 /**
- * Lança uma reação curta com símbolos relacionados à área escolhida.
- * @param {HTMLElement} item Item do menu acionado.
- */
-function launchMenuEmojiBurst(item) {
-  const bounds = item.getBoundingClientRect();
-  const originX = bounds.left + bounds.width / 2;
-  const originY = bounds.bottom - 15;
-  const emojis = MENU_EMOJIS_BY_PAGE[item.dataset.page] || ['✨'];
-  const burst = document.createElement('span');
-
-  burst.className = 'menu-emoji-burst';
-  burst.setAttribute('aria-hidden', 'true');
-  burst.style.left = `${originX}px`;
-  burst.style.top = `${originY}px`;
-
-  MENU_EMOJI_DIRECTIONS.forEach(([x, y], index) => {
-    const particle = document.createElement('span');
-    particle.className = 'menu-emoji-particle';
-    particle.textContent = emojis[index % emojis.length];
-    particle.style.setProperty('--emoji-x', `${x}px`);
-    particle.style.setProperty('--emoji-y', `${y}px`);
-    particle.style.setProperty('--emoji-rotation', `${index % 2 === 0 ? -5 : 5}deg`);
-    particle.style.setProperty('--emoji-scale', `${0.82 + (index % 3) * 0.07}`);
-    particle.style.setProperty('--emoji-delay', `${index * 45}ms`);
-    burst.appendChild(particle);
-
-    if (index === MENU_EMOJI_DIRECTIONS.length - 1) {
-      particle.addEventListener('animationend', () => burst.remove(), { once: true });
-    }
-  });
-
-  document.body.appendChild(burst);
-}
-
-/**
  * Transforma o botão Sobre numa onda antes de revelar a página de créditos.
  * @param {HTMLElement} item Botão Sobre.
  */
@@ -1182,6 +1135,25 @@ function launchMenuRipple(item, event) {
   item.addEventListener('animationend', clearRipple);
 }
 
+/** Alterna o menu lateral entre os estados expandido e compacto. */
+function setupSidebar() {
+  const setCollapsed = (collapsed) => {
+    sidebar.classList.toggle('is-collapsed', collapsed);
+    sidebarToggle.setAttribute('aria-expanded', String(!collapsed));
+    sidebarToggle.setAttribute('aria-label', collapsed ? 'Expandir menu lateral' : 'Recolher menu lateral');
+
+    // No modo compacto, o título nativo identifica cada ícone ao passar o mouse.
+    menuItems.forEach((item) => {
+      if (collapsed) item.title = item.dataset.page;
+      else item.removeAttribute('title');
+    });
+  };
+
+  sidebarToggle.addEventListener('click', () => {
+    setCollapsed(!sidebar.classList.contains('is-collapsed'));
+  });
+}
+
 /** Conecta botões do menu às telas disponíveis ou aos avisos de planejamento. */
 function setupNavigation() {
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1196,8 +1168,6 @@ function setupNavigation() {
         launchAboutTransition(item);
         return;
       }
-
-      if (!reducedMotion) launchMenuEmojiBurst(item);
 
       if (!reducedMotion && item.classList.contains('menu__item')) {
         launchMenuRipple(item, event);
@@ -1803,6 +1773,7 @@ async function handleLoanSubmit(event) {
 /** Inicializa os eventos após o carregamento do HTML. */
 function initializeApp() {
   setupThemeToggle(); // Alterna entre os temas claro e escuro e salva a preferência.
+  setupSidebar(); // Controla os estados expandido e compacto do menu lateral.
   setupNavigation(); // Controla a interface
   setupCollectionCatalog();// Configura a tabela do acervo. Renderiza os livros, atualiza os totais de livros disponíveis e emprestados e permite filtrar por gênero.
   setupCollectionSearch(); // Configura a busca de livros no acervo. Permite pesquisar por título, autor ou gênero e exibe os resultados encontrados. 

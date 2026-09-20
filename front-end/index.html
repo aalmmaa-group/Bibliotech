@@ -17,25 +17,29 @@
             <img class="brand__wordmark" src="assets/bibliotech-brand-teal.png" alt="Bibliotech">
         </button>
 
+        <button class="sidebar-toggle" id="sidebarToggle" type="button" aria-label="Recolher menu lateral" aria-controls="sidebar" aria-expanded="true">
+            <span class="material-symbols-outlined" aria-hidden="true">chevron_left</span>
+        </button>
+
         <div class="sidebar__content">
             <p class="sidebar__label">Menu principal</p>
 
             <nav class="menu">
-                <button class="menu__item is-active" type="button" data-page="Visão geral" aria-current="page">
+                <button class="menu__item is-active" type="button" data-page="Visão geral" aria-label="Visão geral" aria-current="page">
                     <img class="menu__icon" src="assets/icons/overview.svg" alt="" aria-hidden="true">
                     <span>Visão geral</span>
                 </button>
-                <button class="menu__item" type="button" data-page="Gestão">
+                <button class="menu__item" type="button" data-page="Gestão" aria-label="Gestão">
                     <img class="menu__icon" src="assets/icons/management.svg" alt="" aria-hidden="true">
                     <span>Gestão</span>
                 </button>
 
-                <button class="menu__item" type="button" data-page="Acervo">
+                <button class="menu__item" type="button" data-page="Acervo" aria-label="Acervo">
                     <img class="menu__icon" src="assets/icons/collection.svg" alt="" aria-hidden="true">
                     <span>Acervo</span>
                 </button>
 
-                <button class="menu__item" type="button" data-page="Relatórios">
+                <button class="menu__item" type="button" data-page="Relatórios" aria-label="Relatórios">
                     <img class="menu__icon" src="assets/icons/reports.svg" alt="" aria-hidden="true">
                     <span>Relatórios</span>
                 </button>
@@ -58,10 +62,6 @@
 
     <div class="app">
         <header class="topbar">
-            <button class="mobile-menu" id="mobileMenu" type="button" aria-label="Abrir menu" aria-controls="sidebar" aria-expanded="false">
-                <span></span><span></span><span></span>
-            </button>
-
             <button class="view-back-button" id="viewBackButton" type="button" aria-label="Voltar para a tela anterior" hidden>
                 <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                     <path d="m15 6-6 6 6 6M9 12h10"/>
@@ -1052,7 +1052,6 @@
         </form>
     </dialog>
 
-    <div class="sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
     <script src="script.js"></script>
 </body>
 </html>
