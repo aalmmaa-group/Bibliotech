@@ -993,14 +993,33 @@
                 <button type="button" data-deadline-days="30">+30 dias</button>
             </div>
 
-            <label class="deadline-modal__date" for="deadlineDate">
-                <span>Ou escolha uma data no calendário</span>
-                <span class="deadline-modal__date-control">
-                    <input id="deadlineDate" name="deadlineDate" type="date" required>
-                    <span aria-hidden="true">calendar_month</span>
-                </span>
+            <div class="deadline-modal__date">
+                <span id="deadlineDateLabel">Ou escolha uma data no calendário</span>
+                <div class="loan-date-picker deadline-date-picker">
+                    <button class="loan-date-picker__trigger deadline-date-picker__trigger" id="deadlineDateButton" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="deadlineDateCalendar" aria-describedby="deadlineDateHelp">
+                        <span id="deadlineDateDisplay">Selecione uma nova data</span>
+                        <span class="material-symbols-outlined loan-date-picker__icon" aria-hidden="true">calendar_month</span>
+                    </button>
+                    <input id="deadlineDate" name="deadlineDate" type="hidden" required>
+
+                    <section class="loan-calendar deadline-calendar" id="deadlineDateCalendar" role="dialog" aria-labelledby="deadlineCalendarMonthLabel" hidden>
+                        <header class="loan-calendar__header">
+                            <button type="button" data-deadline-calendar-action="previous" aria-label="Mês anterior">‹</button>
+                            <strong id="deadlineCalendarMonthLabel" aria-live="polite"></strong>
+                            <button type="button" data-deadline-calendar-action="next" aria-label="Próximo mês">›</button>
+                        </header>
+                        <div class="loan-calendar__weekdays" aria-hidden="true">
+                            <span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span>
+                        </div>
+                        <div class="loan-calendar__days" id="deadlineCalendarDays"></div>
+                        <footer class="loan-calendar__footer">
+                            <button type="button" data-deadline-calendar-action="minimum">Primeira data</button>
+                            <button type="button" data-deadline-calendar-action="close">Fechar</button>
+                        </footer>
+                    </section>
+                </div>
                 <small id="deadlineDateHelp">A nova data precisa ser posterior ao prazo atual.</small>
-            </label>
+            </div>
 
             <footer class="deadline-modal__actions">
                 <button class="deadline-modal__cancel" type="button" data-deadline-close>Cancelar</button>

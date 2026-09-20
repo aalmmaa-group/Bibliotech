@@ -1356,25 +1356,108 @@ function setupDeadlineExtensionModal() {
   const bookTitle = document.querySelector('#deadlineBookTitle');
   const currentDate = document.querySelector('#deadlineCurrentDate');
   const dateInput = document.querySelector('#deadlineDate');
+  const datePicker = modal.querySelector('.deadline-date-picker');
+  const dateButton = document.querySelector('#deadlineDateButton');
+  const dateDisplay = document.querySelector('#deadlineDateDisplay');
+  const calendar = document.querySelector('#deadlineDateCalendar');
+  const calendarLabel = document.querySelector('#deadlineCalendarMonthLabel');
+  const calendarDays = document.querySelector('#deadlineCalendarDays');
+  const previousMonthButton = calendar.querySelector('[data-deadline-calendar-action="previous"]');
   const dateHelp = document.querySelector('#deadlineDateHelp');
   const shortcutButtons = [...modal.querySelectorAll('[data-deadline-days]')];
   const closeButtons = [...modal.querySelectorAll('[data-deadline-close]')];
   let selectedLoan = null;
   let triggerButton = null;
+  let minimumDate = null;
+  let calendarCursor = new Date();
+
+  const formatLongDate = (date) => new Intl.DateTimeFormat('pt-BR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  }).format(date);
+
+  const setCalendarOpen = (isOpen) => {
+    calendar.hidden = !isOpen;
+    dateButton.setAttribute('aria-expanded', String(isOpen));
+    datePicker.classList.toggle('is-open', isOpen);
+    if (isOpen) replayEntranceAnimation(calendar);
+  };
+
+  const renderCalendar = () => {
+    if (!minimumDate) return;
+
+    const year = calendarCursor.getFullYear();
+    const month = calendarCursor.getMonth();
+    const firstWeekday = new Date(year, month, 1).getDay();
+    const numberOfDays = new Date(year, month + 1, 0).getDate();
+    const selectedValue = dateInput.value;
+    const minimumMonth = new Date(minimumDate.getFullYear(), minimumDate.getMonth(), 1);
+    const visibleMonth = new Date(year, month, 1);
+    const monthText = new Intl.DateTimeFormat('pt-BR', {
+      month: 'long',
+      year: 'numeric'
+    }).format(calendarCursor);
+
+    calendarLabel.textContent = monthText.charAt(0).toLocaleUpperCase('pt-BR') + monthText.slice(1);
+    previousMonthButton.disabled = visibleMonth <= minimumMonth;
+    calendarDays.replaceChildren();
+
+    for (let blank = 0; blank < firstWeekday; blank += 1) {
+      const spacer = document.createElement('span');
+      spacer.className = 'loan-calendar__blank';
+      spacer.setAttribute('aria-hidden', 'true');
+      calendarDays.append(spacer);
+    }
+
+    for (let day = 1; day <= numberOfDays; day += 1) {
+      const date = new Date(year, month, day);
+      const dateValue = getLocalDateValue(date);
+      const dayButton = document.createElement('button');
+
+      dayButton.type = 'button';
+      dayButton.textContent = String(day);
+      dayButton.dataset.date = dateValue;
+      dayButton.setAttribute('aria-label', formatLongDate(date));
+      dayButton.disabled = date < minimumDate;
+
+      if (dateValue === getLocalDateValue(minimumDate)) {
+        dayButton.classList.add('is-minimum');
+        dayButton.setAttribute('aria-description', 'Primeira data disponível');
+      }
+
+      if (dateValue === selectedValue) {
+        dayButton.classList.add('is-selected');
+        dayButton.setAttribute('aria-pressed', 'true');
+      }
+
+      dayButton.addEventListener('click', () => selectDate(date));
+      calendarDays.append(dayButton);
+    }
+  };
 
   const closeModal = () => {
+    setCalendarOpen(false);
     if (modal.open) modal.close();
   };
 
   const selectDate = (date, selectedShortcut = null) => {
+    if (!minimumDate || date < minimumDate) return;
+
     dateInput.value = getLocalDateValue(date);
     dateInput.setCustomValidity('');
+    dateDisplay.textContent = formatShortDatePtBr(dateInput.value);
+    dateButton.classList.add('has-value');
+    dateButton.classList.remove('is-invalid');
     dateHelp.textContent = `Novo prazo selecionado: ${formatShortDatePtBr(dateInput.value)}.`;
     shortcutButtons.forEach((button) => {
       const isSelected = button === selectedShortcut;
       button.classList.toggle('is-selected', isSelected);
       button.setAttribute('aria-pressed', String(isSelected));
     });
+    renderCalendar();
+    setCalendarOpen(false);
+    dateButton.focus();
   };
 
   openDeadlineModal = (loan, button) => {
@@ -1387,18 +1470,25 @@ function setupDeadlineExtensionModal() {
     firstAvailableDate.setDate(firstAvailableDate.getDate() + 1);
 
     form.reset();
+    minimumDate = firstAvailableDate;
+    calendarCursor = new Date(minimumDate.getFullYear(), minimumDate.getMonth(), 1);
     bookTitle.textContent = loan.bookTitle || 'Livro';
     currentDate.dateTime = loan.expectedReturnDate || '';
     currentDate.textContent = formatShortDatePtBr(loan.expectedReturnDate);
-    dateInput.min = getLocalDateValue(firstAvailableDate);
+    dateInput.value = '';
+    dateInput.setCustomValidity('');
+    dateDisplay.textContent = 'Selecione uma nova data';
+    dateButton.classList.remove('has-value', 'is-invalid');
     dateHelp.textContent = 'A nova data precisa ser posterior ao prazo atual.';
     shortcutButtons.forEach((shortcut) => {
       shortcut.classList.remove('is-selected');
       shortcut.setAttribute('aria-pressed', 'false');
     });
+    setCalendarOpen(false);
+    renderCalendar();
 
     modal.showModal();
-    dateInput.focus();
+    dateButton.focus();
   };
 
   shortcutButtons.forEach((button) => {
@@ -1406,28 +1496,59 @@ function setupDeadlineExtensionModal() {
       if (!selectedLoan) return;
       const today = parseLocalDateValue(getLocalDateValue());
       const currentDeadline = parseLocalDateValue(selectedLoan.expectedReturnDate) || today;
-      const shortcutDate = new Date(currentDeadline > today ? currentDeadline : today);
+      const selectedDate = parseLocalDateValue(dateInput.value);
+      const shortcutBase = selectedDate && selectedDate >= minimumDate
+        ? selectedDate
+        : (currentDeadline > today ? currentDeadline : today);
+      const shortcutDate = new Date(shortcutBase);
+
+      // Cada clique continua a partir da data visível, inclusive após uma escolha manual.
       shortcutDate.setDate(shortcutDate.getDate() + Number(button.dataset.deadlineDays));
       selectDate(shortcutDate, button);
     });
   });
 
-  dateInput.addEventListener('change', () => {
-    dateInput.setCustomValidity('');
-    shortcutButtons.forEach((button) => {
-      button.classList.remove('is-selected');
-      button.setAttribute('aria-pressed', 'false');
+  dateButton.addEventListener('click', (event) => {
+    event.stopPropagation();
+    if (!minimumDate) return;
+
+    const selectedDate = parseLocalDateValue(dateInput.value) || minimumDate;
+    calendarCursor = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+    renderCalendar();
+    setCalendarOpen(calendar.hidden);
+  });
+
+  calendar.querySelectorAll('[data-deadline-calendar-action]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const action = button.dataset.deadlineCalendarAction;
+
+      if (action === 'previous') {
+        calendarCursor = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() - 1, 1);
+        renderCalendar();
+      } else if (action === 'next') {
+        calendarCursor = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() + 1, 1);
+        renderCalendar();
+      } else if (action === 'minimum') {
+        selectDate(new Date(minimumDate));
+      } else {
+        setCalendarOpen(false);
+        dateButton.focus();
+      }
     });
-    dateHelp.textContent = dateInput.value
-      ? `Novo prazo selecionado: ${formatShortDatePtBr(dateInput.value)}.`
-      : 'A nova data precisa ser posterior ao prazo atual.';
+  });
+
+  calendar.addEventListener('click', (event) => event.stopPropagation());
+  document.addEventListener('click', (event) => {
+    if (modal.open && !event.target.closest('.deadline-date-picker')) setCalendarOpen(false);
   });
 
   form.addEventListener('submit', (event) => {
     event.preventDefault();
     if (!selectedLoan || !dateInput.value) {
       dateInput.setCustomValidity('Escolha uma nova data para continuar.');
-      dateInput.reportValidity();
+      dateHelp.textContent = 'Escolha uma nova data para continuar.';
+      dateButton.classList.add('is-invalid');
+      dateButton.focus();
       return;
     }
 
@@ -1440,8 +1561,15 @@ function setupDeadlineExtensionModal() {
   modal.addEventListener('click', (event) => {
     if (event.target === modal) closeModal();
   });
+  modal.addEventListener('cancel', (event) => {
+    if (calendar.hidden) return;
+    event.preventDefault();
+    setCalendarOpen(false);
+    dateButton.focus();
+  });
   modal.addEventListener('close', () => {
     selectedLoan = null;
+    minimumDate = null;
     triggerButton?.focus();
     triggerButton = null;
   });
