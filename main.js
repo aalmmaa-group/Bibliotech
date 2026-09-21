@@ -1,8 +1,9 @@
 /** Processo principal: cria a janela e recebe chamadas seguras da interface. */
 const { app, BrowserWindow, ipcMain } = require('electron/main');
 const path = require('node:path');
+const {iniciarBackupAutomatico} = require ('./src/services/backupService.js')
 let db;
-
+const {executarBackup} = require('./src/services/backupService.js') 
 
 
 /** Cria a janela desktop e carrega a interface local do projeto. */
@@ -78,7 +79,8 @@ function cadastrarLivro(bookData) {
         quantidade_livros_disponiveis, 
         observacao
       ) VALUES (?, ?, ?, ?, ?, ?)
-    `);
+    `)
+    executarBackup();
 
     const info = stmt.run(title, author, genre, quantity, quantity, notes);
 
@@ -134,6 +136,7 @@ function realizarEmprestimo(loanData) {
       `);
       
       const updateInfo = stmtAtualizarLivro.run(bookId);
+      executarBackup();
 
       // Cancela tudo se não tiver estoque
       if (updateInfo.changes === 0) {
@@ -197,6 +200,7 @@ function realizarDevolucao(idEmprestimo) {
         WHERE id_emprestimo = ?
       `);
       const emprestimo = stmtBusca.get(idEmprestimo);
+      executarBackup();
 
       // Barreiras de segurança
       if (!emprestimo) {
@@ -213,6 +217,7 @@ function realizarDevolucao(idEmprestimo) {
         WHERE id_livro = ?
       `);
       stmtEstoque.run(emprestimo.id_livro);
+      executarBackup();
 
       //  Atualiza o status para 'devolvido' e coloca a data de devolução
       const stmtAtualizarEmprestimo = db.db.prepare(`
@@ -223,10 +228,12 @@ function realizarDevolucao(idEmprestimo) {
       `);
       stmtAtualizarEmprestimo.run(idEmprestimo);
       
+      
     });
 
     // Executa a transação completa
     processarDevolucao();
+    executarBackup();
 
     return { ok: true, message: "Livro devolvido com sucesso ao acervo!" };
 
@@ -252,6 +259,7 @@ function alterarDataDevolucao(idEmprestimo, novaData) {
       SET data_devolucao_prevista = ? 
       WHERE id_emprestimo = ? AND status_emprestimo = 'emprestado'
     `);
+    executarBackup();
     
     const info = stmt.run(novaData, idEmprestimo);
 
@@ -401,7 +409,7 @@ app.whenReady().then(() => {
     console.warn('Banco de dados indisponível nesta máquina:', error.message);
   }
   createWindow()
-
+  iniciarBackupAutomatico(db);
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow()
