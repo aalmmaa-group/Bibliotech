@@ -1,9 +1,8 @@
 /** Processo principal: cria a janela e recebe chamadas seguras da interface. */
 const { app, BrowserWindow, ipcMain } = require('electron/main');
 const path = require('node:path');
-const {iniciarBackupAutomatico} = require ('./src/services/backupService.js')
+const {iniciarBackupAutomatico, executarBackup} = require ('./src/services/backupService.js')
 let db;
-const {executarBackup} = require('./src/services/backupService.js') 
 
 
 /** Cria a janela desktop e carrega a interface local do projeto. */
@@ -80,9 +79,9 @@ function cadastrarLivro(bookData) {
         observacao
       ) VALUES (?, ?, ?, ?, ?, ?)
     `)
-    executarBackup();
 
     const info = stmt.run(title, author, genre, quantity, quantity, notes);
+    executarBackup();
 
       // Mensagem de retorno
     return {
@@ -136,7 +135,6 @@ function realizarEmprestimo(loanData) {
       `);
       
       const updateInfo = stmtAtualizarLivro.run(bookId);
-      executarBackup();
 
       // Cancela tudo se não tiver estoque
       if (updateInfo.changes === 0) {
@@ -161,6 +159,7 @@ function realizarEmprestimo(loanData) {
 
     // Executa as duas ações juntas
     const novoEmprestimoId = processarEmprestimo();
+    executarBackup();
 
     return {
       ok: true,
@@ -200,7 +199,6 @@ function realizarDevolucao(idEmprestimo) {
         WHERE id_emprestimo = ?
       `);
       const emprestimo = stmtBusca.get(idEmprestimo);
-      executarBackup();
 
       // Barreiras de segurança
       if (!emprestimo) {
@@ -217,7 +215,6 @@ function realizarDevolucao(idEmprestimo) {
         WHERE id_livro = ?
       `);
       stmtEstoque.run(emprestimo.id_livro);
-      executarBackup();
 
       //  Atualiza o status para 'devolvido' e coloca a data de devolução
       const stmtAtualizarEmprestimo = db.db.prepare(`
@@ -259,7 +256,6 @@ function alterarDataDevolucao(idEmprestimo, novaData) {
       SET data_devolucao_prevista = ? 
       WHERE id_emprestimo = ? AND status_emprestimo = 'emprestado'
     `);
-    executarBackup();
     
     const info = stmt.run(novaData, idEmprestimo);
 
@@ -270,6 +266,7 @@ function alterarDataDevolucao(idEmprestimo, novaData) {
         message: 'Não foi possível alterar. O empréstimo não existe ou o livro já foi devolvido.' 
       };
     }
+    executarBackup();
 
     return { ok: true, message: 'Data de devolução atualizada com sucesso!' };
 
