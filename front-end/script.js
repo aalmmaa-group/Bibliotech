@@ -1294,6 +1294,7 @@ function setupPendingActions() {
 function setupBookAutocomplete() {
   const bookInput = document.querySelector('input[name="bookName"]');
   if (!bookInput) return;
+  let searchRequestId = 0;
 
   const resultList = document.createElement('ul');
   resultList.className = 'book-autocomplete';
@@ -1305,6 +1306,7 @@ function setupBookAutocomplete() {
   bookInput.parentElement.appendChild(resultList);
 
   bookInput.addEventListener('input', async (e) => {
+    const requestId = ++searchRequestId;
     const termo = e.target.value.trim();
 
     // Uma nova digitação invalida a seleção anterior até que outro livro seja escolhido.
@@ -1316,6 +1318,7 @@ function setupBookAutocomplete() {
     }
 
     const response = await window.bibliotech.books.search(termo);
+    if (requestId !== searchRequestId || bookInput.value.trim() !== termo) return;
 
     if (response.ok && response.data.length > 0) {
       resultList.replaceChildren();
@@ -1339,6 +1342,12 @@ function setupBookAutocomplete() {
     } else {
       resultList.hidden = true;
     }
+  });
+
+  loanForm.addEventListener('reset', () => {
+    searchRequestId += 1;
+    resultList.replaceChildren();
+    resultList.hidden = true;
   });
 
   document.addEventListener('click', (e) => {
@@ -1832,17 +1841,29 @@ async function handleBookSubmit(event) {
     setFormMessage('Ocorreu um erro inesperado ao tentar salvar o livro.');
   }
 }
-/** Limpa dados, avisos e controles visuais depois de um empréstimo registrado. */
-function clearLoanFormAfterSubmit() {
+/** Limpa os dados e controles visuais do novo empréstimo sem alterar os registros salvos. */
+function clearLoanForm({ focusName = false } = {}) {
   const bookInput = loanForm.elements.bookName;
   const returnDate = loanForm.elements.returnDate;
   const autocomplete = loanForm.querySelector('.book-autocomplete');
+  const classroomSelect = document.querySelector('#classroomSelect');
+  const classroomOptions = document.querySelector('#classroomOptions');
+  const returnDateCalendar = document.querySelector('#returnDateCalendar');
 
   loanForm.reset();
   bookInput.dataset.bookId = '';
   returnDate.value = '';
   autocomplete?.replaceChildren();
   if (autocomplete) autocomplete.hidden = true;
+  classroomSelect.classList.remove('is-open');
+  classroomOptions.hidden = true;
+  document.querySelector('#classroomSelectButton').setAttribute('aria-expanded', 'false');
+  classroomOptions.querySelectorAll('[role="option"]').forEach((option) => {
+    option.setAttribute('aria-selected', 'false');
+  });
+  returnDateCalendar.hidden = true;
+  document.querySelector('#returnDateButton').setAttribute('aria-expanded', 'false');
+  document.querySelector('.loan-date-picker').classList.remove('is-open');
 
   loanForm.querySelectorAll('[data-return-days]').forEach((button) => {
     button.classList.remove('is-selected');
@@ -1857,7 +1878,15 @@ function clearLoanFormAfterSubmit() {
 
   // O campo de data é oculto; o evento também restaura o texto e o calendário visíveis.
   returnDate.dispatchEvent(new Event('change', { bubbles: true }));
-  window.setTimeout(() => loanForm.elements.studentName.focus());
+  if (focusName) window.setTimeout(() => loanForm.elements.studentName.focus());
+}
+
+/** Cancela o rascunho antes de voltar à Gestão. */
+function setupLoanFormCancel() {
+  loanForm.querySelector('[data-open-view="gestao"]').addEventListener('click', () => {
+    clearLoanForm();
+    setLoanMessage('');
+  });
 }
 
 /** Valida e encaminha o empréstimo pela API segura exposta em preload.js. */
@@ -1886,7 +1915,7 @@ async function handleLoanSubmit(event) {
     const resultado = await window.bibliotech.loans.create(loanData);
 
     if (resultado.ok) {
-      clearLoanFormAfterSubmit();
+      clearLoanForm({ focusName: true });
       setLoanMessage(resultado.message, 'success');
       await loadActiveLoans();
     } else {
@@ -1915,6 +1944,7 @@ function initializeApp() {
   setupLoanCalendar();//Configura o calendário de data de devolução dos empréstimos. Permite escolher uma data, navegar entre meses, usar atalhos e impedir datas anteriores ao dia atual.
   setupLoanBorrowerType(); // Preenche as turmas e controla a opção "Não é aluno".
   setupLoanForm(); //Configura a validação e o envio do formulário de empréstimo. Depois de validar os dados, exibe uma prévia do empréstimo preenchido.
+  setupLoanFormCancel(); // Limpa o rascunho quando o usuário cancela um novo empréstimo.
   setupLoanTabs(); //Controla as abas do módulo de empréstimos, alternando entre “Novo empréstimo” e “Devoluções”.
   setupDeadlineExtensionModal(); // Controla a mini tela de extensão do prazo.
   setupReturnConfirmationModal(); // Controla a confirmação personalizada da devolução.
