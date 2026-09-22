@@ -20,6 +20,8 @@ const loanForm = document.querySelector('#loanForm');
 const notificationButton = document.querySelector('#notificationButton');
 const notificationPanel = document.querySelector('#notificationPanel');
 const themeToggle = document.querySelector('#themeToggle');
+const sidebar = document.querySelector('#sidebar');
+const sidebarToggle = document.querySelector('#sidebarToggle');
 let pendingMessageTimer;
 let formMessageTimer;
 let loanMessageTimer;
@@ -59,20 +61,6 @@ const RETURNS_LAYOUT_EXAMPLES = [
 ];
 
 // --- Configurações das microinterações do menu lateral. ---
-const MENU_EMOJIS_BY_PAGE = {
-  'Visão geral': ['📊', '✨', '📚'],
-  Gestão: ['⚙️', '🛠️', '📚'],
-  Acervo: ['📚', '📖', '🔖'],
-  Relatórios: ['📈', '📊', '✨'],
-};
-const MENU_EMOJI_DIRECTIONS = [
-  [-58, -13],
-  [-35, -18],
-  [-12, -14],
-  [12, -17],
-  [35, -19],
-  [58, -13],
-];
 const ABOUT_TRANSITION_REVEAL_DELAY = 900;
 const ABOUT_TRANSITION_CLEANUP_DELAY = 1520;
 
@@ -1071,41 +1059,6 @@ function setupLoanTabs() {
 }
 
 /**
- * Lança uma reação curta com símbolos relacionados à área escolhida.
- * @param {HTMLElement} item Item do menu acionado.
- */
-function launchMenuEmojiBurst(item) {
-  const bounds = item.getBoundingClientRect();
-  const originX = bounds.left + bounds.width / 2;
-  const originY = bounds.bottom - 15;
-  const emojis = MENU_EMOJIS_BY_PAGE[item.dataset.page] || ['✨'];
-  const burst = document.createElement('span');
-
-  burst.className = 'menu-emoji-burst';
-  burst.setAttribute('aria-hidden', 'true');
-  burst.style.left = `${originX}px`;
-  burst.style.top = `${originY}px`;
-
-  MENU_EMOJI_DIRECTIONS.forEach(([x, y], index) => {
-    const particle = document.createElement('span');
-    particle.className = 'menu-emoji-particle';
-    particle.textContent = emojis[index % emojis.length];
-    particle.style.setProperty('--emoji-x', `${x}px`);
-    particle.style.setProperty('--emoji-y', `${y}px`);
-    particle.style.setProperty('--emoji-rotation', `${index % 2 === 0 ? -5 : 5}deg`);
-    particle.style.setProperty('--emoji-scale', `${0.82 + (index % 3) * 0.07}`);
-    particle.style.setProperty('--emoji-delay', `${index * 45}ms`);
-    burst.appendChild(particle);
-
-    if (index === MENU_EMOJI_DIRECTIONS.length - 1) {
-      particle.addEventListener('animationend', () => burst.remove(), { once: true });
-    }
-  });
-
-  document.body.appendChild(burst);
-}
-
-/**
  * Transforma o botão Sobre numa onda antes de revelar a página de créditos.
  * @param {HTMLElement} item Botão Sobre.
  */
@@ -1182,6 +1135,25 @@ function launchMenuRipple(item, event) {
   item.addEventListener('animationend', clearRipple);
 }
 
+/** Alterna o menu lateral entre os estados expandido e compacto. */
+function setupSidebar() {
+  const setCollapsed = (collapsed) => {
+    sidebar.classList.toggle('is-collapsed', collapsed);
+    sidebarToggle.setAttribute('aria-expanded', String(!collapsed));
+    sidebarToggle.setAttribute('aria-label', collapsed ? 'Expandir menu lateral' : 'Recolher menu lateral');
+
+    // No modo compacto, o título nativo identifica cada ícone ao passar o mouse.
+    menuItems.forEach((item) => {
+      if (collapsed) item.title = item.dataset.page;
+      else item.removeAttribute('title');
+    });
+  };
+
+  sidebarToggle.addEventListener('click', () => {
+    setCollapsed(!sidebar.classList.contains('is-collapsed'));
+  });
+}
+
 /** Conecta botões do menu às telas disponíveis ou aos avisos de planejamento. */
 function setupNavigation() {
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1196,8 +1168,6 @@ function setupNavigation() {
         launchAboutTransition(item);
         return;
       }
-
-      if (!reducedMotion) launchMenuEmojiBurst(item);
 
       if (!reducedMotion && item.classList.contains('menu__item')) {
         launchMenuRipple(item, event);
@@ -1324,6 +1294,7 @@ function setupPendingActions() {
 function setupBookAutocomplete() {
   const bookInput = document.querySelector('input[name="bookName"]');
   if (!bookInput) return;
+  let searchRequestId = 0;
 
   const resultList = document.createElement('ul');
   resultList.className = 'book-autocomplete';
@@ -1335,6 +1306,7 @@ function setupBookAutocomplete() {
   bookInput.parentElement.appendChild(resultList);
 
   bookInput.addEventListener('input', async (e) => {
+    const requestId = ++searchRequestId;
     const termo = e.target.value.trim();
 
     // Uma nova digitação invalida a seleção anterior até que outro livro seja escolhido.
@@ -1346,6 +1318,7 @@ function setupBookAutocomplete() {
     }
 
     const response = await window.bibliotech.books.search(termo);
+    if (requestId !== searchRequestId || bookInput.value.trim() !== termo) return;
 
     if (response.ok && response.data.length > 0) {
       resultList.replaceChildren();
@@ -1371,6 +1344,12 @@ function setupBookAutocomplete() {
     }
   });
 
+  loanForm.addEventListener('reset', () => {
+    searchRequestId += 1;
+    resultList.replaceChildren();
+    resultList.hidden = true;
+  });
+
   document.addEventListener('click', (e) => {
     if (e.target !== bookInput) {
       resultList.hidden = true;
@@ -1386,25 +1365,108 @@ function setupDeadlineExtensionModal() {
   const bookTitle = document.querySelector('#deadlineBookTitle');
   const currentDate = document.querySelector('#deadlineCurrentDate');
   const dateInput = document.querySelector('#deadlineDate');
+  const datePicker = modal.querySelector('.deadline-date-picker');
+  const dateButton = document.querySelector('#deadlineDateButton');
+  const dateDisplay = document.querySelector('#deadlineDateDisplay');
+  const calendar = document.querySelector('#deadlineDateCalendar');
+  const calendarLabel = document.querySelector('#deadlineCalendarMonthLabel');
+  const calendarDays = document.querySelector('#deadlineCalendarDays');
+  const previousMonthButton = calendar.querySelector('[data-deadline-calendar-action="previous"]');
   const dateHelp = document.querySelector('#deadlineDateHelp');
   const shortcutButtons = [...modal.querySelectorAll('[data-deadline-days]')];
   const closeButtons = [...modal.querySelectorAll('[data-deadline-close]')];
   let selectedLoan = null;
   let triggerButton = null;
+  let minimumDate = null;
+  let calendarCursor = new Date();
+
+  const formatLongDate = (date) => new Intl.DateTimeFormat('pt-BR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  }).format(date);
+
+  const setCalendarOpen = (isOpen) => {
+    calendar.hidden = !isOpen;
+    dateButton.setAttribute('aria-expanded', String(isOpen));
+    datePicker.classList.toggle('is-open', isOpen);
+    if (isOpen) replayEntranceAnimation(calendar);
+  };
+
+  const renderCalendar = () => {
+    if (!minimumDate) return;
+
+    const year = calendarCursor.getFullYear();
+    const month = calendarCursor.getMonth();
+    const firstWeekday = new Date(year, month, 1).getDay();
+    const numberOfDays = new Date(year, month + 1, 0).getDate();
+    const selectedValue = dateInput.value;
+    const minimumMonth = new Date(minimumDate.getFullYear(), minimumDate.getMonth(), 1);
+    const visibleMonth = new Date(year, month, 1);
+    const monthText = new Intl.DateTimeFormat('pt-BR', {
+      month: 'long',
+      year: 'numeric'
+    }).format(calendarCursor);
+
+    calendarLabel.textContent = monthText.charAt(0).toLocaleUpperCase('pt-BR') + monthText.slice(1);
+    previousMonthButton.disabled = visibleMonth <= minimumMonth;
+    calendarDays.replaceChildren();
+
+    for (let blank = 0; blank < firstWeekday; blank += 1) {
+      const spacer = document.createElement('span');
+      spacer.className = 'loan-calendar__blank';
+      spacer.setAttribute('aria-hidden', 'true');
+      calendarDays.append(spacer);
+    }
+
+    for (let day = 1; day <= numberOfDays; day += 1) {
+      const date = new Date(year, month, day);
+      const dateValue = getLocalDateValue(date);
+      const dayButton = document.createElement('button');
+
+      dayButton.type = 'button';
+      dayButton.textContent = String(day);
+      dayButton.dataset.date = dateValue;
+      dayButton.setAttribute('aria-label', formatLongDate(date));
+      dayButton.disabled = date < minimumDate;
+
+      if (dateValue === getLocalDateValue(minimumDate)) {
+        dayButton.classList.add('is-minimum');
+        dayButton.setAttribute('aria-description', 'Primeira data disponível');
+      }
+
+      if (dateValue === selectedValue) {
+        dayButton.classList.add('is-selected');
+        dayButton.setAttribute('aria-pressed', 'true');
+      }
+
+      dayButton.addEventListener('click', () => selectDate(date));
+      calendarDays.append(dayButton);
+    }
+  };
 
   const closeModal = () => {
+    setCalendarOpen(false);
     if (modal.open) modal.close();
   };
 
   const selectDate = (date, selectedShortcut = null) => {
+    if (!minimumDate || date < minimumDate) return;
+
     dateInput.value = getLocalDateValue(date);
     dateInput.setCustomValidity('');
+    dateDisplay.textContent = formatShortDatePtBr(dateInput.value);
+    dateButton.classList.add('has-value');
+    dateButton.classList.remove('is-invalid');
     dateHelp.textContent = `Novo prazo selecionado: ${formatShortDatePtBr(dateInput.value)}.`;
     shortcutButtons.forEach((button) => {
       const isSelected = button === selectedShortcut;
       button.classList.toggle('is-selected', isSelected);
       button.setAttribute('aria-pressed', String(isSelected));
     });
+    renderCalendar();
+    setCalendarOpen(false);
+    dateButton.focus();
   };
 
   openDeadlineModal = (loan, button) => {
@@ -1417,18 +1479,25 @@ function setupDeadlineExtensionModal() {
     firstAvailableDate.setDate(firstAvailableDate.getDate() + 1);
 
     form.reset();
+    minimumDate = firstAvailableDate;
+    calendarCursor = new Date(minimumDate.getFullYear(), minimumDate.getMonth(), 1);
     bookTitle.textContent = loan.bookTitle || 'Livro';
     currentDate.dateTime = loan.expectedReturnDate || '';
     currentDate.textContent = formatShortDatePtBr(loan.expectedReturnDate);
-    dateInput.min = getLocalDateValue(firstAvailableDate);
+    dateInput.value = '';
+    dateInput.setCustomValidity('');
+    dateDisplay.textContent = 'Selecione uma nova data';
+    dateButton.classList.remove('has-value', 'is-invalid');
     dateHelp.textContent = 'A nova data precisa ser posterior ao prazo atual.';
     shortcutButtons.forEach((shortcut) => {
       shortcut.classList.remove('is-selected');
       shortcut.setAttribute('aria-pressed', 'false');
     });
+    setCalendarOpen(false);
+    renderCalendar();
 
     modal.showModal();
-    dateInput.focus();
+    dateButton.focus();
   };
 
   shortcutButtons.forEach((button) => {
@@ -1436,28 +1505,59 @@ function setupDeadlineExtensionModal() {
       if (!selectedLoan) return;
       const today = parseLocalDateValue(getLocalDateValue());
       const currentDeadline = parseLocalDateValue(selectedLoan.expectedReturnDate) || today;
-      const shortcutDate = new Date(currentDeadline > today ? currentDeadline : today);
+      const selectedDate = parseLocalDateValue(dateInput.value);
+      const shortcutBase = selectedDate && selectedDate >= minimumDate
+        ? selectedDate
+        : (currentDeadline > today ? currentDeadline : today);
+      const shortcutDate = new Date(shortcutBase);
+
+      // Cada clique continua a partir da data visível, inclusive após uma escolha manual.
       shortcutDate.setDate(shortcutDate.getDate() + Number(button.dataset.deadlineDays));
       selectDate(shortcutDate, button);
     });
   });
 
-  dateInput.addEventListener('change', () => {
-    dateInput.setCustomValidity('');
-    shortcutButtons.forEach((button) => {
-      button.classList.remove('is-selected');
-      button.setAttribute('aria-pressed', 'false');
+  dateButton.addEventListener('click', (event) => {
+    event.stopPropagation();
+    if (!minimumDate) return;
+
+    const selectedDate = parseLocalDateValue(dateInput.value) || minimumDate;
+    calendarCursor = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+    renderCalendar();
+    setCalendarOpen(calendar.hidden);
+  });
+
+  calendar.querySelectorAll('[data-deadline-calendar-action]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const action = button.dataset.deadlineCalendarAction;
+
+      if (action === 'previous') {
+        calendarCursor = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() - 1, 1);
+        renderCalendar();
+      } else if (action === 'next') {
+        calendarCursor = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() + 1, 1);
+        renderCalendar();
+      } else if (action === 'minimum') {
+        selectDate(new Date(minimumDate));
+      } else {
+        setCalendarOpen(false);
+        dateButton.focus();
+      }
     });
-    dateHelp.textContent = dateInput.value
-      ? `Novo prazo selecionado: ${formatShortDatePtBr(dateInput.value)}.`
-      : 'A nova data precisa ser posterior ao prazo atual.';
+  });
+
+  calendar.addEventListener('click', (event) => event.stopPropagation());
+  document.addEventListener('click', (event) => {
+    if (modal.open && !event.target.closest('.deadline-date-picker')) setCalendarOpen(false);
   });
 
   form.addEventListener('submit', (event) => {
     event.preventDefault();
     if (!selectedLoan || !dateInput.value) {
       dateInput.setCustomValidity('Escolha uma nova data para continuar.');
-      dateInput.reportValidity();
+      dateHelp.textContent = 'Escolha uma nova data para continuar.';
+      dateButton.classList.add('is-invalid');
+      dateButton.focus();
       return;
     }
 
@@ -1470,8 +1570,15 @@ function setupDeadlineExtensionModal() {
   modal.addEventListener('click', (event) => {
     if (event.target === modal) closeModal();
   });
+  modal.addEventListener('cancel', (event) => {
+    if (calendar.hidden) return;
+    event.preventDefault();
+    setCalendarOpen(false);
+    dateButton.focus();
+  });
   modal.addEventListener('close', () => {
     selectedLoan = null;
+    minimumDate = null;
     triggerButton?.focus();
     triggerButton = null;
   });
@@ -1734,17 +1841,29 @@ async function handleBookSubmit(event) {
     setFormMessage('Ocorreu um erro inesperado ao tentar salvar o livro.');
   }
 }
-/** Limpa dados, avisos e controles visuais depois de um empréstimo registrado. */
-function clearLoanFormAfterSubmit() {
+/** Limpa os dados e controles visuais do novo empréstimo sem alterar os registros salvos. */
+function clearLoanForm({ focusName = false } = {}) {
   const bookInput = loanForm.elements.bookName;
   const returnDate = loanForm.elements.returnDate;
   const autocomplete = loanForm.querySelector('.book-autocomplete');
+  const classroomSelect = document.querySelector('#classroomSelect');
+  const classroomOptions = document.querySelector('#classroomOptions');
+  const returnDateCalendar = document.querySelector('#returnDateCalendar');
 
   loanForm.reset();
   bookInput.dataset.bookId = '';
   returnDate.value = '';
   autocomplete?.replaceChildren();
   if (autocomplete) autocomplete.hidden = true;
+  classroomSelect.classList.remove('is-open');
+  classroomOptions.hidden = true;
+  document.querySelector('#classroomSelectButton').setAttribute('aria-expanded', 'false');
+  classroomOptions.querySelectorAll('[role="option"]').forEach((option) => {
+    option.setAttribute('aria-selected', 'false');
+  });
+  returnDateCalendar.hidden = true;
+  document.querySelector('#returnDateButton').setAttribute('aria-expanded', 'false');
+  document.querySelector('.loan-date-picker').classList.remove('is-open');
 
   loanForm.querySelectorAll('[data-return-days]').forEach((button) => {
     button.classList.remove('is-selected');
@@ -1759,7 +1878,15 @@ function clearLoanFormAfterSubmit() {
 
   // O campo de data é oculto; o evento também restaura o texto e o calendário visíveis.
   returnDate.dispatchEvent(new Event('change', { bubbles: true }));
-  window.setTimeout(() => loanForm.elements.studentName.focus());
+  if (focusName) window.setTimeout(() => loanForm.elements.studentName.focus());
+}
+
+/** Cancela o rascunho antes de voltar à Gestão. */
+function setupLoanFormCancel() {
+  loanForm.querySelector('[data-open-view="gestao"]').addEventListener('click', () => {
+    clearLoanForm();
+    setLoanMessage('');
+  });
 }
 
 /** Valida e encaminha o empréstimo pela API segura exposta em preload.js. */
@@ -1788,7 +1915,7 @@ async function handleLoanSubmit(event) {
     const resultado = await window.bibliotech.loans.create(loanData);
 
     if (resultado.ok) {
-      clearLoanFormAfterSubmit();
+      clearLoanForm({ focusName: true });
       setLoanMessage(resultado.message, 'success');
       await loadActiveLoans();
     } else {
@@ -1803,6 +1930,7 @@ async function handleLoanSubmit(event) {
 /** Inicializa os eventos após o carregamento do HTML. */
 function initializeApp() {
   setupThemeToggle(); // Alterna entre os temas claro e escuro e salva a preferência.
+  setupSidebar(); // Controla os estados expandido e compacto do menu lateral.
   setupNavigation(); // Controla a interface
   setupCollectionCatalog();// Configura a tabela do acervo. Renderiza os livros, atualiza os totais de livros disponíveis e emprestados e permite filtrar por gênero.
   setupCollectionSearch(); // Configura a busca de livros no acervo. Permite pesquisar por título, autor ou gênero e exibe os resultados encontrados. 
@@ -1816,6 +1944,7 @@ function initializeApp() {
   setupLoanCalendar();//Configura o calendário de data de devolução dos empréstimos. Permite escolher uma data, navegar entre meses, usar atalhos e impedir datas anteriores ao dia atual.
   setupLoanBorrowerType(); // Preenche as turmas e controla a opção "Não é aluno".
   setupLoanForm(); //Configura a validação e o envio do formulário de empréstimo. Depois de validar os dados, exibe uma prévia do empréstimo preenchido.
+  setupLoanFormCancel(); // Limpa o rascunho quando o usuário cancela um novo empréstimo.
   setupLoanTabs(); //Controla as abas do módulo de empréstimos, alternando entre “Novo empréstimo” e “Devoluções”.
   setupDeadlineExtensionModal(); // Controla a mini tela de extensão do prazo.
   setupReturnConfirmationModal(); // Controla a confirmação personalizada da devolução.

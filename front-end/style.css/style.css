@@ -1,6 +1,7 @@
 :root {
     color-scheme: light;
     --sidebar-width: 248px;
+    --sidebar-collapsed-width: 80px;
     --topbar-height: 66px;
     --background: #f3fbfc;
     --surface: #ffffff;
@@ -50,8 +51,7 @@ html[data-theme="dark"] :is(
     .catalog-select__options,
     .genre-select__options,
     .loan-calendar,
-    .book-autocomplete,
-    .mobile-menu
+    .book-autocomplete
 ) {
     color: var(--text);
     background: var(--surface);
@@ -252,7 +252,7 @@ button {
     color: #e9f1f5;
     background: var(--nav-background);
     border-right: 1px solid #203f53;
-    transition: transform 220ms ease;
+    transition: width 360ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .brand {
@@ -263,7 +263,8 @@ button {
     gap: 10px;
     padding: 5px 14px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    transition: background 220ms ease;
+    overflow: hidden;
+    transition: background 220ms ease, padding 360ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .brand:hover {
@@ -275,6 +276,11 @@ button {
     width: min(166px, calc(100% - 46px));
     height: auto;
     filter: drop-shadow(0 5px 10px rgba(3, 16, 31, 0.34));
+    opacity: 1;
+    transform: translateX(0);
+    transform-origin: left center;
+    transition: width 300ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 180ms ease,
+        transform 300ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .brand__icon {
@@ -322,6 +328,41 @@ button {
 .sidebar__content {
     flex: 1;
     padding: 28px 16px;
+    transition: padding 360ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.sidebar-toggle {
+    position: absolute;
+    top: 50px;
+    right: -15px;
+    z-index: 2;
+    display: grid;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    color: #dff9f7;
+    background: linear-gradient(145deg, #0b9d96, #176b83);
+    border: 2px solid var(--background);
+    border-radius: 50%;
+    box-shadow: 0 6px 16px rgba(4, 32, 48, 0.28);
+    cursor: pointer;
+    place-items: center;
+}
+
+.sidebar-toggle:hover {
+    color: #ffffff;
+    box-shadow: 0 8px 20px rgba(4, 32, 48, 0.38);
+    transform: scale(1.08);
+}
+
+.sidebar-toggle:focus-visible {
+    outline: 3px solid rgba(92, 224, 214, 0.36);
+    outline-offset: 2px;
+}
+
+.sidebar-toggle .material-symbols-outlined {
+    font-size: 20px;
+    transition: transform 360ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .sidebar-about {
@@ -366,7 +407,11 @@ button {
 
 .sidebar-about__text {
     display: grid;
+    max-width: 145px;
+    min-width: 0;
     gap: 3px;
+    overflow: hidden;
+    white-space: nowrap;
 }
 
 .sidebar-about__text strong {
@@ -407,7 +452,8 @@ button {
 
 .sidebar-about__text,
 .sidebar-about__arrow {
-    transition: opacity 180ms ease, transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition: width 300ms cubic-bezier(0.2, 0.8, 0.2, 1), max-width 300ms cubic-bezier(0.2, 0.8, 0.2, 1),
+        margin 300ms ease, opacity 180ms ease, transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .sidebar-about.is-launching-about .sidebar-about__text {
@@ -569,12 +615,16 @@ button {
 }
 
 .sidebar__label {
+    max-height: 20px;
     margin: 0 10px 14px;
     color: #8ca5b3;
     font-size: 9px;
     font-weight: 700;
     letter-spacing: 0.04em;
     text-transform: uppercase;
+    overflow: hidden;
+    white-space: nowrap;
+    transition: max-height 240ms ease, margin 240ms ease, opacity 160ms ease;
 }
 
 .menu {
@@ -597,7 +647,17 @@ button {
     cursor: pointer;
     text-align: left;
     overflow: hidden;
-    transition: color 220ms ease, background 220ms ease, transform 220ms ease;
+    transition: color 220ms ease, background 220ms ease, transform 220ms ease,
+        padding 360ms cubic-bezier(0.2, 0.8, 0.2, 1), gap 300ms ease;
+}
+
+.menu__item > span {
+    max-width: 160px;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    transition: max-width 300ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 160ms ease,
+        transform 300ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 /* O brilho parte do ponto clicado e reforça a troca de tela sem atrasar a navegação. */
@@ -658,8 +718,7 @@ button {
 }
 
 .menu__item:focus-visible,
-.notification:focus-visible,
-.mobile-menu:focus-visible {
+.notification:focus-visible {
     outline: 3px solid rgba(7, 141, 135, 0.25);
     outline-offset: 2px;
 }
@@ -710,50 +769,6 @@ button {
     45% { transform: translateY(-2px) scale(1.16); }
 }
 
-/* Partículas contextuais do menu: ficam fora do fluxo e são removidas ao final. */
-.menu-emoji-burst {
-    position: fixed;
-    z-index: 1000;
-    width: 1px;
-    height: 1px;
-    pointer-events: none;
-}
-
-.menu-emoji-particle {
-    position: absolute;
-    top: 0;
-    left: 0;
-    display: block;
-    font-size: 18px;
-    filter: drop-shadow(0 3px 5px rgba(4, 45, 61, 0.2));
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.25);
-    animation: menu-emoji-flight 1050ms cubic-bezier(0.18, 0.78, 0.24, 1) var(--emoji-delay, 0ms) forwards;
-    will-change: transform, opacity;
-}
-
-@keyframes menu-emoji-flight {
-    0% {
-        opacity: 0;
-        transform: translate(-50%, -50%) rotate(0deg) scale(0.25);
-    }
-
-    20% {
-        opacity: 1;
-        transform: translate(calc(-50% + var(--emoji-x)), -50%) rotate(0deg) scale(1.08);
-    }
-
-    68% {
-        opacity: 0.9;
-        transform: translate(calc(-50% + var(--emoji-x)), calc(-50% + var(--emoji-y))) rotate(var(--emoji-rotation)) scale(1);
-    }
-
-    100% {
-        opacity: 0;
-        transform: translate(calc(-50% + var(--emoji-x)), calc(-50% + var(--emoji-y) - 5px)) rotate(var(--emoji-rotation)) scale(var(--emoji-scale));
-    }
-}
-
 @media (prefers-reduced-motion: reduce) {
     .menu__item,
     .menu__icon {
@@ -762,7 +777,6 @@ button {
 
     .menu__item.is-rippling::before,
     .menu__item.is-rippling .menu__icon,
-    .menu-emoji-particle,
     .about-nav-transition__surface,
     .about-nav-transition__surface::before,
     .about-nav-transition__surface::after,
@@ -896,6 +910,75 @@ button {
 .app {
     min-height: 100vh;
     margin-left: var(--sidebar-width);
+    transition: margin-left 360ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* O estado compacto preserva os atalhos e libera mais espaco para o conteudo. */
+.sidebar.is-collapsed {
+    width: var(--sidebar-collapsed-width);
+}
+
+.sidebar.is-collapsed + .app {
+    margin-left: var(--sidebar-collapsed-width);
+}
+
+.sidebar.is-collapsed .brand {
+    justify-content: center;
+    padding-inline: 0;
+}
+
+.sidebar.is-collapsed .brand__wordmark {
+    width: 0;
+    opacity: 0;
+    transform: translateX(-10px) scale(0.94);
+}
+
+.sidebar.is-collapsed .sidebar-toggle .material-symbols-outlined {
+    transform: rotate(180deg);
+}
+
+.sidebar.is-collapsed .sidebar__content {
+    padding-inline: 12px;
+}
+
+.sidebar.is-collapsed .sidebar__label {
+    max-height: 0;
+    margin-block: 0;
+    opacity: 0;
+}
+
+.sidebar.is-collapsed .menu__item {
+    justify-content: center;
+    gap: 0;
+    padding-inline: 0;
+}
+
+.sidebar.is-collapsed .menu__item > span {
+    max-width: 0;
+    opacity: 0;
+    transform: translateX(-8px);
+}
+
+.sidebar.is-collapsed .menu__item::after {
+    right: 12px;
+    left: 12px;
+}
+
+.sidebar.is-collapsed .sidebar-about {
+    justify-content: center;
+    min-height: 56px;
+    gap: 0;
+    margin-inline: 12px;
+    padding-inline: 0;
+}
+
+.sidebar.is-collapsed .sidebar-about__text,
+.sidebar.is-collapsed .sidebar-about__arrow {
+    width: 0;
+    max-width: 0;
+    margin: 0;
+    opacity: 0;
+    overflow: hidden;
 }
 
 .topbar {
@@ -2018,50 +2101,7 @@ button.is-pressed {
     }
 }
 
-.mobile-menu {
-    display: none;
-    width: 40px;
-    height: 40px;
-    padding: 10px;
-    background: #ffffff;
-    border: 1px solid var(--border);
-    border-radius: 7px;
-    cursor: pointer;
-}
-
-.mobile-menu span {
-    display: block;
-    height: 2px;
-    margin: 3px 0;
-    background: var(--primary-dark);
-    border-radius: 2px;
-}
-
-.sidebar-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 25;
-    display: none;
-    background: rgba(7, 33, 35, 0.36);
-    opacity: 0;
-    transition: opacity 220ms ease;
-}
-
 @media (max-width: 760px) {
-    .sidebar {
-        width: min(84vw, 290px);
-        transform: translateX(-100%);
-        box-shadow: var(--shadow);
-    }
-
-    .sidebar.is-open {
-        transform: translateX(0);
-    }
-
-    .app {
-        margin-left: 0;
-    }
-
     .topbar {
         gap: 14px;
         padding: 0 16px;
@@ -2073,10 +2113,6 @@ button.is-pressed {
         right: 16px;
         left: 16px;
         width: auto;
-    }
-
-    .mobile-menu {
-        display: block;
     }
 
     .breadcrumb {
@@ -2156,10 +2192,6 @@ button.is-pressed {
         padding: 6px 8px;
     }
 
-    .sidebar-overlay.is-visible {
-        display: block;
-        opacity: 1;
-    }
 }
 
 @media (min-width: 761px) and (max-width: 1100px) {
@@ -3527,8 +3559,7 @@ button.is-pressed {
 }
 
 .deadline-modal__icon,
-.deadline-modal__close,
-.deadline-modal__date-control > span {
+.deadline-modal__close {
     font-family: "Material Symbols Outlined";
 }
 
@@ -3635,45 +3666,30 @@ button.is-pressed {
     gap: 8px;
 }
 
-.deadline-modal__date-control {
-    position: relative;
-    display: block;
-}
-
-.deadline-modal__date-control input {
-    width: 100%;
-    height: 48px;
-    padding: 0 46px 0 14px;
-    color: var(--text);
+.deadline-date-picker__trigger {
+    min-height: 48px;
+    padding-inline: 14px 11px;
     background: #ffffff;
-    border: 1px solid var(--border);
+    border-color: var(--border);
     border-radius: 11px;
     font: 600 14px Inter, "Segoe UI", Arial, sans-serif;
-    outline: none;
 }
 
-.deadline-modal__date-control input:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 4px rgba(7, 141, 135, 0.12);
+.deadline-date-picker__trigger.is-invalid {
+    border-color: var(--danger);
+    box-shadow: 0 0 0 4px rgba(219, 67, 84, 0.12);
 }
 
-.deadline-modal__date-control input::-webkit-calendar-picker-indicator {
-    position: absolute;
-    inset: 0;
+.deadline-calendar {
+    right: auto;
+    left: 0;
     width: 100%;
-    height: 100%;
-    cursor: pointer;
-    opacity: 0;
 }
 
-.deadline-modal__date-control > span {
-    position: absolute;
-    top: 50%;
-    right: 14px;
-    color: var(--primary);
-    font-size: 21px;
-    pointer-events: none;
-    transform: translateY(-50%);
+.deadline-calendar .loan-calendar__days button.is-minimum:not(.is-selected) {
+    color: var(--primary-dark);
+    background: #effaf8;
+    border-color: #8bcac6;
 }
 
 .deadline-modal__date small {
@@ -3750,10 +3766,16 @@ html[data-theme="dark"] .deadline-modal__shortcuts button.is-selected {
     border-color: #04c5b5;
 }
 
-html[data-theme="dark"] .deadline-modal__date-control input {
-    color: #e1eef0;
-    color-scheme: dark;
-    background: #07161b;
+html[data-theme="dark"] .deadline-calendar .loan-calendar__days button.is-minimum:not(.is-selected) {
+    color: #04c5b5;
+    background: #002626;
+    border-color: #04c5b5;
+}
+
+html[data-theme="dark"] .loan-calendar__header button,
+html[data-theme="dark"] .loan-calendar__footer button {
+    color: #04c5b5;
+    background: #14242a;
     border-color: #273c42;
 }
 
@@ -5436,7 +5458,6 @@ html[data-theme="dark"] :is(
     .help-button,
     .theme-toggle,
     .notification,
-    .mobile-menu,
     .profile-menu,
     .notification-panel,
     .collection-search__filter-menu,
