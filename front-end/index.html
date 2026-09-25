@@ -17,25 +17,29 @@
             <img class="brand__wordmark" src="assets/bibliotech-brand-teal.png" alt="Bibliotech">
         </button>
 
+        <button class="sidebar-toggle" id="sidebarToggle" type="button" aria-label="Recolher menu lateral" aria-controls="sidebar" aria-expanded="true">
+            <span class="material-symbols-outlined" aria-hidden="true">chevron_left</span>
+        </button>
+
         <div class="sidebar__content">
             <p class="sidebar__label">Menu principal</p>
 
             <nav class="menu">
-                <button class="menu__item is-active" type="button" data-page="Visão geral" aria-current="page">
+                <button class="menu__item is-active" type="button" data-page="Visão geral" aria-label="Visão geral" aria-current="page">
                     <img class="menu__icon" src="assets/icons/overview.svg" alt="" aria-hidden="true">
                     <span>Visão geral</span>
                 </button>
-                <button class="menu__item" type="button" data-page="Gestão">
+                <button class="menu__item" type="button" data-page="Gestão" aria-label="Gestão">
                     <img class="menu__icon" src="assets/icons/management.svg" alt="" aria-hidden="true">
                     <span>Gestão</span>
                 </button>
 
-                <button class="menu__item" type="button" data-page="Acervo">
+                <button class="menu__item" type="button" data-page="Acervo" aria-label="Acervo">
                     <img class="menu__icon" src="assets/icons/collection.svg" alt="" aria-hidden="true">
                     <span>Acervo</span>
                 </button>
 
-                <button class="menu__item" type="button" data-page="Relatórios">
+                <button class="menu__item" type="button" data-page="Relatórios" aria-label="Relatórios">
                     <img class="menu__icon" src="assets/icons/reports.svg" alt="" aria-hidden="true">
                     <span>Relatórios</span>
                 </button>
@@ -58,10 +62,6 @@
 
     <div class="app">
         <header class="topbar">
-            <button class="mobile-menu" id="mobileMenu" type="button" aria-label="Abrir menu" aria-controls="sidebar" aria-expanded="false">
-                <span></span><span></span><span></span>
-            </button>
-
             <button class="view-back-button" id="viewBackButton" type="button" aria-label="Voltar para a tela anterior" hidden>
                 <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                     <path d="m15 6-6 6 6 6M9 12h10"/>
@@ -76,6 +76,16 @@
 
             <div class="topbar-actions">
                 <button class="help-button" id="helpButton" type="button">Ajuda</button>
+
+                <button class="theme-toggle" id="themeToggle" type="button" aria-label="Ativar modo escuro" aria-pressed="false" title="Ativar modo escuro">
+                    <svg class="theme-toggle__icon theme-toggle__icon--moon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M20 15.2A8.5 8.5 0 0 1 8.8 4 8.5 8.5 0 1 0 20 15.2Z"/>
+                    </svg>
+                    <svg class="theme-toggle__icon theme-toggle__icon--sun" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <circle cx="12" cy="12" r="3.5"/>
+                        <path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.65 17.65l1.42 1.42M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.65 6.35l1.42-1.42"/>
+                    </svg>
+                </button>
 
                 <div class="notification-area">
                     <button class="notification" id="notificationButton" type="button" aria-label="Abrir notificações" aria-controls="notificationPanel" aria-expanded="false" aria-haspopup="true">
@@ -427,20 +437,12 @@
                             <small></small>
                         </label>
 
-                        <section class="loan-preview wide" id="loanPreview" aria-live="polite" hidden>
-                            <span class="loan-preview__status" aria-hidden="true">✓</span>
-                            <div>
-                                <strong>Empréstimo validado</strong>
-                                <p id="loanPreviewSummary"></p>
-                            </div>
-                        </section>
-
                         <p class="form-message wide" id="loanFormMessage" role="status" aria-live="polite"></p>
 
                         <div class="form-actions wide">
                             <button type="button" data-open-view="gestao">Cancelar</button>
                             <button class="primary-action loan-submit-button" type="submit">
-                                <span>Validar empréstimo</span>
+                                <span>Registrar empréstimo</span>
                                 <span aria-hidden="true">→</span>
                             </button>
                         </div>
@@ -469,8 +471,10 @@
                     <div class="returns-table" aria-label="Lista de devoluções pendentes">
                         <div class="returns-table__header" aria-hidden="true">
                             <span>Livro</span>
-                            <span>Aluno</span>
+                            <span>Leitor</span>
+                            <span>Tipo de leitor</span>
                             <span>Turma</span>
+                            <span>Emprestado em</span>
                             <span>Prazo</span>
                             <span>Ação</span>
                         </div>
@@ -576,6 +580,155 @@
                         </section>
                     </div>
                 </section>
+            </section>
+
+            <!-- Estrutura visual da tela de relatórios. -->
+            <section class="page-intro reports-page" id="reportsPage" hidden aria-labelledby="reportsPageTitle">
+                <header class="reports-header">
+                    <div>
+                        <p class="page-intro__eyebrow">Análise da biblioteca</p>
+                        <h1 id="reportsPageTitle">Relatórios</h1>
+                        <p class="page-intro__description">
+                            Acompanhe o cenário atual do acervo, dos empréstimos e dos prazos de devolução.
+                        </p>
+                    </div>
+
+                </header>
+
+                <div class="reports-scope" aria-label="Escopo do relatório">
+                    <span class="reports-scope__item is-active">Visão atual</span>
+                    <label class="reports-scope__filter">
+                        <span class="sr-only">Filtrar por gênero</span>
+                        <select id="reportsGenreFilter" aria-label="Filtrar relatório por gênero" disabled>
+                            <option value="all">Todos os gêneros</option>
+                        </select>
+                    </label>
+                    <label class="reports-scope__filter">
+                        <span class="sr-only">Filtrar por turma</span>
+                        <select id="reportsClassFilter" aria-label="Filtrar relatório por turma" disabled>
+                            <option value="all">Todas as turmas</option>
+                        </select>
+                    </label>
+                </div>
+
+                <section class="reports-metrics" aria-label="Indicadores da biblioteca">
+                    <article class="report-metric-card">
+                        <header>
+                            <span>Acervo total</span>
+                            <span class="material-symbols-outlined" aria-hidden="true">menu_book</span>
+                        </header>
+                        <div><strong id="reportMetricTotal">—</strong><small>Aguardando dados</small></div>
+                    </article>
+
+                    <article class="report-metric-card report-metric-card--available">
+                        <header>
+                            <span>Disponíveis</span>
+                            <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
+                        </header>
+                        <div><strong id="reportMetricAvailable">—</strong><small>Aguardando dados</small></div>
+                    </article>
+
+                    <article class="report-metric-card report-metric-card--loaned">
+                        <header>
+                            <span>Em empréstimo</span>
+                            <span class="material-symbols-outlined" aria-hidden="true">swap_horiz</span>
+                        </header>
+                        <div><strong id="reportMetricLoaned">—</strong><small>Aguardando dados</small></div>
+                    </article>
+
+                    <article class="report-metric-card report-metric-card--attention">
+                        <header>
+                            <span>Atrasados</span>
+                            <span class="material-symbols-outlined" aria-hidden="true">warning</span>
+                        </header>
+                        <div><strong id="reportMetricOverdue">—</strong><small>Aguardando dados</small></div>
+                    </article>
+                </section>
+
+                <div class="reports-grid reports-grid--overview">
+                    <article class="report-panel report-availability" aria-labelledby="availabilityReportTitle">
+                        <header class="report-panel__header">
+                            <div>
+                                <h2 id="availabilityReportTitle">Disponibilidade do acervo</h2>
+                                <p>Situação atual dos exemplares</p>
+                            </div>
+                        </header>
+
+                        <div class="report-availability__content">
+                            <div class="report-donut is-empty" id="reportAvailabilityChart" role="img" aria-label="Disponibilidade ainda não carregada">
+                                <div><strong id="reportAvailabilityPercentage">—</strong><span>disponibilidade</span></div>
+                            </div>
+                            <dl class="report-legend">
+                                <div><dt><i></i>Disponíveis</dt><dd id="reportAvailableCount">—</dd></div>
+                                <div><dt><i></i>Em empréstimo</dt><dd id="reportLoanedCount">—</dd></div>
+                            </dl>
+                        </div>
+                    </article>
+
+                    <article class="report-panel report-deadlines" aria-labelledby="deadlinesReportTitle">
+                        <header class="report-panel__header">
+                            <div>
+                                <h2 id="deadlinesReportTitle">Prazos de devolução</h2>
+                                <p>Quantidade de empréstimos por urgência</p>
+                            </div>
+                        </header>
+
+                        <div class="report-bars">
+                            <div class="report-bar report-bar--danger">
+                                <span>Atrasados</span><i><b id="reportOverdueBar" style="--bar-size: 0%;"></b></i><strong id="reportOverdueCount">—</strong>
+                            </div>
+                            <div class="report-bar report-bar--today">
+                                <span>Vencem hoje</span><i><b id="reportTodayBar" style="--bar-size: 0%;"></b></i><strong id="reportTodayCount">—</strong>
+                            </div>
+                            <div class="report-bar report-bar--soon">
+                                <span>Próximos 7 dias</span><i><b id="reportSoonBar" style="--bar-size: 0%;"></b></i><strong id="reportSoonCount">—</strong>
+                            </div>
+                            <div class="report-bar report-bar--safe">
+                                <span>Depois de 7 dias</span><i><b id="reportLaterBar" style="--bar-size: 0%;"></b></i><strong id="reportLaterCount">—</strong>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+
+                <div class="reports-grid reports-grid--details">
+                    <article class="report-panel report-genres" aria-labelledby="genresReportTitle">
+                        <header class="report-panel__header">
+                            <div>
+                                <h2 id="genresReportTitle">Distribuição por gênero</h2>
+                                <p>Exemplares cadastrados no acervo</p>
+                            </div>
+                        </header>
+
+                        <div class="report-genre-list" id="reportsGenreList"></div>
+                        <div class="report-data-empty" id="reportsGenresEmpty" role="status">
+                            <span class="material-symbols-outlined" aria-hidden="true">bar_chart</span>
+                            <strong>Nenhum dado por gênero carregado</strong>
+                        </div>
+                    </article>
+
+                    <article class="report-panel report-attention" aria-labelledby="attentionReportTitle">
+                        <header class="report-panel__header">
+                            <div>
+                                <h2 id="attentionReportTitle">Empréstimos que exigem atenção</h2>
+                                <p>Prioridade para acompanhamento da equipe</p>
+                            </div>
+                        </header>
+
+                        <div class="report-attention__table" role="table" aria-label="Empréstimos que exigem atenção">
+                            <div class="report-attention__head" role="row">
+                                <span role="columnheader">Livro</span>
+                                <span role="columnheader">Leitor</span>
+                                <span role="columnheader">Prazo</span>
+                                <span role="columnheader">Status</span>
+                            </div>
+                            <div id="reportsAttentionBody" role="rowgroup"></div>
+                            <div class="report-data-empty report-data-empty--table" id="reportsAttentionEmpty" role="status">
+                                <span class="material-symbols-outlined" aria-hidden="true">event_available</span>
+                                <strong>Nenhum empréstimo carregado</strong>
+                            </div>
+                        </div>
+                    </article>
+                </div>
             </section>
 
             <!-- Formulário alinhado aos atributos previstos no banco SQLite. -->
@@ -816,7 +969,108 @@
         </main>
     </div>
 
-    <div class="sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+    <dialog class="deadline-modal" id="deadlineModal" aria-labelledby="deadlineModalTitle">
+        <form class="deadline-modal__card" id="deadlineForm" method="dialog">
+            <header class="deadline-modal__header">
+                <span class="deadline-modal__icon" aria-hidden="true">edit_calendar</span>
+                <div>
+                    <p>AJUSTE DE PRAZO</p>
+                    <h2 id="deadlineModalTitle">Estender prazo</h2>
+                </div>
+                <button class="deadline-modal__close" type="button" data-deadline-close aria-label="Fechar">close</button>
+            </header>
+
+            <div class="deadline-modal__loan">
+                <span>Empréstimo selecionado</span>
+                <strong id="deadlineBookTitle">Livro</strong>
+                <small>Prazo atual: <time id="deadlineCurrentDate">—</time></small>
+            </div>
+
+            <div class="deadline-modal__shortcuts" role="group" aria-label="Prazos rápidos">
+                <span>Estender rapidamente</span>
+                <button type="button" data-deadline-days="7">+7 dias</button>
+                <button type="button" data-deadline-days="14">+14 dias</button>
+                <button type="button" data-deadline-days="30">+30 dias</button>
+            </div>
+
+            <div class="deadline-modal__date">
+                <span id="deadlineDateLabel">Ou escolha uma data no calendário</span>
+                <div class="loan-date-picker deadline-date-picker">
+                    <button class="loan-date-picker__trigger deadline-date-picker__trigger" id="deadlineDateButton" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="deadlineDateCalendar" aria-describedby="deadlineDateHelp">
+                        <span id="deadlineDateDisplay">Selecione uma nova data</span>
+                        <span class="material-symbols-outlined loan-date-picker__icon" aria-hidden="true">calendar_month</span>
+                    </button>
+                    <input id="deadlineDate" name="deadlineDate" type="hidden" required>
+
+                    <section class="loan-calendar deadline-calendar" id="deadlineDateCalendar" role="dialog" aria-labelledby="deadlineCalendarMonthLabel" hidden>
+                        <header class="loan-calendar__header">
+                            <button type="button" data-deadline-calendar-action="previous" aria-label="Mês anterior">‹</button>
+                            <strong id="deadlineCalendarMonthLabel" aria-live="polite"></strong>
+                            <button type="button" data-deadline-calendar-action="next" aria-label="Próximo mês">›</button>
+                        </header>
+                        <div class="loan-calendar__weekdays" aria-hidden="true">
+                            <span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span>
+                        </div>
+                        <div class="loan-calendar__days" id="deadlineCalendarDays"></div>
+                        <footer class="loan-calendar__footer">
+                            <button type="button" data-deadline-calendar-action="minimum">Primeira data</button>
+                            <button type="button" data-deadline-calendar-action="close">Fechar</button>
+                        </footer>
+                    </section>
+                </div>
+                <small id="deadlineDateHelp">A nova data precisa ser posterior ao prazo atual.</small>
+            </div>
+
+            <footer class="deadline-modal__actions">
+                <button class="deadline-modal__cancel" type="button" data-deadline-close>Cancelar</button>
+                <button class="deadline-modal__confirm" type="submit">Confirmar novo prazo</button>
+            </footer>
+        </form>
+    </dialog>
+
+    <dialog class="deadline-modal return-modal" id="returnModal" aria-labelledby="returnModalTitle">
+        <form class="deadline-modal__card return-modal__card" id="returnForm" method="dialog">
+            <header class="deadline-modal__header">
+                <span class="deadline-modal__icon return-modal__icon" aria-hidden="true">assignment_return</span>
+                <div>
+                    <p>CONFIRMAÇÃO DE RETORNO</p>
+                    <h2 id="returnModalTitle">Registrar devolução</h2>
+                </div>
+                <button class="deadline-modal__close" type="button" data-return-close aria-label="Fechar">close</button>
+            </header>
+
+            <div class="deadline-modal__loan return-modal__loan">
+                <span>Livro selecionado</span>
+                <strong id="returnBookTitle">Livro</strong>
+                <dl class="return-modal__details">
+                    <div>
+                        <dt>Leitor</dt>
+                        <dd id="returnReaderName">—</dd>
+                    </div>
+                    <div>
+                        <dt>Prazo</dt>
+                        <dd><time id="returnDueDate">—</time></dd>
+                    </div>
+                </dl>
+            </div>
+
+            <div class="return-modal__notice">
+                <span aria-hidden="true">info</span>
+                <p>Ao confirmar, o exemplar voltará a ficar disponível no acervo.</p>
+            </div>
+
+            <p class="return-modal__message" id="returnModalMessage" role="status" aria-live="polite"></p>
+
+            <footer class="deadline-modal__actions">
+                <button class="deadline-modal__cancel" type="button" data-return-close>Cancelar</button>
+                <button class="deadline-modal__confirm return-modal__confirm" type="submit">
+                    <span aria-hidden="true">assignment_return</span>
+                    <span>Confirmar devolução</span>
+                </button>
+            </footer>
+        </form>
+    </dialog>
+
     <script src="script.js"></script>
 </body>
 </html>

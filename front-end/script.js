@@ -10,6 +10,7 @@ const managementPage = document.querySelector('#managementPage');
 const loanPage = document.querySelector('#loanPage');
 const registrationPage = document.querySelector('#registrationPage');
 const collectionPage = document.querySelector('#collectionPage');
+const reportsPage = document.querySelector('#reportsPage');
 const aboutPage = document.querySelector('#aboutPage');
 const pageTitle = document.querySelector('#pageTitle');
 const breadcrumbCurrent = document.querySelector('#breadcrumbCurrent');
@@ -18,6 +19,9 @@ const bookForm = document.querySelector('#bookForm');
 const loanForm = document.querySelector('#loanForm');
 const notificationButton = document.querySelector('#notificationButton');
 const notificationPanel = document.querySelector('#notificationPanel');
+const themeToggle = document.querySelector('#themeToggle');
+const sidebar = document.querySelector('#sidebar');
+const sidebarToggle = document.querySelector('#sidebarToggle');
 let pendingMessageTimer;
 let formMessageTimer;
 let loanMessageTimer;
@@ -27,7 +31,58 @@ let collectionLoaded = false; //
 let renderCollectionCatalog = null;
 const sessionActiveLoans = [];
 let renderReturnsList = null;
+let openDeadlineModal = null;
+let openReturnModal = null;
 const viewHistory = ['inicio'];
+
+// Exemplos visuais exibidos somente quando não há empréstimos ativos no banco.
+// Assim que o back-end retornar um registro real, esta prévia deixa de aparecer.
+const RETURNS_LAYOUT_EXAMPLES = [
+  {
+    id: 'layout-example-student',
+    bookTitle: 'O Pequeno Príncipe',
+    studentName: 'Ana Souza',
+    borrowerType: 'student',
+    classroom: '8º A',
+    loanDate: '2026-09-15',
+    expectedReturnDate: '2026-09-29',
+    isLayoutExample: true
+  },
+  {
+    id: 'layout-example-non-student',
+    bookTitle: 'Dom Casmurro',
+    studentName: 'Marcos Oliveira',
+    borrowerType: 'non_student',
+    classroom: '',
+    loanDate: '2026-09-18',
+    expectedReturnDate: '2026-10-02',
+    isLayoutExample: true
+  }
+];
+
+// --- Configurações das microinterações do menu lateral. ---
+const ABOUT_TRANSITION_REVEAL_DELAY = 900;
+const ABOUT_TRANSITION_CLEANUP_DELAY = 1520;
+
+/** Sempre inicia no tema claro e permite alternar o tema durante a sessão. */
+function setupThemeToggle() {
+  const applyTheme = (theme) => {
+    const isDark = theme === 'dark';
+    const actionLabel = isDark ? 'Ativar modo claro' : 'Ativar modo escuro';
+
+    document.documentElement.dataset.theme = theme;
+    themeToggle.setAttribute('aria-pressed', String(isDark));
+    themeToggle.setAttribute('aria-label', actionLabel);
+    themeToggle.title = actionLabel;
+  };
+
+  applyTheme('light');
+
+  themeToggle.addEventListener('click', () => {
+    const nextTheme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    applyTheme(nextTheme);
+  });
+}
 
 /**
  * Reinicia uma animação CSS aplicada por classe sem alterar o conteúdo da tela.
@@ -41,7 +96,7 @@ function replayEntranceAnimation(element) {
 
 /**
  * Alterna a tela visível da aplicação.
- * @param {'inicio'|'gestao'|'emprestimos'|'acervo'|'cadastro'|'sobre'} view Tela que deve ser exibida.
+ * @param {'inicio'|'gestao'|'emprestimos'|'acervo'|'cadastro'|'relatorios'|'sobre'} view Tela que deve ser exibida.
  */
 function openView(view, { fromHistory = false, resetHistory = false } = {}) {
   if (resetHistory) {
@@ -55,6 +110,7 @@ function openView(view, { fromHistory = false, resetHistory = false } = {}) {
   loanPage.hidden = view !== 'emprestimos';
   collectionPage.hidden = view !== 'acervo';
   registrationPage.hidden = view !== 'cadastro';
+  reportsPage.hidden = view !== 'relatorios';
   aboutPage.hidden = view !== 'sobre';
 
   const titleByView = {
@@ -63,6 +119,7 @@ function openView(view, { fromHistory = false, resetHistory = false } = {}) {
     emprestimos: 'Empréstimos',
     acervo: 'Acervo',
     cadastro: 'Cadastro de livro',
+    relatorios: 'Relatórios',
     sobre: 'Sobre'
   };
   const title = titleByView[view];
@@ -77,6 +134,8 @@ function openView(view, { fromHistory = false, resetHistory = false } = {}) {
     ? 'Visão geral'
     : view === 'acervo'
       ? 'Acervo'
+      : view === 'relatorios'
+        ? 'Relatórios'
       : view === 'sobre'
         ? 'Sobre'
         : 'Gestão';
@@ -90,6 +149,7 @@ function openView(view, { fromHistory = false, resetHistory = false } = {}) {
     emprestimos: loanPage,
     acervo: collectionPage,
     cadastro: registrationPage,
+    relatorios: reportsPage,
     sobre: aboutPage
   };
   const visiblePage = pageByView[view];
@@ -956,7 +1016,7 @@ function setupLoanCalendar() {
   returnDate.addEventListener('change', updateDateShortcuts);
 }
 
-/** Prepara a validação progressiva e o resumo do novo empréstimo. */
+/** Prepara a validação progressiva do novo empréstimo. */
 function setupLoanForm() {
   loanForm.querySelectorAll('[required]').forEach((input) => {
     if (input.type !== 'hidden') input.addEventListener('blur', () => validateLoanField(input));
@@ -964,27 +1024,6 @@ function setupLoanForm() {
     input.addEventListener(validationEvent, () => {
       if (input.closest('label, .form-field').classList.contains('is-invalid')) validateLoanField(input);
     });
-  });
-
-  loanForm.addEventListener('submit', (event) => {
-    event.preventDefault();
-    const preview = document.querySelector('#loanPreview');
-    preview.hidden = true;
-
-    if (!validateLoanForm()) {
-      setLoanMessage('Preencha corretamente os campos obrigatórios destacados em vermelho.');
-      loanForm.querySelector('[aria-invalid="true"]')?.focus();
-      return;
-    }
-
-    const loanData = getLoanPayload();
-    const returnDateText = new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' })
-      .format(new Date(`${loanData.expectedReturnDate}T00:00:00Z`));
-    document.querySelector('#loanPreviewSummary').textContent =
-      `${loanData.bookName} para ${loanData.studentName} (${loanData.classroom}), devolução em ${returnDateText}.`;
-    preview.hidden = false;
-    replayEntranceAnimation(preview);
-    setLoanMessage('Dados do empréstimo validados com sucesso.', 'success');
   });
 }
 
@@ -1019,17 +1058,125 @@ function setupLoanTabs() {
   });
 }
 
+/**
+ * Transforma o botão Sobre numa onda antes de revelar a página de créditos.
+ * @param {HTMLElement} item Botão Sobre.
+ */
+function launchAboutTransition(item) {
+  if (item.dataset.navigating === 'true') return;
+
+  const icon = item.querySelector('.sidebar-about__icon');
+  const buttonBounds = item.getBoundingClientRect();
+  const iconBounds = icon.getBoundingClientRect();
+  const originX = iconBounds.left + iconBounds.width / 2;
+  const originY = iconBounds.top + iconBounds.height / 2;
+  const waveOriginX = buttonBounds.left + buttonBounds.width / 2;
+  const waveOriginY = buttonBounds.top + buttonBounds.height / 2;
+  const travelX = window.innerWidth / 2 - originX;
+  const travelY = window.innerHeight / 2 - originY;
+  const farthestX = Math.max(waveOriginX, window.innerWidth - waveOriginX);
+  const farthestY = Math.max(waveOriginY, window.innerHeight - waveOriginY);
+  const fillRadius = Math.hypot(farthestX, farthestY) * 1.05;
+  const transition = document.createElement('span');
+
+  transition.className = 'about-nav-transition';
+  transition.setAttribute('aria-hidden', 'true');
+  transition.style.setProperty('--about-origin-x', `${originX}px`);
+  transition.style.setProperty('--about-origin-y', `${originY}px`);
+  transition.style.setProperty('--about-wave-origin-x', `${waveOriginX}px`);
+  transition.style.setProperty('--about-wave-origin-y', `${waveOriginY}px`);
+  transition.style.setProperty('--about-start-radius-x', `${buttonBounds.width / 2}px`);
+  transition.style.setProperty('--about-start-radius-y', `${buttonBounds.height / 2}px`);
+  transition.style.setProperty('--about-travel-x', `${travelX}px`);
+  transition.style.setProperty('--about-travel-y', `${travelY}px`);
+  transition.style.setProperty('--about-fill-radius', `${fillRadius}px`);
+  transition.innerHTML = `
+    <span class="about-nav-transition__surface"></span>
+    <span class="about-nav-transition__circle"></span>
+    <span class="about-nav-transition__icon"><img src="assets/icons/about.svg" alt=""></span>
+  `;
+
+  item.dataset.navigating = 'true';
+  item.setAttribute('aria-busy', 'true');
+  item.classList.add('is-launching-about');
+  document.body.appendChild(transition);
+
+  window.setTimeout(() => openView('sobre'), ABOUT_TRANSITION_REVEAL_DELAY);
+  window.setTimeout(() => {
+    transition.remove();
+    item.classList.remove('is-launching-about');
+    item.removeAttribute('aria-busy');
+    delete item.dataset.navigating;
+  }, ABOUT_TRANSITION_CLEANUP_DELAY);
+}
+
+/**
+ * Reinicia o efeito de toque no ponto exato acionado pelo mouse ou teclado.
+ * @param {HTMLElement} item Item principal do menu.
+ * @param {MouseEvent} event Evento que iniciou a navegação.
+ */
+function launchMenuRipple(item, event) {
+  const bounds = item.getBoundingClientRect();
+  const fromKeyboard = event.detail === 0;
+  const rippleX = fromKeyboard ? bounds.width / 2 : event.clientX - bounds.left;
+  const rippleY = fromKeyboard ? bounds.height / 2 : event.clientY - bounds.top;
+
+  item.style.setProperty('--menu-ripple-x', `${rippleX}px`);
+  item.style.setProperty('--menu-ripple-y', `${rippleY}px`);
+  item.classList.remove('is-rippling');
+  void item.offsetWidth;
+  item.classList.add('is-rippling');
+
+  const clearRipple = (animationEvent) => {
+    if (animationEvent.animationName !== 'menu-ripple') return;
+    item.classList.remove('is-rippling');
+    item.removeEventListener('animationend', clearRipple);
+  };
+  item.addEventListener('animationend', clearRipple);
+}
+
+/** Alterna o menu lateral entre os estados expandido e compacto. */
+function setupSidebar() {
+  const setCollapsed = (collapsed) => {
+    sidebar.classList.toggle('is-collapsed', collapsed);
+    sidebarToggle.setAttribute('aria-expanded', String(!collapsed));
+    sidebarToggle.setAttribute('aria-label', collapsed ? 'Expandir menu lateral' : 'Recolher menu lateral');
+
+    // No modo compacto, o título nativo identifica cada ícone ao passar o mouse.
+    menuItems.forEach((item) => {
+      if (collapsed) item.title = item.dataset.page;
+      else item.removeAttribute('title');
+    });
+  };
+
+  sidebarToggle.addEventListener('click', () => {
+    setCollapsed(!sidebar.classList.contains('is-collapsed'));
+  });
+}
+
 /** Conecta botões do menu às telas disponíveis ou aos avisos de planejamento. */
 function setupNavigation() {
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   menuItems.forEach((item) => {
-    item.addEventListener('click', () => {
+    item.addEventListener('click', (event) => {
       const page = item.dataset.page;
+
+      if (page === 'Sobre') {
+        if (!aboutPage.hidden) return;
+        if (reducedMotion) return openView('sobre');
+        launchAboutTransition(item);
+        return;
+      }
+
+      if (!reducedMotion && item.classList.contains('menu__item')) {
+        launchMenuRipple(item, event);
+      }
+
       if (page === 'Visão geral') return openView('inicio', { resetHistory: true });
       if (page === 'Gestão') return openView('gestao');
       if (page === 'Acervo') return openView('acervo');
-      if (page === 'Sobre') return openView('sobre');
+      if (page === 'Relatórios') return openView('relatorios');
       showPending(`${page} será disponibilizado nas próximas etapas.`);
     });
   });
@@ -1147,6 +1294,7 @@ function setupPendingActions() {
 function setupBookAutocomplete() {
   const bookInput = document.querySelector('input[name="bookName"]');
   if (!bookInput) return;
+  let searchRequestId = 0;
 
   const resultList = document.createElement('ul');
   resultList.className = 'book-autocomplete';
@@ -1158,6 +1306,7 @@ function setupBookAutocomplete() {
   bookInput.parentElement.appendChild(resultList);
 
   bookInput.addEventListener('input', async (e) => {
+    const requestId = ++searchRequestId;
     const termo = e.target.value.trim();
 
     // Uma nova digitação invalida a seleção anterior até que outro livro seja escolhido.
@@ -1169,6 +1318,7 @@ function setupBookAutocomplete() {
     }
 
     const response = await window.bibliotech.books.search(termo);
+    if (requestId !== searchRequestId || bookInput.value.trim() !== termo) return;
 
     if (response.ok && response.data.length > 0) {
       resultList.replaceChildren();
@@ -1194,6 +1344,12 @@ function setupBookAutocomplete() {
     }
   });
 
+  loanForm.addEventListener('reset', () => {
+    searchRequestId += 1;
+    resultList.replaceChildren();
+    resultList.hidden = true;
+  });
+
   document.addEventListener('click', (e) => {
     if (e.target !== bookInput) {
       resultList.hidden = true;
@@ -1201,6 +1357,318 @@ function setupBookAutocomplete() {
   });
 }
 
+
+/** Configura a mini tela usada para escolher e confirmar um novo prazo. */
+function setupDeadlineExtensionModal() {
+  const modal = document.querySelector('#deadlineModal');
+  const form = document.querySelector('#deadlineForm');
+  const bookTitle = document.querySelector('#deadlineBookTitle');
+  const currentDate = document.querySelector('#deadlineCurrentDate');
+  const dateInput = document.querySelector('#deadlineDate');
+  const datePicker = modal.querySelector('.deadline-date-picker');
+  const dateButton = document.querySelector('#deadlineDateButton');
+  const dateDisplay = document.querySelector('#deadlineDateDisplay');
+  const calendar = document.querySelector('#deadlineDateCalendar');
+  const calendarLabel = document.querySelector('#deadlineCalendarMonthLabel');
+  const calendarDays = document.querySelector('#deadlineCalendarDays');
+  const previousMonthButton = calendar.querySelector('[data-deadline-calendar-action="previous"]');
+  const dateHelp = document.querySelector('#deadlineDateHelp');
+  const shortcutButtons = [...modal.querySelectorAll('[data-deadline-days]')];
+  const closeButtons = [...modal.querySelectorAll('[data-deadline-close]')];
+  let selectedLoan = null;
+  let triggerButton = null;
+  let minimumDate = null;
+  let calendarCursor = new Date();
+
+  const formatLongDate = (date) => new Intl.DateTimeFormat('pt-BR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  }).format(date);
+
+  const setCalendarOpen = (isOpen) => {
+    calendar.hidden = !isOpen;
+    dateButton.setAttribute('aria-expanded', String(isOpen));
+    datePicker.classList.toggle('is-open', isOpen);
+    if (isOpen) replayEntranceAnimation(calendar);
+  };
+
+  const renderCalendar = () => {
+    if (!minimumDate) return;
+
+    const year = calendarCursor.getFullYear();
+    const month = calendarCursor.getMonth();
+    const firstWeekday = new Date(year, month, 1).getDay();
+    const numberOfDays = new Date(year, month + 1, 0).getDate();
+    const selectedValue = dateInput.value;
+    const minimumMonth = new Date(minimumDate.getFullYear(), minimumDate.getMonth(), 1);
+    const visibleMonth = new Date(year, month, 1);
+    const monthText = new Intl.DateTimeFormat('pt-BR', {
+      month: 'long',
+      year: 'numeric'
+    }).format(calendarCursor);
+
+    calendarLabel.textContent = monthText.charAt(0).toLocaleUpperCase('pt-BR') + monthText.slice(1);
+    previousMonthButton.disabled = visibleMonth <= minimumMonth;
+    calendarDays.replaceChildren();
+
+    for (let blank = 0; blank < firstWeekday; blank += 1) {
+      const spacer = document.createElement('span');
+      spacer.className = 'loan-calendar__blank';
+      spacer.setAttribute('aria-hidden', 'true');
+      calendarDays.append(spacer);
+    }
+
+    for (let day = 1; day <= numberOfDays; day += 1) {
+      const date = new Date(year, month, day);
+      const dateValue = getLocalDateValue(date);
+      const dayButton = document.createElement('button');
+
+      dayButton.type = 'button';
+      dayButton.textContent = String(day);
+      dayButton.dataset.date = dateValue;
+      dayButton.setAttribute('aria-label', formatLongDate(date));
+      dayButton.disabled = date < minimumDate;
+
+      if (dateValue === getLocalDateValue(minimumDate)) {
+        dayButton.classList.add('is-minimum');
+        dayButton.setAttribute('aria-description', 'Primeira data disponível');
+      }
+
+      if (dateValue === selectedValue) {
+        dayButton.classList.add('is-selected');
+        dayButton.setAttribute('aria-pressed', 'true');
+      }
+
+      dayButton.addEventListener('click', () => selectDate(date));
+      calendarDays.append(dayButton);
+    }
+  };
+
+  const closeModal = () => {
+    setCalendarOpen(false);
+    if (modal.open) modal.close();
+  };
+
+  const selectDate = (date, selectedShortcut = null) => {
+    if (!minimumDate || date < minimumDate) return;
+
+    dateInput.value = getLocalDateValue(date);
+    dateInput.setCustomValidity('');
+    dateDisplay.textContent = formatShortDatePtBr(dateInput.value);
+    dateButton.classList.add('has-value');
+    dateButton.classList.remove('is-invalid');
+    dateHelp.textContent = `Novo prazo selecionado: ${formatShortDatePtBr(dateInput.value)}.`;
+    shortcutButtons.forEach((button) => {
+      const isSelected = button === selectedShortcut;
+      button.classList.toggle('is-selected', isSelected);
+      button.setAttribute('aria-pressed', String(isSelected));
+    });
+    renderCalendar();
+    setCalendarOpen(false);
+    dateButton.focus();
+  };
+
+  openDeadlineModal = (loan, button) => {
+    selectedLoan = loan;
+    triggerButton = button;
+    const today = parseLocalDateValue(getLocalDateValue());
+    const loanDeadline = parseLocalDateValue(loan.expectedReturnDate) || today;
+    const extensionBase = loanDeadline > today ? loanDeadline : today;
+    const firstAvailableDate = new Date(extensionBase);
+    firstAvailableDate.setDate(firstAvailableDate.getDate() + 1);
+
+    form.reset();
+    minimumDate = firstAvailableDate;
+    calendarCursor = new Date(minimumDate.getFullYear(), minimumDate.getMonth(), 1);
+    bookTitle.textContent = loan.bookTitle || 'Livro';
+    currentDate.dateTime = loan.expectedReturnDate || '';
+    currentDate.textContent = formatShortDatePtBr(loan.expectedReturnDate);
+    dateInput.value = '';
+    dateInput.setCustomValidity('');
+    dateDisplay.textContent = 'Selecione uma nova data';
+    dateButton.classList.remove('has-value', 'is-invalid');
+    dateHelp.textContent = 'A nova data precisa ser posterior ao prazo atual.';
+    shortcutButtons.forEach((shortcut) => {
+      shortcut.classList.remove('is-selected');
+      shortcut.setAttribute('aria-pressed', 'false');
+    });
+    setCalendarOpen(false);
+    renderCalendar();
+
+    modal.showModal();
+    dateButton.focus();
+  };
+
+  shortcutButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      if (!selectedLoan) return;
+      const today = parseLocalDateValue(getLocalDateValue());
+      const currentDeadline = parseLocalDateValue(selectedLoan.expectedReturnDate) || today;
+      const selectedDate = parseLocalDateValue(dateInput.value);
+      const shortcutBase = selectedDate && selectedDate >= minimumDate
+        ? selectedDate
+        : (currentDeadline > today ? currentDeadline : today);
+      const shortcutDate = new Date(shortcutBase);
+
+      // Cada clique continua a partir da data visível, inclusive após uma escolha manual.
+      shortcutDate.setDate(shortcutDate.getDate() + Number(button.dataset.deadlineDays));
+      selectDate(shortcutDate, button);
+    });
+  });
+
+  dateButton.addEventListener('click', (event) => {
+    event.stopPropagation();
+    if (!minimumDate) return;
+
+    const selectedDate = parseLocalDateValue(dateInput.value) || minimumDate;
+    calendarCursor = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+    renderCalendar();
+    setCalendarOpen(calendar.hidden);
+  });
+
+  calendar.querySelectorAll('[data-deadline-calendar-action]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const action = button.dataset.deadlineCalendarAction;
+
+      if (action === 'previous') {
+        calendarCursor = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() - 1, 1);
+        renderCalendar();
+      } else if (action === 'next') {
+        calendarCursor = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() + 1, 1);
+        renderCalendar();
+      } else if (action === 'minimum') {
+        selectDate(new Date(minimumDate));
+      } else {
+        setCalendarOpen(false);
+        dateButton.focus();
+      }
+    });
+  });
+
+  calendar.addEventListener('click', (event) => event.stopPropagation());
+  document.addEventListener('click', (event) => {
+    if (modal.open && !event.target.closest('.deadline-date-picker')) setCalendarOpen(false);
+  });
+
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    if (!selectedLoan || !dateInput.value) {
+      dateInput.setCustomValidity('Escolha uma nova data para continuar.');
+      dateHelp.textContent = 'Escolha uma nova data para continuar.';
+      dateButton.classList.add('is-invalid');
+      dateButton.focus();
+      return;
+    }
+
+    selectedLoan.expectedReturnDate = dateInput.value;
+    notifyReturnsUpdated();
+    closeModal();
+  });
+
+  closeButtons.forEach((button) => button.addEventListener('click', closeModal));
+  modal.addEventListener('click', (event) => {
+    if (event.target === modal) closeModal();
+  });
+  modal.addEventListener('cancel', (event) => {
+    if (calendar.hidden) return;
+    event.preventDefault();
+    setCalendarOpen(false);
+    dateButton.focus();
+  });
+  modal.addEventListener('close', () => {
+    selectedLoan = null;
+    minimumDate = null;
+    triggerButton?.focus();
+    triggerButton = null;
+  });
+}
+
+/** Substitui a confirmação nativa pela caixa de devolução do Bibliotech. */
+function setupReturnConfirmationModal() {
+  const modal = document.querySelector('#returnModal');
+  const form = document.querySelector('#returnForm');
+  const bookTitle = document.querySelector('#returnBookTitle');
+  const readerName = document.querySelector('#returnReaderName');
+  const dueDate = document.querySelector('#returnDueDate');
+  const message = document.querySelector('#returnModalMessage');
+  const confirmButton = form.querySelector('.return-modal__confirm');
+  const confirmLabel = confirmButton.querySelector('span:last-child');
+  const closeButtons = [...modal.querySelectorAll('[data-return-close]')];
+  let selectedLoan = null;
+  let triggerButton = null;
+
+  const setBusy = (isBusy) => {
+    confirmButton.disabled = isBusy;
+    closeButtons.forEach((button) => { button.disabled = isBusy; });
+    confirmButton.setAttribute('aria-busy', String(isBusy));
+    confirmLabel.textContent = isBusy ? 'Registrando...' : 'Confirmar devolução';
+  };
+
+  const closeModal = () => {
+    if (modal.open) modal.close();
+  };
+
+  openReturnModal = (loan, button) => {
+    selectedLoan = loan;
+    triggerButton = button;
+    bookTitle.textContent = loan.bookTitle || 'Livro';
+    readerName.textContent = loan.studentName || '—';
+    dueDate.dateTime = loan.expectedReturnDate || '';
+    dueDate.textContent = formatShortDatePtBr(loan.expectedReturnDate);
+    message.textContent = '';
+    message.classList.remove('is-error');
+    setBusy(false);
+    modal.showModal();
+    confirmButton.focus();
+  };
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!selectedLoan) return;
+
+    if (!selectedLoan.isLayoutExample && !window.bibliotech?.loans?.return) {
+      message.textContent = 'Abra o projeto pelo Electron para concluir a devolução.';
+      message.classList.add('is-error');
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const result = selectedLoan.isLayoutExample
+        ? { ok: true }
+        : await window.bibliotech.loans.return(selectedLoan.id);
+
+      if (!result.ok) {
+        message.textContent = result.message || 'Não foi possível registrar a devolução.';
+        message.classList.add('is-error');
+        return;
+      }
+
+      const returnedLoanIndex = sessionActiveLoans.findIndex((loan) => loan.id === selectedLoan.id);
+      if (returnedLoanIndex >= 0) sessionActiveLoans.splice(returnedLoanIndex, 1);
+      notifyReturnsUpdated();
+      closeModal();
+    } catch (error) {
+      console.error('Erro ao registrar a devolução:', error);
+      message.textContent = 'Ocorreu um erro inesperado ao registrar a devolução.';
+      message.classList.add('is-error');
+    } finally {
+      setBusy(false);
+    }
+  });
+
+  closeButtons.forEach((button) => button.addEventListener('click', closeModal));
+  modal.addEventListener('click', (event) => {
+    if (event.target === modal) closeModal();
+  });
+  modal.addEventListener('close', () => {
+    selectedLoan = null;
+    triggerButton?.focus();
+    triggerButton = null;
+    message.textContent = '';
+  });
+}
 
 //Configuração da tabela de devolução
 function setupReturnsList() {
@@ -1222,8 +1690,16 @@ function setupReturnsList() {
       const studentCell = document.createElement('span');
       studentCell.textContent = emprestimo.studentName || '—';
 
+      const borrowerTypeCell = document.createElement('span');
+      borrowerTypeCell.className = 'returns-table__borrower-type';
+      borrowerTypeCell.dataset.borrowerType = emprestimo.borrowerType;
+      borrowerTypeCell.textContent = emprestimo.borrowerType === 'student' ? 'Aluno' : 'Não é aluno';
+
       const classroomCell = document.createElement('span');
       classroomCell.textContent = emprestimo.classroom || '—';
+
+      const loanDateCell = document.createElement('span');
+      loanDateCell.textContent = formatShortDatePtBr(emprestimo.loanDate);
 
       const dueDateCell = document.createElement('span');
       dueDateCell.textContent = formatShortDatePtBr(emprestimo.expectedReturnDate);
@@ -1238,8 +1714,9 @@ function setupReturnsList() {
       extendDeadlineButton.textContent = 'Estender prazo';
       extendDeadlineButton.dataset.loanId = emprestimo.id;
       extendDeadlineButton.dataset.currentDueDate = emprestimo.expectedReturnDate;
+      extendDeadlineButton.setAttribute('aria-haspopup', 'dialog');
       extendDeadlineButton.addEventListener('click', () => {
-        alert('Prévia da interface: o back-end receberá o ID do empréstimo e a data atual do prazo para registrar a extensão.');
+        openDeadlineModal?.(emprestimo, extendDeadlineButton);
       });
 
       const returnBookButton = document.createElement('button');
@@ -1247,29 +1724,21 @@ function setupReturnsList() {
       returnBookButton.className = 'returns-table__action returns-table__action--return';
       returnBookButton.textContent = 'Registrar devolução';
       returnBookButton.dataset.loanId = emprestimo.id;
-      // Adiciona a ação de clique ao botão
-      returnBookButton.addEventListener('click', async () => {
-        if (!window.bibliotech?.loans?.return) {
-          alert('Prévia da interface: a devolução real estará disponível ao abrir o projeto pelo Electron.');
-          return;
-        }
-        // Pede confirmação para evitar cliques acidentais
-        if (confirm("Confirmar devolução do livro ao acervo?")) {
-          
-          // Manda a ordem para o SQLite usando o ID do empréstimo
-          const resultado = await window.bibliotech.loans.return(emprestimo.id);
-          
-          if (resultado.ok) {
-            // Recarrega a tabela para o livro sumir da tela
-            renderReturns(); 
-          } else {
-            alert("Erro ao devolver: " + resultado.message);
-          }
-        }
+      returnBookButton.setAttribute('aria-haspopup', 'dialog');
+      returnBookButton.addEventListener('click', () => {
+        openReturnModal?.(emprestimo, returnBookButton);
       });
       actionsCell.append(extendDeadlineButton, returnBookButton);
 
-      row.append(bookCell, studentCell, classroomCell, dueDateCell, actionsCell);
+      row.append(
+        bookCell,
+        studentCell,
+        borrowerTypeCell,
+        classroomCell,
+        loanDateCell,
+        dueDateCell,
+        actionsCell
+      );
       tableBody.appendChild(row);
     });
   };
@@ -1289,6 +1758,7 @@ async function loadActiveLoans() {
     const resultado = await window.bibliotech?.loans?.listActive();
 
     if (!resultado) {
+      sessionActiveLoans.splice(0, sessionActiveLoans.length, ...RETURNS_LAYOUT_EXAMPLES);
       notifyReturnsUpdated();
       return;
     }
@@ -1296,18 +1766,34 @@ async function loadActiveLoans() {
     if (resultado.ok) {
       sessionActiveLoans.length = 0;
       resultado.payload.forEach((emprestimo) => {
+        const classroom = String(emprestimo.turma_serie || '').trim();
+        const normalizedClassroom = classroom
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .toLocaleLowerCase('pt-BR');
+        const inferredBorrowerType = !classroom || normalizedClassroom === 'nao se aplica'
+          ? 'non_student'
+          : 'student';
+
         sessionActiveLoans.push({
           id: emprestimo.id_emprestimo,
           bookId: emprestimo.id_livro,
           bookTitle: emprestimo.nome_livro,
           studentName: emprestimo.nome_aluno,
-          classroom: emprestimo.turma_serie,
+          // Compatível com a futura coluna do banco e com registros atuais.
+          borrowerType: emprestimo.tipo_leitor
+            || emprestimo.borrowerType
+            || inferredBorrowerType,
+          classroom,
           loanDate: emprestimo.data_emprestimo,
           expectedReturnDate: emprestimo.data_devolucao_prevista,
           actualReturnDate: emprestimo.data_devolucao_efetiva,
           status: emprestimo.status_emprestimo
         });
       });
+      if (sessionActiveLoans.length === 0) {
+        sessionActiveLoans.push(...RETURNS_LAYOUT_EXAMPLES);
+      }
     } else {
       console.error('Erro ao carregar devoluções pendentes:', resultado.message);
     }
@@ -1355,64 +1841,96 @@ async function handleBookSubmit(event) {
     setFormMessage('Ocorreu um erro inesperado ao tentar salvar o livro.');
   }
 }
-/** Valida e encaminha o emprestimo pela API segura exposta em preload.js. */
+/** Limpa os dados e controles visuais do novo empréstimo sem alterar os registros salvos. */
+function clearLoanForm({ focusName = false } = {}) {
+  const bookInput = loanForm.elements.bookName;
+  const returnDate = loanForm.elements.returnDate;
+  const autocomplete = loanForm.querySelector('.book-autocomplete');
+  const classroomSelect = document.querySelector('#classroomSelect');
+  const classroomOptions = document.querySelector('#classroomOptions');
+  const returnDateCalendar = document.querySelector('#returnDateCalendar');
+
+  loanForm.reset();
+  bookInput.dataset.bookId = '';
+  returnDate.value = '';
+  autocomplete?.replaceChildren();
+  if (autocomplete) autocomplete.hidden = true;
+  classroomSelect.classList.remove('is-open');
+  classroomOptions.hidden = true;
+  document.querySelector('#classroomSelectButton').setAttribute('aria-expanded', 'false');
+  classroomOptions.querySelectorAll('[role="option"]').forEach((option) => {
+    option.setAttribute('aria-selected', 'false');
+  });
+  returnDateCalendar.hidden = true;
+  document.querySelector('#returnDateButton').setAttribute('aria-expanded', 'false');
+  document.querySelector('.loan-date-picker').classList.remove('is-open');
+
+  loanForm.querySelectorAll('[data-return-days]').forEach((button) => {
+    button.classList.remove('is-selected');
+    button.setAttribute('aria-pressed', 'false');
+  });
+
+  loanForm.querySelectorAll('.is-invalid').forEach((field) => field.classList.remove('is-invalid'));
+  loanForm.querySelectorAll('[aria-invalid]').forEach((control) => control.setAttribute('aria-invalid', 'false'));
+  loanForm.querySelectorAll('label > small, .form-field > small').forEach((message) => {
+    message.textContent = '';
+  });
+
+  // O campo de data é oculto; o evento também restaura o texto e o calendário visíveis.
+  returnDate.dispatchEvent(new Event('change', { bubbles: true }));
+  if (focusName) window.setTimeout(() => loanForm.elements.studentName.focus());
+}
+
+/** Cancela o rascunho antes de voltar à Gestão. */
+function setupLoanFormCancel() {
+  loanForm.querySelector('[data-open-view="gestao"]').addEventListener('click', () => {
+    clearLoanForm();
+    setLoanMessage('');
+  });
+}
+
+/** Valida e encaminha o empréstimo pela API segura exposta em preload.js. */
 async function handleLoanSubmit(event) {
-  event.preventDefault(); // Evita recarregar a tela
+  event.preventDefault();
 
-  const loanForm = document.getElementById('loanForm');
-  const loanFormMessage = document.getElementById('loanFormMessage');
-
-  // Puxa os textos digitados
-  const studentName = loanForm.elements['studentName'].value;
-  const classroom = loanForm.elements['classroom'].value;
-  const expectedReturnDate = loanForm.elements['returnDate'].value;
-
-  // Puxa o ID numérico do livro
-  const bookInput = loanForm.elements['bookName'];
-  const bookId = bookInput.getAttribute('data-book-id');
-
-  // Barreira de segurança para campos vazios
-  if (!bookId || !studentName || !classroom || !expectedReturnDate) {
-    loanFormMessage.textContent = "Por favor, preencha todos os campos e selecione um livro válido.";
-    loanFormMessage.style.color = "red";
-    setTimeout(() => { loanFormMessage.textContent = ""; }, 4000);
+  if (!validateLoanForm()) {
+    setLoanMessage('Preencha corretamente os campos obrigatórios destacados em vermelho.');
+    loanForm.querySelector('[aria-invalid="true"]')?.focus();
     return;
   }
 
-  // Prepara o pacote de dados
-  const loanData = {
-    bookId: Number(bookId),
-    studentName: studentName,
-    classroom: classroom,
-    borrowerType: loanForm.elements['borrowerType'].value,
-    expectedReturnDate: expectedReturnDate
-  };
+  const loanData = getLoanPayload();
+  if (!loanData.bookId) {
+    setLoanMessage('Selecione um livro válido na lista de sugestões.');
+    loanForm.elements.bookName.focus();
+    return;
+  }
+
+  if (!window.bibliotech?.loans?.create) {
+    setLoanMessage('Abra o projeto pelo Electron para registrar o empréstimo.');
+    return;
+  }
 
   try {
-    // Manda para o Back-end
     const resultado = await window.bibliotech.loans.create(loanData);
 
     if (resultado.ok) {
-      loanFormMessage.textContent = resultado.message;
-      loanFormMessage.style.color = "green";
-      await loadActiveLoans();//atualiza lista de devoluções apos o emprestimo
-      loanForm.reset(); 
-      bookInput.setAttribute('data-book-id', ''); // Limpa o ID escondido
-      loanForm.querySelector('[name="studentName"]').focus(); 
+      clearLoanForm({ focusName: true });
+      setLoanMessage(resultado.message, 'success');
+      await loadActiveLoans();
     } else {
-      loanFormMessage.textContent = "Erro ao emprestar: " + resultado.message;
-      loanFormMessage.style.color = "red";
+      setLoanMessage(`Erro ao emprestar: ${resultado.message}`);
     }
-
-    setTimeout(() => { loanFormMessage.textContent = ""; }, 4000);
-
   } catch (erro) {
     console.error("Erro no front-end ao emprestar:", erro);
+    setLoanMessage('Ocorreu um erro inesperado ao registrar o empréstimo.');
   }
 }
 
 /** Inicializa os eventos após o carregamento do HTML. */
 function initializeApp() {
+  setupThemeToggle(); // Alterna entre os temas claro e escuro e salva a preferência.
+  setupSidebar(); // Controla os estados expandido e compacto do menu lateral.
   setupNavigation(); // Controla a interface
   setupCollectionCatalog();// Configura a tabela do acervo. Renderiza os livros, atualiza os totais de livros disponíveis e emprestados e permite filtrar por gênero.
   setupCollectionSearch(); // Configura a busca de livros no acervo. Permite pesquisar por título, autor ou gênero e exibe os resultados encontrados. 
@@ -1426,7 +1944,10 @@ function initializeApp() {
   setupLoanCalendar();//Configura o calendário de data de devolução dos empréstimos. Permite escolher uma data, navegar entre meses, usar atalhos e impedir datas anteriores ao dia atual.
   setupLoanBorrowerType(); // Preenche as turmas e controla a opção "Não é aluno".
   setupLoanForm(); //Configura a validação e o envio do formulário de empréstimo. Depois de validar os dados, exibe uma prévia do empréstimo preenchido.
+  setupLoanFormCancel(); // Limpa o rascunho quando o usuário cancela um novo empréstimo.
   setupLoanTabs(); //Controla as abas do módulo de empréstimos, alternando entre “Novo empréstimo” e “Devoluções”.
+  setupDeadlineExtensionModal(); // Controla a mini tela de extensão do prazo.
+  setupReturnConfirmationModal(); // Controla a confirmação personalizada da devolução.
   setupReturnsList(); //Configura a renderização da lista de devoluções pendentes
   loadActiveLoans(); //Busca na tabela emprestimos os empréstimos ainda não devolvidos, através da API disponibilizada pelo preload
   setupBookAutocomplete();
