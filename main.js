@@ -100,6 +100,50 @@ function cadastrarLivro(bookData) {
   }
 }
 
+// Função para atualizar todos os dados de um livro
+function atualizarLivro(dadosLivro) {
+  if (!db || !db.db) {
+    return { ok: false, message: 'O banco de dados está indisponível.' };
+  }
+
+  try {
+    const stmt = db.db.prepare(`
+      UPDATE livros 
+      SET 
+        titulo = ?, 
+        autor = ?, 
+        editora = ?, 
+        ano_publicacao = ?, 
+        genero = ?, 
+        isbn = ?, 
+        quantidade_livros_disponiveis = ?
+      WHERE id_livro = ?
+    `);
+    
+    // Executa a query injetando os dados exatos
+    const info = stmt.run(
+      dadosLivro.titulo, 
+      dadosLivro.autor, 
+      dadosLivro.editora, 
+      dadosLivro.ano_publicacao,
+      dadosLivro.genero,
+      dadosLivro.isbn,
+      dadosLivro.quantidade, 
+      dadosLivro.id 
+    );
+
+    if (info.changes === 0) {
+      return { ok: false, message: 'Não foi possível alterar. O livro não existe.' };
+    }
+
+    return { ok: true, message: 'Todas as informações do livro foram atualizadas!' };
+
+  } catch (erro) {
+    console.error("Erro ao atualizar o livro:", erro);
+    return { ok: false, message: "Erro interno ao processar a edição." };
+  }
+}
+
 // Função para registrar o empréstimo de um livro
 function realizarEmprestimo(loanData) {
   // Verifica se o banco está conectado
