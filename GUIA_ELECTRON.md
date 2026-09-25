@@ -1,6 +1,6 @@
-# Guia da Épica 2 — empréstimos e devoluções
+# Guia de execução do Bibliotech no Electron
 
-Este documento complementa o README original sem substituir as informações mantidas pela equipe.
+Este documento complementa o README original com orientações para executar e empacotar o Bibliotech no Electron, sem substituir as informações mantidas pela equipe.
 
 ## Estado atual do front-end
 
