@@ -33,6 +33,7 @@ const sessionActiveLoans = [];
 let renderReturnsList = null;
 let openDeadlineModal = null;
 let openReturnModal = null;
+let openBookEditModal = null;
 const viewHistory = ['inicio'];
 
 // Exemplos visuais exibidos somente quando não há empréstimos ativos no banco.
@@ -253,6 +254,7 @@ async function loadCollectionBooks() {
           genre: livro.genero,
           available: livro.quantidade_livros_disponiveis,
           total: livro.quantidade_livros_total,
+          registeredAt: livro.data_cadastro,
           // Campo já retornado pelo cadastro/listagem para a interface exibir no acervo.
           notes: livro.observacao
         });
@@ -348,6 +350,26 @@ function setupCollectionCatalog() {
         if (index === 3) cell.className = 'catalog-table__availability';
         row.append(cell);
       });
+
+      const actionsCell = document.createElement('td');
+      actionsCell.className = 'catalog-table__actions';
+      const editButton = document.createElement('button');
+      editButton.type = 'button';
+      editButton.className = 'catalog-edit-button';
+      editButton.setAttribute('aria-label', `Editar ${book.title}`);
+      editButton.setAttribute('aria-haspopup', 'dialog');
+
+      const editIcon = document.createElement('span');
+      editIcon.className = 'material-symbols-outlined';
+      editIcon.setAttribute('aria-hidden', 'true');
+      editIcon.textContent = 'edit';
+
+      const editText = document.createElement('span');
+      editText.textContent = 'Editar';
+      editButton.append(editIcon, editText);
+      editButton.addEventListener('click', () => openBookEditModal?.(book, editButton));
+      actionsCell.append(editButton);
+      row.append(actionsCell);
       tableBody.append(row);
     });
   };
@@ -384,6 +406,221 @@ function setupCollectionCatalog() {
   document.addEventListener('collection-updated', renderCatalog);
   renderCollectionCatalog = renderCatalog;
   renderCatalog();
+}
+
+/**
+ * Controla a mini tela de edição e mantém a estrutura isolada da futura persistência.
+ * Nesta etapa, as mudanças atualizam somente a coleção carregada na interface.
+ */
+function setupBookEditModal() {
+  const modal = document.querySelector('#bookEditModal');
+  const form = document.querySelector('#bookEditForm');
+  const message = document.querySelector('#bookEditMessage');
+  const closeButtons = [...modal.querySelectorAll('[data-book-edit-close]')];
+  const genreInput = form.elements.genre;
+  const genreSelect = document.querySelector('#bookEditGenreSelect');
+  const genreTrigger = document.querySelector('#bookEditGenreButton');
+  const genreValue = document.querySelector('#bookEditGenreValue');
+  const genreOptionsPanel = document.querySelector('#bookEditGenreOptions');
+  let selectedBook = null;
+  let triggerButton = null;
+  let borrowedCopies = 0;
+
+  const setGenreOpen = (isOpen) => {
+    genreSelect.classList.toggle('is-open', isOpen);
+    genreOptionsPanel.hidden = !isOpen;
+    genreTrigger.setAttribute('aria-expanded', String(isOpen));
+  };
+
+  const getGenreOptions = () => [...genreOptionsPanel.querySelectorAll('[role="option"]')];
+
+  const selectGenre = (value, label = value) => {
+    genreInput.value = value;
+    genreValue.textContent = label || 'Selecione um gênero';
+    genreSelect.classList.toggle('has-value', Boolean(value));
+    getGenreOptions().forEach((option) => {
+      option.setAttribute('aria-selected', String(option.dataset.value === value));
+    });
+    genreInput.dispatchEvent(new Event('input', { bubbles: true }));
+    setGenreOpen(false);
+  };
+
+  // Reaproveita a lista oficial do formulário de cadastro para evitar divergências.
+  document.querySelectorAll('#genreOptions [data-value]').forEach((registrationOption) => {
+    const option = document.createElement('button');
+    option.type = 'button';
+    option.setAttribute('role', 'option');
+    option.setAttribute('aria-selected', 'false');
+    option.dataset.value = registrationOption.dataset.value;
+    option.textContent = registrationOption.textContent;
+    genreOptionsPanel.append(option);
+  });
+
+  const clearValidation = () => {
+    message.textContent = '';
+    form.querySelectorAll('.is-invalid').forEach((field) => field.classList.remove('is-invalid'));
+    form.querySelectorAll('[aria-invalid]').forEach((control) => control.setAttribute('aria-invalid', 'false'));
+    form.querySelectorAll('.book-edit-modal__field').forEach((field) => {
+      if (field.querySelector('[readonly]')) return;
+      field.querySelector('small').textContent = '';
+    });
+  };
+
+  const closeModal = () => {
+    if (!modal.open) return;
+    setGenreOpen(false);
+    modal.close();
+    selectedBook = null;
+    triggerButton?.focus();
+    triggerButton = null;
+  };
+
+  const validateField = (input) => {
+    const field = input.closest('.book-edit-modal__field');
+    const value = input.value.trim();
+    let error = '';
+
+    if (input.required && !value) {
+      error = 'Este campo é obrigatório.';
+    } else if (['total', 'available'].includes(input.name) && (!Number.isInteger(Number(value)) || Number(value) < Number(input.min))) {
+      error = `Informe um número inteiro igual ou maior que ${input.min}.`;
+    } else if (input.name === 'total' && Number(value) < borrowedCopies) {
+      error = `A quantidade não pode ser menor que os ${borrowedCopies} exemplar(es) emprestado(s).`;
+    }
+
+    const validationControl = input.name === 'genre' ? genreTrigger : input;
+    field.classList.toggle('is-invalid', Boolean(error));
+    validationControl.setAttribute('aria-invalid', String(Boolean(error)));
+    field.querySelector('small').textContent = error;
+    return !error;
+  };
+
+  openBookEditModal = (book, button) => {
+    selectedBook = book;
+    triggerButton = button;
+    form.elements.title.value = book.title || '';
+    form.elements.author.value = book.author || '';
+    genreOptionsPanel.querySelector('[data-book-edit-custom]')?.remove();
+    const currentGenre = book.genre || '';
+    const knownGenre = getGenreOptions().find((option) => option.dataset.value === currentGenre);
+    if (currentGenre && !knownGenre) {
+      const customOption = document.createElement('button');
+      customOption.type = 'button';
+      customOption.setAttribute('role', 'option');
+      customOption.setAttribute('aria-selected', 'false');
+      customOption.dataset.value = currentGenre;
+      customOption.dataset.bookEditCustom = 'true';
+      customOption.textContent = currentGenre;
+      genreOptionsPanel.prepend(customOption);
+    }
+    selectGenre(currentGenre);
+    const totalCopies = Number(book.total || 0);
+    const availableCopies = Number(book.available || 0);
+    borrowedCopies = Math.max(0, totalCopies - availableCopies);
+    form.elements.total.value = totalCopies;
+    form.elements.available.value = availableCopies;
+    form.elements.registeredAt.value = formatShortDatePtBr(book.registeredAt);
+    form.elements.notes.value = book.notes || '';
+    clearValidation();
+    modal.showModal();
+    form.elements.title.focus();
+  };
+
+  form.querySelectorAll('input[required]').forEach((input) => {
+    input.addEventListener('blur', () => validateField(input));
+    input.addEventListener('input', () => {
+      if (input.closest('.book-edit-modal__field').classList.contains('is-invalid')) validateField(input);
+    });
+  });
+
+  form.elements.total.addEventListener('input', () => {
+    const total = Number(form.elements.total.value);
+    form.elements.available.value = Number.isInteger(total) && total >= borrowedCopies
+      ? Math.max(0, total - borrowedCopies)
+      : '';
+  });
+
+  genreTrigger.addEventListener('click', (event) => {
+    event.stopPropagation();
+    setGenreOpen(genreOptionsPanel.hidden);
+  });
+
+  genreTrigger.addEventListener('keydown', (event) => {
+    if (!['ArrowDown', 'ArrowUp'].includes(event.key)) return;
+    event.preventDefault();
+    setGenreOpen(true);
+    const options = getGenreOptions();
+    const selectedIndex = options.findIndex((option) => option.getAttribute('aria-selected') === 'true');
+    const fallbackIndex = event.key === 'ArrowDown' ? 0 : options.length - 1;
+    options[selectedIndex >= 0 ? selectedIndex : fallbackIndex]?.focus();
+  });
+
+  genreOptionsPanel.addEventListener('click', (event) => {
+    const option = event.target.closest('[role="option"]');
+    if (!option) return;
+    event.stopPropagation();
+    selectGenre(option.dataset.value, option.textContent);
+    genreTrigger.focus();
+  });
+
+  genreOptionsPanel.addEventListener('keydown', (event) => {
+    const options = getGenreOptions();
+    const index = options.indexOf(event.target);
+    if (event.key === 'Escape') {
+      setGenreOpen(false);
+      genreTrigger.focus();
+      return;
+    }
+    if (index < 0 || !['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+    event.preventDefault();
+    const nextIndex = event.key === 'Home'
+      ? 0
+      : event.key === 'End'
+        ? options.length - 1
+        : (index + (event.key === 'ArrowDown' ? 1 : -1) + options.length) % options.length;
+    options[nextIndex].focus();
+  });
+
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    if (!selectedBook) return;
+
+    const requiredFields = [...form.querySelectorAll('input[required]')];
+    const isValid = requiredFields.map(validateField).every(Boolean);
+    const total = Number(form.elements.total.value);
+    const available = Math.max(0, total - borrowedCopies);
+
+    if (!isValid) {
+      message.textContent = 'Revise os campos destacados antes de salvar.';
+      (form.querySelector('[aria-invalid="true"]') || genreTrigger).focus();
+      return;
+    }
+
+    Object.assign(selectedBook, {
+      title: form.elements.title.value.trim(),
+      author: form.elements.author.value.trim(),
+      genre: form.elements.genre.value.trim(),
+      total,
+      available,
+      notes: form.elements.notes.value.trim()
+    });
+
+    notifyCollectionUpdated();
+    closeModal();
+    showPending('Alterações aplicadas à visualização do acervo.');
+  });
+
+  closeButtons.forEach((button) => button.addEventListener('click', closeModal));
+  document.addEventListener('click', (event) => {
+    if (!event.target.closest('#bookEditGenreSelect')) setGenreOpen(false);
+  });
+  modal.addEventListener('click', (event) => {
+    if (event.target === modal) closeModal();
+  });
+  modal.addEventListener('cancel', (event) => {
+    event.preventDefault();
+    closeModal();
+  });
 }
 
 /** Configura busca por título, autor ou gênero dos livros cadastrados. */
@@ -1933,6 +2170,7 @@ function initializeApp() {
   setupSidebar(); // Controla os estados expandido e compacto do menu lateral.
   setupNavigation(); // Controla a interface
   setupCollectionCatalog();// Configura a tabela do acervo. Renderiza os livros, atualiza os totais de livros disponíveis e emprestados e permite filtrar por gênero.
+  setupBookEditModal(); // Controla a mini tela de atualização de livros no acervo.
   setupCollectionSearch(); // Configura a busca de livros no acervo. Permite pesquisar por título, autor ou gênero e exibe os resultados encontrados. 
   loadCollectionBooks(); //Busca os livros através da API disponibilizada pelo preload
   setupNotifications(); //Controla o painel de notificações. Permite abrir, fechar, fechar ao clicar fora e fechar pressionando Escape.
