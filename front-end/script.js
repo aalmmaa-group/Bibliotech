@@ -1261,7 +1261,8 @@ function setupReturnsList() {
           
           if (resultado.ok) {
             // Recarrega a tabela para o livro sumir da tela
-            renderReturns(); 
+            await loadActiveLoans();
+            await loadCollectionBooks();  
           } else {
             alert("Erro ao devolver: " + resultado.message);
           }
@@ -1396,6 +1397,7 @@ async function handleLoanSubmit(event) {
       loanFormMessage.textContent = resultado.message;
       loanFormMessage.style.color = "green";
       await loadActiveLoans();//atualiza lista de devoluções apos o emprestimo
+      await loadCollectionBooks(); //puxa a função responsavel por buscar as novas infos do acervo
       loanForm.reset(); 
       bookInput.setAttribute('data-book-id', ''); // Limpa o ID escondido
       loanForm.querySelector('[name="studentName"]').focus(); 
