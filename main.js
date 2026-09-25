@@ -156,10 +156,18 @@ function realizarEmprestimo(loanData) {
   }
 
   // Extrai as variáveis que vêm do Front-end
-  const { bookId, studentName, classroom, expectedReturnDate } = loanData;
+  const { bookId, studentName, classroom, expectedReturnDate, borrowerType } = loanData;
 
+  // Converte o valor recebido para corresponder à regra da base de dados ('aluno' ou 'nao aluno')
+  let tipoSolicitanteFormatado = 'aluno';
+
+  if (borrowerType === 'student' || borrowerType === 'aluno') {
+    tipoSolicitanteFormatado = 'aluno';
+  } else {
+    tipoSolicitanteFormatado = 'nao aluno';
+  }
   // Barreira de segurança
-  if (!bookId || !studentName || !classroom || !expectedReturnDate) {
+  if (!bookId || !studentName || !classroom || !expectedReturnDate || !borrowerType) {
     return {
       ok: false,
       code: 'VALIDATION_ERROR',
@@ -190,12 +198,13 @@ function realizarEmprestimo(loanData) {
         INSERT INTO emprestimos (
           id_livro, 
           turma_serie, 
-          nome_aluno, 
-          data_devolucao_prevista
-        ) VALUES (?, ?, ?, ?)
+          nome_solicitante, 
+          data_devolucao_prevista,
+          tipo_solicitante
+        ) VALUES (?, ?, ?, ?, ?)
       `);
       
-      const info = stmtEmprestimo.run(bookId, classroom, studentName, expectedReturnDate);
+      const info = stmtEmprestimo.run(bookId, classroom, studentName, expectedReturnDate, tipoSolicitanteFormatado);
 
       return info.lastInsertRowid; // Retorna o id_emprestimo gerado
     });
@@ -404,8 +413,9 @@ function listarEmprestimosAtivos() {
         e.id_emprestimo,
         e.id_livro,
         l.nome AS nome_livro,
-        e.nome_aluno,
+        e.nome_solicitante,
         e.turma_serie,
+        tipo_solicitante,
         e.data_emprestimo,
         e.data_devolucao_prevista,
         e.data_devolucao_efetiva,
