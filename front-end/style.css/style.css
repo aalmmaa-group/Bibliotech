@@ -2316,6 +2316,12 @@ button.is-pressed {
     width: 176px;
 }
 
+.management-options--compact .loan-launch-button {
+    min-width: 176px;
+    max-width: 176px;
+    flex-basis: 176px;
+}
+
 .catalog-launch-button {
     display: inline-flex;
     width: 210px;
@@ -5060,8 +5066,13 @@ html[data-theme="dark"] .return-modal__confirm:focus-visible {
     }
 
     .management-options--compact .register-book-button,
-    .management-options--compact .catalog-launch-button {
+    .management-options--compact .catalog-launch-button,
+    .management-options--compact .loan-launch-button {
         width: 100%;
+        min-width: 0;
+        max-width: none;
+        flex-basis: auto;
+        justify-self: stretch;
     }
 
     .book-form {
@@ -5639,7 +5650,7 @@ html[data-theme="dark"] .return-modal__confirm:focus-visible {
 
     .returns-table__row > span:nth-child(1)::before { content: "Livro"; }
     .returns-table__row > span:nth-child(2)::before { content: "Leitor"; }
-    .returns-table__row > span:nth-child(3)::before { content: "Tipo de leitor"; }
+    .returns-table__row > span:nth-child(3)::before { content: "Solicitante"; }
     .returns-table__row > span:nth-child(4)::before { content: "Turma"; }
     .returns-table__row > span:nth-child(5)::before { content: "Emprestado em"; }
     .returns-table__row > span:nth-child(6)::before { content: "Prazo"; }
