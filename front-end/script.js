@@ -808,14 +808,15 @@ function clearBookFormErrors() {
   });
 }
 
-/** Limpa o cadastro em andamento quando a pessoa decide cancelar. */
+/** Limpa o cadastro em andamento sem sair da tela. */
 function setupBookFormCancel() {
-  const cancelButton = bookForm.querySelector('[data-open-view="gestao"]');
+  const clearButton = bookForm.querySelector('[data-book-clear]');
 
-  cancelButton.addEventListener('click', () => {
+  clearButton.addEventListener('click', () => {
     bookForm.reset();
     clearBookFormErrors();
     setFormMessage('');
+    bookForm.elements.title.focus();
   });
 }
 
@@ -2118,11 +2119,12 @@ function clearLoanForm({ focusName = false } = {}) {
   if (focusName) window.setTimeout(() => loanForm.elements.studentName.focus());
 }
 
-/** Cancela o rascunho antes de voltar à Gestão. */
+/** Limpa o rascunho sem sair da aba Novo empréstimo. */
 function setupLoanFormCancel() {
-  loanForm.querySelector('[data-open-view="gestao"]').addEventListener('click', () => {
+  loanForm.querySelector('[data-loan-clear]').addEventListener('click', () => {
     clearLoanForm();
     setLoanMessage('');
+    loanForm.elements.studentName.focus();
   });
 }
 
@@ -2178,11 +2180,11 @@ function initializeApp() {
   setupGenreSelect(); //Configura o seletor personalizado de gênero no formulário de cadastro. Também controla a opção “Outro”, exibindo um campo adicional quando necessário.
   setupClickFeedback(); //Adiciona um efeito visual rápido aos botões quando o usuário pressiona algum deles. Respeita a preferência do sistema por reduzir animações.
   setupBookFormValidation(); //Configura a validação progressiva do formulário de livros. Os campos são validados quando perdem o foco ou quando o usuário começa a editá-los
-  setupBookFormCancel();
+  setupBookFormCancel(); // Limpa o formulário de cadastro sem trocar de tela.
   setupLoanCalendar();//Configura o calendário de data de devolução dos empréstimos. Permite escolher uma data, navegar entre meses, usar atalhos e impedir datas anteriores ao dia atual.
   setupLoanBorrowerType(); // Preenche as turmas e controla a opção "Não é aluno".
   setupLoanForm(); //Configura a validação e o envio do formulário de empréstimo. Depois de validar os dados, exibe uma prévia do empréstimo preenchido.
-  setupLoanFormCancel(); // Limpa o rascunho quando o usuário cancela um novo empréstimo.
+  setupLoanFormCancel(); // Limpa o rascunho sem sair da aba Novo empréstimo.
   setupLoanTabs(); //Controla as abas do módulo de empréstimos, alternando entre “Novo empréstimo” e “Devoluções”.
   setupDeadlineExtensionModal(); // Controla a mini tela de extensão do prazo.
   setupReturnConfirmationModal(); // Controla a confirmação personalizada da devolução.
