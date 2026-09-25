@@ -2019,7 +2019,7 @@ async function loadActiveLoans() {
           id: emprestimo.id_emprestimo,
           bookId: emprestimo.id_livro,
           bookTitle: emprestimo.nome_livro,
-          studentName: emprestimo.nome_aluno,
+          studentName: emprestimo.nome_solicitante,
           // Compatível com a futura coluna do banco e com registros atuais.
           borrowerType: emprestimo.tipo_leitor
             || emprestimo.borrowerType
