@@ -440,7 +440,7 @@
                         <p class="form-message wide" id="loanFormMessage" role="status" aria-live="polite"></p>
 
                         <div class="form-actions wide">
-                            <button type="button" data-open-view="gestao">Cancelar</button>
+                            <button type="button" data-loan-clear>Limpar</button>
                             <button class="primary-action loan-submit-button" type="submit">
                                 <span>Registrar empréstimo</span>
                                 <span aria-hidden="true">→</span>
@@ -472,7 +472,7 @@
                         <div class="returns-table__header" aria-hidden="true">
                             <span>Livro</span>
                             <span>Leitor</span>
-                            <span>Tipo de leitor</span>
+                            <span>Solicitante</span>
                             <span>Turma</span>
                             <span>Emprestado em</span>
                             <span>Prazo</span>
@@ -569,7 +569,7 @@
 
                     <div class="catalog-table-wrap">
                         <table class="catalog-table">
-                            <thead><tr><th>Livro</th><th>Autor</th><th>Gênero</th><th>Disponibilidade</th></tr></thead>
+                            <thead><tr><th>Livro</th><th>Autor</th><th>Gênero</th><th>Disponibilidade</th><th>Ações</th></tr></thead>
                             <tbody id="catalogTableBody"></tbody>
                         </table>
                         <section class="catalog-empty" id="catalogEmpty" aria-live="polite">
@@ -825,7 +825,7 @@
                     <p class="form-message wide" id="mensagem-alerta" role="status" aria-live="polite"></p>
 
                     <div class="form-actions wide">
-                        <button type="button" data-open-view="gestao">Cancelar</button>
+                        <button type="button" data-book-clear>Limpar</button>
                         <button class="primary-action" id="btnCadastrar" type="submit">Validar e enviar cadastro</button>
                     </div>
                 </form>
@@ -968,6 +968,81 @@
             </section>
         </main>
     </div>
+
+    <!-- Mini tela de edição: a persistência será conectada à API de livros em uma etapa posterior. -->
+    <dialog class="book-edit-modal" id="bookEditModal" aria-labelledby="bookEditModalTitle">
+        <form class="book-edit-modal__card" id="bookEditForm" method="dialog" novalidate>
+            <header class="book-edit-modal__header">
+                <span class="material-symbols-outlined book-edit-modal__icon" aria-hidden="true">edit_note</span>
+                <div>
+                    <p>ATUALIZAÇÃO DO ACERVO</p>
+                    <h2 id="bookEditModalTitle">Editar livro</h2>
+                </div>
+                <button class="book-edit-modal__close material-symbols-outlined" type="button" data-book-edit-close aria-label="Fechar">close</button>
+            </header>
+
+            <div class="book-edit-modal__fields">
+                <label class="book-edit-modal__field book-edit-modal__field--wide">
+                    <span>Título do livro</span>
+                    <input name="title" required maxlength="160" autocomplete="off">
+                    <small></small>
+                </label>
+
+                <label class="book-edit-modal__field">
+                    <span>Autor</span>
+                    <input name="author" required maxlength="120" autocomplete="off">
+                    <small></small>
+                </label>
+
+                <div class="book-edit-modal__field">
+                    <span id="bookEditGenreLabel">Gênero</span>
+                    <input id="bookEditGenreInput" name="genre" type="hidden" required>
+                    <div class="genre-select book-edit-genre-select" id="bookEditGenreSelect">
+                        <button class="genre-select__trigger" id="bookEditGenreButton" type="button" aria-haspopup="listbox" aria-controls="bookEditGenreOptions" aria-expanded="false" aria-labelledby="bookEditGenreLabel bookEditGenreValue">
+                            <span id="bookEditGenreValue">Selecione um gênero</span>
+                            <span class="genre-select__arrow" aria-hidden="true"></span>
+                        </button>
+                        <div class="genre-select__options" id="bookEditGenreOptions" role="listbox" aria-label="Gênero do livro" hidden></div>
+                    </div>
+                    <small></small>
+                </div>
+
+                <label class="book-edit-modal__field">
+                    <span>Quantidade no acervo</span>
+                    <input name="total" type="number" min="1" step="1" required>
+                    <small></small>
+                </label>
+
+                <label class="book-edit-modal__field">
+                    <span>Disponíveis para empréstimo</span>
+                    <input name="available" type="number" min="0" step="1" readonly aria-readonly="true">
+                    <small>Calculado a partir dos empréstimos ativos.</small>
+                </label>
+
+                <label class="book-edit-modal__field book-edit-modal__field--wide">
+                    <span>Data de cadastro</span>
+                    <input name="registeredAt" type="text" readonly aria-readonly="true">
+                    <small>Informação preservada pelo sistema.</small>
+                </label>
+
+                <label class="book-edit-modal__field book-edit-modal__field--wide">
+                    <span>Observação</span>
+                    <textarea name="notes" rows="3" maxlength="500"></textarea>
+                    <small></small>
+                </label>
+            </div>
+
+            <p class="book-edit-modal__message" id="bookEditMessage" role="status" aria-live="polite"></p>
+
+            <footer class="book-edit-modal__actions">
+                <button class="book-edit-modal__cancel" type="button" data-book-edit-close>Cancelar</button>
+                <button class="book-edit-modal__confirm" type="submit">
+                    <span class="material-symbols-outlined" aria-hidden="true">save</span>
+                    <span>Salvar alterações</span>
+                </button>
+            </footer>
+        </form>
+    </dialog>
 
     <dialog class="deadline-modal" id="deadlineModal" aria-labelledby="deadlineModalTitle">
         <form class="deadline-modal__card" id="deadlineForm" method="dialog">
