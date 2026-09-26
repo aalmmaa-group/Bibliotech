@@ -581,34 +581,55 @@ function setupBookEditModal() {
     options[nextIndex].focus();
   });
 
-  form.addEventListener('submit', (event) => {
-    event.preventDefault();
-    if (!selectedBook) return;
+  form.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  if (!selectedBook) return;
 
-    const requiredFields = [...form.querySelectorAll('input[required]')];
-    const isValid = requiredFields.map(validateField).every(Boolean);
-    const total = Number(form.elements.total.value);
-    const available = Math.max(0, total - borrowedCopies);
+  const requiredFields = [...form.querySelectorAll('input[required]')];
+  const isValid = requiredFields.map(validateField).every(Boolean);
+  const total = Number(form.elements.total.value);
+  const available = Math.max(0, total - borrowedCopies);
 
-    if (!isValid) {
-      message.textContent = 'Revise os campos destacados antes de salvar.';
-      (form.querySelector('[aria-invalid="true"]') || genreTrigger).focus();
-      return;
-    }
+  if (!isValid) {
+    message.textContent = 'Revise os campos destacados antes de salvar.';
+    (form.querySelector('[aria-invalid="true"]') || genreTrigger).focus();
+    return;
+  }
 
-    Object.assign(selectedBook, {
-      title: form.elements.title.value.trim(),
-      author: form.elements.author.value.trim(),
-      genre: form.elements.genre.value.trim(),
-      total,
-      available,
-      notes: form.elements.notes.value.trim()
-    });
-
-    notifyCollectionUpdated();
-    closeModal();
-    showPending('Alterações aplicadas à visualização do acervo.');
+  Object.assign(selectedBook, {
+    title: form.elements.title.value.trim(),
+    author: form.elements.author.value.trim(),
+    genre: form.elements.genre.value.trim(),
+    total,
+    available,
+    notes: form.elements.notes.value.trim()
   });
+
+  const dadosParaBaseDeDados = { 
+    id_livro: selectedBook.id_livro || selectedBook.id, 
+    nome: form.elements.title.value.trim(),
+    autor: form.elements.author.value.trim(),
+    genero: form.elements.genre.value.trim(),
+    quantidade_livros_total: total,
+    quantidade_livros_disponiveis: available,
+    observacao: form.elements.notes.value.trim()
+  };
+
+  try {
+    const resposta = await window.bibliotech.books.update(dadosParaBaseDeDados);
+    
+    if (resposta.ok) {
+      notifyCollectionUpdated();
+      closeModal();
+      showPending('Alterações aplicadas e guardadas na base de dados com sucesso.');
+    } else {
+      message.textContent = 'Erro ao guardar: ' + resposta.message;
+    }
+  } catch (erro) {
+    console.error("Erro na comunicação com o back-end:", erro);
+    message.textContent = 'Erro fatal ao tentar comunicar com a base de dados.';
+  }
+});
 
   closeButtons.forEach((button) => button.addEventListener('click', closeModal));
   document.addEventListener('click', (event) => {

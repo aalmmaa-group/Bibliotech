@@ -34,6 +34,9 @@ ipcMain.handle('books:create', async (_event, book) => {
   // Agora ele chama a função real em vez de retornar o texto pendente
   return cadastrarLivro(book);
 });
+ipcMain.handle('books:update', async (event, dadosLivro) => {
+  return atualizarLivro(dadosLivro);
+});
 ipcMain.handle('loans:create', async (event, loanData) => {
   return realizarEmprestimo(loanData);
 });
@@ -110,26 +113,24 @@ function atualizarLivro(dadosLivro) {
     const stmt = db.db.prepare(`
       UPDATE livros 
       SET 
-        titulo = ?, 
+        nome = ?, 
         autor = ?, 
-        editora = ?, 
-        ano_publicacao = ?, 
         genero = ?, 
-        isbn = ?, 
-        quantidade_livros_disponiveis = ?
+        quantidade_livros_total = ?, 
+        quantidade_livros_disponiveis = ?, 
+        observacao = ?
       WHERE id_livro = ?
     `);
     
     // Executa a query injetando os dados exatos
     const info = stmt.run(
-      dadosLivro.titulo, 
+      dadosLivro.nome, 
       dadosLivro.autor, 
-      dadosLivro.editora, 
-      dadosLivro.ano_publicacao,
-      dadosLivro.genero,
-      dadosLivro.isbn,
-      dadosLivro.quantidade, 
-      dadosLivro.id 
+      dadosLivro.genero, 
+      dadosLivro.quantidade_livros_total,
+      dadosLivro.quantidade_livros_disponiveis,
+      dadosLivro.observacao, 
+      dadosLivro.id_livro
     );
 
     if (info.changes === 0) {
