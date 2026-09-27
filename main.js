@@ -399,8 +399,6 @@ function listarLivros() {
 
 
 // função de buscar os empréstimos 
-//necessario colocar um regra no status_emprestimo. ALgo como:     //if data_devolucao_prevista < datetime('now', 'localtime') status_emprestimo update 'devoluçao pendente'
-
 function listarEmprestimosAtivos() {
   if (!db || !db.db) {
     return {
@@ -412,9 +410,9 @@ function listarEmprestimosAtivos() {
 
   try {
     db.db.prepare(`
-      UPDATE emprestimos 
+      UPDATE emprestimos
       SET status_emprestimo = 'devolução pendente'
-      WHERE status_emprestimo = 'emprestado' AND data_devolucao_prevista < datetime('now', 'localtime');
+      WHERE status_emprestimo = 'emprestado' AND date('now', 'localtime') > date(data_devolucao_prevista);
       `) 
 
 
