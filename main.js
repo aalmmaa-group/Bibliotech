@@ -399,6 +399,8 @@ function listarLivros() {
 
 
 // função de buscar os empréstimos 
+//necessario colocar um regra no status_emprestimo. ALgo como:     //if data_devolucao_prevista < datetime('now', 'localtime') status_emprestimo update 'devoluçao pendente'
+
 function listarEmprestimosAtivos() {
   if (!db || !db.db) {
     return {
@@ -409,6 +411,13 @@ function listarEmprestimosAtivos() {
   }
 
   try {
+    db.db.prepare(`
+      UPDATE emprestimos 
+      SET status_emprestimo = 'devolução pendente'
+      WHERE status_emprestimo = 'emprestado' AND data_devolucao_prevista < datetime('now', 'localtime');
+      `) 
+
+
     const linhas = db.db.prepare(`
       SELECT
         e.id_emprestimo,
@@ -426,7 +435,7 @@ function listarEmprestimosAtivos() {
       WHERE e.status_emprestimo IN ('emprestado', 'devolução pendente')
       ORDER BY e.data_devolucao_prevista ASC
     `).all();
-
+    
     return {
       ok: true,
       code: 'SUCCESS',
@@ -450,7 +459,7 @@ ipcMain.handle('reports:getDashboard', async (event, filtros = {}) => {
 });
 
 //A seguinte função tem como objetivo agrupar as principais queries para a tela de relatorio. 
-// Obs.: Essa função *talvez* será usada na visão geral.
+// Obs.: Alguns filtros foram usados na visão geral.
 function montarRelatorio(filtros) {
   if (!db || !db.db) {
     return {
