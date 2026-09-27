@@ -496,13 +496,20 @@ function montarRelatorio(filtros) {
       WHERE status_emprestimo IN ('emprestado', 'devolução pendente') AND date('now', 'localtime') > date(data_devolucao_prevista);
       `).get();
 
+      //Empréstimos que exigem atenção = Emprestimos com o prazo de devolução pendente ou prazo está para vencer
+      const emprestimosGrafico = db.db.prepare(`
+        SELECT e.id_emprestimo, l.nome AS nome_livro, e.turma_serie, e.nome_solicitante, e.data_devolucao_prevista, e.tipo_solicitante, e.status_emprestimo
+        FROM emprestimos e
+        JOIN livros l on l.id_livro = e.id_livro
+        WHERE e.status_emprestimo IN ('emprestado', 'devolução pendente') 
+        AND (date(e.data_devolucao_prevista) = date('now', 'localtime', '+3 days') OR  date(e.data_devolucao_prevista) < date('now', 'localtime')) 
+        LIMIT 10`).get()
 
-      
     return {
       ok: true,
       code: 'SUCCESS',
       message: 'Relatório carregado com sucesso!',
-      payload: { acervoTotal, disponiveis, emprestimos, atrasados}
+      payload: { acervoTotal, disponiveis, emprestimos, atrasados,emprestimosGrafico}
     };
   } catch (erro) {
     console.error('Erro ao montar o relatório:', erro);
@@ -529,8 +536,6 @@ app.whenReady().then(() => {
     }
   })
 })
-
-
 
 
 
