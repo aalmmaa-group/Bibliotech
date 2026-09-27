@@ -44,9 +44,12 @@ ipcMain.handle('books:search', async (event, termo) => {
   return buscarLivrosPorNome(termo);
 });
 
-
 ipcMain.handle('loans:listActive', async() => {
   return listarEmprestimosAtivos(); 
+})
+
+ipcMain.handle('loand:updateStatus', async() => {
+  return atualizarStatusDevolução();
 })
 
 // função de cadastrar os livros 
@@ -409,12 +412,12 @@ function listarEmprestimosAtivos() {
   }
 
   try {
-    db.db.prepare(`
-      UPDATE emprestimos
-      SET status_emprestimo = 'devolução pendente'
-      WHERE status_emprestimo = 'emprestado' AND date('now', 'localtime') > date(data_devolucao_prevista);
-      `) 
 
+    db.db.prepare(`
+        UPDATE emprestimos
+        SET status_emprestimo = 'devolução pendente'
+        WHERE status_emprestimo = 'emprestado' AND date('now', 'localtime') > date(data_devolucao_prevista);
+        `).run(); 
 
     const linhas = db.db.prepare(`
       SELECT
@@ -490,7 +493,7 @@ function montarRelatorio(filtros) {
     const atrasados = db.db.prepare(`
       SELECT count(status_emprestimo) AS emprestimos
       FROM emprestimos
-      WHERE status_emprestimo IN ('devolução pendente')
+      WHERE status_emprestimo IN ('emprestado', 'devolução pendente') AND date('now', 'localtime') > date(data_devolucao_prevista);
       `).get();
 
     return {

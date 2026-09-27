@@ -2204,7 +2204,7 @@ const atrasadosVisaoGeral = document.querySelector('#metricOverdueReturns');
       acervoTotalVisaoGeral.textContent = payload.acervoTotal.acervoTotal || 0;
       disponiveiVisaoGerals.textContent = payload.disponiveis.disponiveis || 0;
       emprestimosVisaoGeral.textContent = payload.emprestimos.emprestimos || 0;
-      atrasadosVisaoGeral.textContent = payload.atrasados.atrasados || 0;
+      atrasadosVisaoGeral.textContent = payload.atrasados.emprestimos || 0;
     }else{
         return{
           ok: false,
@@ -2234,7 +2234,7 @@ async function carregarRelatorio() {
       acervoTotal.textContent = payload.acervoTotal.acervoTotal || 0;
       disponiveis.textContent = payload.disponiveis.disponiveis || 0;
       emprestimos.textContent = payload.emprestimos.emprestimos || 0;
-      atrasados.textContent = payload.atrasados.atrasados || 0;
+      atrasados.textContent = payload.atrasados.emprestimos || 0;
     
     }else{
         return{
