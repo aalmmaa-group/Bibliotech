@@ -138,7 +138,7 @@
                             </span>
                         </div>
                         <strong id="metricBooksTotal" aria-live="polite">—</strong>
-                        <small>Aguardando dados do acervo</small>
+                        <small id="metricBooksTotalStatus">Aguardando dados do acervo</small>
                     </article>
 
                     <article class="stat-card">
@@ -152,7 +152,7 @@
                             </span>
                         </div>
                         <strong id="metricBooksAvailable" aria-live="polite">—</strong>
-                        <small>Disponibilidade ainda não carregada</small>
+                        <small id="metricBooksAvailableStatus">Disponibilidade ainda não carregada</small>
                     </article>
 
                     <article class="stat-card">
@@ -165,7 +165,7 @@
                             </span>
                         </div>
                         <strong id="metricActiveLoans" aria-live="polite">—</strong>
-                        <small>Movimentações ainda não carregadas</small>
+                        <small id="metricActiveLoansStatus">Movimentações ainda não carregadas</small>
                     </article>
 
                     <article class="stat-card stat-card--warning">
@@ -179,7 +179,7 @@
                             </span>
                         </div>
                         <strong id="metricOverdueReturns" aria-live="polite">—</strong>
-                        <small>Atrasos ainda não calculados</small>
+                        <small id="metricOverdueReturnsStatus">Atrasos ainda não calculados</small>
                     </article>
                 </div>
 
@@ -617,7 +617,7 @@
                             <span>Acervo total</span>
                             <span class="material-symbols-outlined" aria-hidden="true">menu_book</span>
                         </header>
-                        <div><strong id="reportMetricTotal">—</strong><small>Aguardando dados</small></div>
+                        <div><strong id="reportMetricTotal">—</strong><small id="reportMetricTotalStatus">Aguardando dados</small></div>
                     </article>
 
                     <article class="report-metric-card report-metric-card--available">
@@ -625,7 +625,7 @@
                             <span>Disponíveis</span>
                             <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
                         </header>
-                        <div><strong id="reportMetricAvailable">—</strong><small>Aguardando dados</small></div>
+                        <div><strong id="reportMetricAvailable">—</strong><small id="reportMetricAvailableStatus">Aguardando dados</small></div>
                     </article>
 
                     <article class="report-metric-card report-metric-card--loaned">
@@ -633,7 +633,7 @@
                             <span>Em empréstimo</span>
                             <span class="material-symbols-outlined" aria-hidden="true">swap_horiz</span>
                         </header>
-                        <div><strong id="reportMetricLoaned">—</strong><small>Aguardando dados</small></div>
+                        <div><strong id="reportMetricLoaned">—</strong><small id="reportMetricLoanedStatus">Aguardando dados</small></div>
                     </article>
 
                     <article class="report-metric-card report-metric-card--attention">
@@ -641,7 +641,7 @@
                             <span>Atrasados</span>
                             <span class="material-symbols-outlined" aria-hidden="true">warning</span>
                         </header>
-                        <div><strong id="reportMetricOverdue">—</strong><small>Aguardando dados</small></div>
+                        <div><strong id="reportMetricOverdue">—</strong><small id="reportMetricOverdueStatus">Aguardando dados</small></div>
                     </article>
                 </section>
 

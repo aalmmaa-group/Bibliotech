@@ -491,11 +491,13 @@ function montarRelatorio(filtros) {
     `).get();
 
     const atrasados = db.db.prepare(`
-      SELECT count(status_emprestimo) AS emprestimos
+      SELECT count(status_emprestimo) AS atrasados
       FROM emprestimos
       WHERE status_emprestimo IN ('emprestado', 'devolução pendente') AND date('now', 'localtime') > date(data_devolucao_prevista);
       `).get();
 
+
+      
     return {
       ok: true,
       code: 'SUCCESS',

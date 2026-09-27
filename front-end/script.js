@@ -2193,19 +2193,47 @@ async function handleLoanSubmit(event) {
 //visão Geral
 async function carregarVisaoGeral() {
 const acervoTotalVisaoGeral = document.querySelector('#metricBooksTotal');
+const acervoTotalVisaoGeralStatus = document.querySelector('#metricBooksTotalStatus');
 const disponiveiVisaoGerals = document.querySelector('#metricBooksAvailable');
+const disponiveiVisaoGeralsStatus = document.querySelector('#metricBooksAvailableStatus');
 const emprestimosVisaoGeral = document.querySelector('#metricActiveLoans');
+const emprestimosVisaoGeralStatus = document.querySelector('#metricActiveLoansStatus');
 const atrasadosVisaoGeral = document.querySelector('#metricOverdueReturns');
+const atrasadosVisaoGeralStatus = document.querySelector('#metricOverdueReturnsStatus');
+
+
+const reportStatusElements = [
+  acervoTotalVisaoGeralStatus,
+  disponiveiVisaoGeralsStatus,
+  emprestimosVisaoGeralStatus,
+  atrasadosVisaoGeralStatus
+];
+
+const exibirErroNoGeral = () => {
+  reportStatusElements.forEach((status) => {
+    if (!status) return;
+    status.hidden = false;
+    status.textContent = 'Não foi possível carregar';
+  });
+};
 
   try {
     const resultado = await window.bibliotech.reports.getDashboard();
     if (resultado.ok) {
       const payload = resultado.payload;
       acervoTotalVisaoGeral.textContent = payload.acervoTotal.acervoTotal || 0;
+      acervoTotalVisaoGeralStatus.hidden = true;
+
       disponiveiVisaoGerals.textContent = payload.disponiveis.disponiveis || 0;
+      disponiveiVisaoGeralsStatus.hidden = true;
+
       emprestimosVisaoGeral.textContent = payload.emprestimos.emprestimos || 0;
-      atrasadosVisaoGeral.textContent = payload.atrasados.emprestimos || 0;
+      emprestimosVisaoGeralStatus.hidden = true;  
+
+      atrasadosVisaoGeral.textContent = payload.atrasados.atrasados || 0;
+      atrasadosVisaoGeralStatus.hidden = true;
     }else{
+      exibirErroNoGeral();
         return{
           ok: false,
           message: 'Falha ao buscar dados do relatório'
@@ -2213,6 +2241,7 @@ const atrasadosVisaoGeral = document.querySelector('#metricOverdueReturns');
     }
   }catch(erro){
       console.error(erro);
+      exibirErroNoGeral();
       return{
         ok:false,
         message: 'Erro interno'
@@ -2222,9 +2251,33 @@ const atrasadosVisaoGeral = document.querySelector('#metricOverdueReturns');
 
 //Tela de relatorio
 const acervoTotal = document.querySelector('#reportMetricTotal');
+const acervoTotalStatus = document.querySelector('#reportMetricTotalStatus');
+
 const disponiveis = document.querySelector('#reportMetricAvailable');
+const disponiveisStatus = document.querySelector('#reportMetricAvailableStatus');
+
 const emprestimos = document.querySelector('#reportMetricLoaned');
+const emprestimosStatus = document.querySelector('#reportMetricLoanedStatus');
+
+
 const atrasados = document.querySelector('#reportMetricOverdue');
+const atrasadosStatus = document.querySelector('#reportMetricOverdueStatus');
+
+
+const reportStatusElements = [
+  acervoTotalStatus,
+  disponiveisStatus,
+  emprestimosStatus,
+  atrasadosStatus
+];
+
+const exibirErroNoRelatorio = () => {
+  reportStatusElements.forEach((status) => {
+    if (!status) return;
+    status.hidden = false;
+    status.textContent = 'Não foi possível carregar';
+  });
+};
 	
 async function carregarRelatorio() {
   try {
@@ -2232,11 +2285,18 @@ async function carregarRelatorio() {
     if (resultado.ok) {
       const payload = resultado.payload;
       acervoTotal.textContent = payload.acervoTotal.acervoTotal || 0;
+      acervoTotalStatus.hidden = true;
+
       disponiveis.textContent = payload.disponiveis.disponiveis || 0;
+      disponiveisStatus.hidden = true;
+
       emprestimos.textContent = payload.emprestimos.emprestimos || 0;
-      atrasados.textContent = payload.atrasados.emprestimos || 0;
-    
+      emprestimosStatus.hidden = true;
+
+      atrasados.textContent = payload.atrasados.atrasados || 0;
+      atrasadosStatus.hidden = true;
     }else{
+        exibirErroNoRelatorio();
         return{
           ok: false,
           message: 'Falha ao buscar dados do relatório'
@@ -2244,6 +2304,7 @@ async function carregarRelatorio() {
     }
   }catch(erro){
       console.error(erro);
+      exibirErroNoRelatorio();
       return{
         ok:false,
         message: 'Erro interno'
