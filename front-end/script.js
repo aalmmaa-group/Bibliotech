@@ -2190,10 +2190,41 @@ async function handleLoanSubmit(event) {
   }
 }
 
+//visão Geral
+async function carregarVisaoGeral() {
+const acervoTotalVisaoGeral = document.querySelector('#metricBooksTotal');
+const disponiveiVisaoGerals = document.querySelector('#metricBooksAvailable');
+const emprestimosVisaoGeral = document.querySelector('#metricActiveLoans');
+const atrasadosVisaoGeral = document.querySelector('#metricOverdueReturns');
+
+  try {
+    const resultado = await window.bibliotech.reports.getDashboard();
+    if (resultado.ok) {
+      const payload = resultado.payload;
+      acervoTotalVisaoGeral.textContent = payload.acervoTotal.acervoTotal || 0;
+      disponiveiVisaoGerals.textContent = payload.disponiveis.disponiveis || 0;
+      emprestimosVisaoGeral.textContent = payload.emprestimos.emprestimos || 0;
+      atrasadosVisaoGeral.textContent = payload.atrasados.atrasados || 0;
+    }else{
+        return{
+          ok: false,
+          message: 'Falha ao buscar dados do relatório'
+        };
+    }
+  }catch(erro){
+      console.error(erro);
+      return{
+        ok:false,
+        message: 'Erro interno'
+      }
+}
+}
+
 //Tela de relatorio
 const acervoTotal = document.querySelector('#reportMetricTotal');
 const disponiveis = document.querySelector('#reportMetricAvailable');
 const emprestimos = document.querySelector('#reportMetricLoaned');
+const atrasados = document.querySelector('#reportMetricOverdue');
 	
 async function carregarRelatorio() {
   try {
@@ -2203,7 +2234,7 @@ async function carregarRelatorio() {
       acervoTotal.textContent = payload.acervoTotal.acervoTotal || 0;
       disponiveis.textContent = payload.disponiveis.disponiveis || 0;
       emprestimos.textContent = payload.emprestimos.emprestimos || 0;
-      
+      atrasados.textContent = payload.atrasados.atrasados || 0;
     
     }else{
         return{
@@ -2249,6 +2280,7 @@ function initializeApp() {
   loadActiveLoans(); //Busca na tabela emprestimos os empréstimos ainda não devolvidos, através da API disponibilizada pelo preload
   setupBookAutocomplete();
   carregarRelatorio();
+  carregarVisaoGeral();
   bookForm.addEventListener('submit', handleBookSubmit);
   loanForm.addEventListener('submit', handleLoanSubmit);
 }

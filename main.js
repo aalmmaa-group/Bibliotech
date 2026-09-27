@@ -480,11 +480,17 @@ function montarRelatorio(filtros) {
      
     `).get();
 
+    const atrasados = db.db.prepare(`
+      SELECT count(status_emprestimo) AS emprestimos
+      FROM emprestimos
+      WHERE status_emprestimo IN ('devolução pendente')
+      `).get();
+
     return {
       ok: true,
       code: 'SUCCESS',
       message: 'Relatório carregado com sucesso!',
-      payload: { acervoTotal, disponiveis, emprestimos}
+      payload: { acervoTotal, disponiveis, emprestimos, atrasados}
     };
   } catch (erro) {
     console.error('Erro ao montar o relatório:', erro);
