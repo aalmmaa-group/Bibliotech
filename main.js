@@ -444,6 +444,54 @@ function listarEmprestimosAtivos() {
 }
 
 
+//Relatorio
+ipcMain.handle('reports:getDashboard', async (event, filtros = {}) => {
+  return montarRelatorio(filtros);
+});
+
+//A seguinte função tem como objetivo agrupar as principais queries para a tela de relatorio. 
+// Obs.: Essa função *talvez* será usada na visão geral.
+function montarRelatorio(filtros) {
+  if (!db || !db.db) {
+    return {
+      ok: false,
+      code: 'DB_UNAVAILABLE',
+      message: 'O banco de dados está indisponível nesta máquina.'
+    };
+  }
+
+  try {
+    // Os big numbers iniciais 
+    const acervoTotal = db.db.prepare(`
+      SELECT SUM(quantidade_livros_total) AS acervoTotal
+      FROM livros
+    `).get();
+
+    const disponiveis = db.db.prepare(`
+      SELECT SUM(quantidade_livros_disponiveis) AS disponiveis
+      FROM livros
+    `).get();
+
+
+    const emprestimos = db.db.prepare(`
+      SELECT count(status_emprestimo) AS emprestimos
+      FROM emprestimos
+      WHERE status_emprestimo IN ('emprestado', 'devolução pendente')
+     
+    `).get();
+
+    return {
+      ok: true,
+      code: 'SUCCESS',
+      message: 'Relatório carregado com sucesso!',
+      payload: { acervoTotal, disponiveis, emprestimos}
+    };
+  } catch (erro) {
+    console.error('Erro ao montar o relatório:', erro);
+    return { ok: false, code: 'SELECT_ERROR', message: 'Erro interno ao montar o relatório.' };
+  }
+}
+
 
 /** Inicializa dependências locais e abre a primeira janela do aplicativo. */
 app.whenReady().then(() => {
@@ -463,6 +511,10 @@ app.whenReady().then(() => {
     }
   })
 })
+
+
+
+
 
 //Quando todas as janelas estão fechadas o app fecha
 app.on('window-all-closed', () => {
