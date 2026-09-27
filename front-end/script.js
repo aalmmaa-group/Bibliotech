@@ -2190,6 +2190,39 @@ async function handleLoanSubmit(event) {
   }
 }
 
+//Tela de relatorio
+const acervoTotal = document.querySelector('#reportMetricTotal');
+const disponiveis = document.querySelector('#reportMetricAvailable');
+const emprestimos = document.querySelector('#reportMetricLoaned');
+	
+async function carregarRelatorio() {
+  try {
+    const resultado = await window.bibliotech.reports.getDashboard();
+    if (resultado.ok) {
+      const payload = resultado.payload;
+      acervoTotal.textContent = payload.acervoTotal.acervoTotal || 0;
+      disponiveis.textContent = payload.disponiveis.disponiveis || 0;
+      emprestimos.textContent = payload.emprestimos.emprestimos || 0;
+      
+    
+    }else{
+        return{
+          ok: false,
+          message: 'Falha ao buscar dados do relatório'
+        };
+    }
+  }catch(erro){
+      console.error(erro);
+      return{
+        ok:false,
+        message: 'Erro interno'
+      }
+    }
+  
+}
+
+
+
 /** Inicializa os eventos após o carregamento do HTML. */
 function initializeApp() {
   setupThemeToggle(); // Alterna entre os temas claro e escuro e salva a preferência.
@@ -2215,6 +2248,7 @@ function initializeApp() {
   setupReturnsList(); //Configura a renderização da lista de devoluções pendentes
   loadActiveLoans(); //Busca na tabela emprestimos os empréstimos ainda não devolvidos, através da API disponibilizada pelo preload
   setupBookAutocomplete();
+  carregarRelatorio();
   bookForm.addEventListener('submit', handleBookSubmit);
   loanForm.addEventListener('submit', handleLoanSubmit);
 }
