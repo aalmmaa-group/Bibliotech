@@ -776,6 +776,7 @@ function setupBookEditModal() {
     
     if (resposta.ok) {
       notifyCollectionUpdated();
+      loadActiveLoans();
       closeModal();
       showPending('Alterações aplicadas e guardadas na base de dados com sucesso.');
     } else {
