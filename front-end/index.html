@@ -78,13 +78,16 @@
                 <button class="help-button" id="helpButton" type="button">Ajuda</button>
 
                 <button class="theme-toggle" id="themeToggle" type="button" aria-label="Ativar modo escuro" aria-pressed="false" title="Ativar modo escuro">
-                    <svg class="theme-toggle__icon theme-toggle__icon--moon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                        <path d="M20 15.2A8.5 8.5 0 0 1 8.8 4 8.5 8.5 0 1 0 20 15.2Z"/>
-                    </svg>
-                    <svg class="theme-toggle__icon theme-toggle__icon--sun" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                        <circle cx="12" cy="12" r="3.5"/>
-                        <path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.65 17.65l1.42 1.42M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.65 6.35l1.42-1.42"/>
-                    </svg>
+                    <span class="theme-toggle__track" aria-hidden="true">
+                        <svg class="theme-toggle__icon theme-toggle__icon--sun" viewBox="0 0 24 24" fill="none">
+                            <circle cx="12" cy="12" r="3.5"/>
+                            <path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.65 17.65l1.42 1.42M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.65 6.35l1.42-1.42"/>
+                        </svg>
+                        <svg class="theme-toggle__icon theme-toggle__icon--moon" viewBox="0 0 24 24" fill="none">
+                            <path d="M20 15.2A8.5 8.5 0 0 1 8.8 4 8.5 8.5 0 1 0 20 15.2Z"/>
+                        </svg>
+                        <span class="theme-toggle__thumb"></span>
+                    </span>
                 </button>
 
                 <div class="notification-area">
@@ -582,153 +585,51 @@
                 </section>
             </section>
 
-            <!-- Estrutura visual da tela de relatórios. -->
+            <!-- Central de acesso aos relatórios do Sprint 4. -->
             <section class="page-intro reports-page" id="reportsPage" hidden aria-labelledby="reportsPageTitle">
                 <header class="reports-header">
                     <div>
                         <p class="page-intro__eyebrow">Análise da biblioteca</p>
                         <h1 id="reportsPageTitle">Relatórios</h1>
                         <p class="page-intro__description">
-                            Acompanhe o cenário atual do acervo, dos empréstimos e dos prazos de devolução.
+                            Escolha uma visão para consultar os dados da biblioteca e preparar o relatório.
                         </p>
                     </div>
-
+                    <span class="reports-header__badge"><span class="material-symbols-outlined" aria-hidden="true">insights</span> Central de relatórios</span>
                 </header>
 
-                <div class="reports-scope" aria-label="Escopo do relatório">
-                    <span class="reports-scope__item is-active">Visão atual</span>
-                    <label class="reports-scope__filter">
-                        <span class="sr-only">Filtrar por gênero</span>
-                        <select id="reportsGenreFilter" aria-label="Filtrar relatório por gênero" disabled>
-                            <option value="all">Todos os gêneros</option>
-                        </select>
-                    </label>
-                    <label class="reports-scope__filter">
-                        <span class="sr-only">Filtrar por turma</span>
-                        <select id="reportsClassFilter" aria-label="Filtrar relatório por turma" disabled>
-                            <option value="all">Todas as turmas</option>
-                        </select>
-                    </label>
-                </div>
-
-                <section class="reports-metrics" aria-label="Indicadores da biblioteca">
-                    <article class="report-metric-card">
-                        <header>
-                            <span>Acervo total</span>
-                            <span class="material-symbols-outlined" aria-hidden="true">menu_book</span>
-                        </header>
-                        <div><strong id="reportMetricTotal">—</strong><small id="reportMetricTotalStatus">Aguardando dados</small></div>
-                    </article>
-
-                    <article class="report-metric-card report-metric-card--available">
-                        <header>
-                            <span>Disponíveis</span>
-                            <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
-                        </header>
-                        <div><strong id="reportMetricAvailable">—</strong><small id="reportMetricAvailableStatus">Aguardando dados</small></div>
-                    </article>
-
-                    <article class="report-metric-card report-metric-card--loaned">
-                        <header>
-                            <span>Em empréstimo</span>
-                            <span class="material-symbols-outlined" aria-hidden="true">swap_horiz</span>
-                        </header>
-                        <div><strong id="reportMetricLoaned">—</strong><small id="reportMetricLoanedStatus">Aguardando dados</small></div>
-                    </article>
-
-                    <article class="report-metric-card report-metric-card--attention">
-                        <header>
-                            <span>Atrasados</span>
-                            <span class="material-symbols-outlined" aria-hidden="true">warning</span>
-                        </header>
-                        <div><strong id="reportMetricOverdue">—</strong><small id="reportMetricOverdueStatus">Aguardando dados</small></div>
-                    </article>
+                <section class="report-launcher-grid" aria-label="Tipos de relatório">
+                    <button class="report-launcher report-launcher--returned" type="button" data-report-open="returnedMonth">
+                        <span class="report-launcher__icon material-symbols-outlined" aria-hidden="true">assignment_return</span>
+                        <span class="report-launcher__content"><small>Movimentação mensal</small><strong>Livros devolvidos no mês</strong><span>Consulte as devoluções registradas no período.</span></span>
+                        <span class="report-launcher__arrow material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+                    </button>
+                    <button class="report-launcher report-launcher--loaned" type="button" data-report-open="loanedMonth">
+                        <span class="report-launcher__icon material-symbols-outlined" aria-hidden="true">output</span>
+                        <span class="report-launcher__content"><small>Movimentação mensal</small><strong>Livros emprestados no mês</strong><span>Acompanhe os empréstimos realizados no período.</span></span>
+                        <span class="report-launcher__arrow material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+                    </button>
+                    <button class="report-launcher" type="button" data-report-pending="turma mais leitora no mês">
+                        <span class="report-launcher__icon material-symbols-outlined" aria-hidden="true">school</span>
+                        <span class="report-launcher__content"><small>Engajamento</small><strong>Turma mais leitora no mês</strong><span>Compare o engajamento das turmas.</span></span>
+                        <span class="report-launcher__tag">Em desenvolvimento</span>
+                    </button>
+                    <button class="report-launcher" type="button" data-report-pending="livros mais lidos do mês">
+                        <span class="report-launcher__icon material-symbols-outlined" aria-hidden="true">auto_stories</span>
+                        <span class="report-launcher__content"><small>Destaques</small><strong>Livros mais lidos do mês</strong><span>Veja os títulos que se destacaram no período.</span></span>
+                        <span class="report-launcher__tag">Em desenvolvimento</span>
+                    </button>
+                    <button class="report-launcher" type="button" data-report-pending="livros mais lidos de todos os tempos">
+                        <span class="report-launcher__icon material-symbols-outlined" aria-hidden="true">workspace_premium</span>
+                        <span class="report-launcher__content"><small>Histórico</small><strong>Livros mais lidos de todos</strong><span>Consulte o ranking histórico do acervo.</span></span>
+                        <span class="report-launcher__tag">Em desenvolvimento</span>
+                    </button>
+                    <button class="report-launcher report-launcher--featured" type="button" data-report-open="general">
+                        <span class="report-launcher__icon material-symbols-outlined" aria-hidden="true">analytics</span>
+                        <span class="report-launcher__content"><small>Visão completa</small><strong>Relatório geral</strong><span>Reúna os principais indicadores da biblioteca.</span></span>
+                        <span class="report-launcher__arrow material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+                    </button>
                 </section>
-
-                <div class="reports-grid reports-grid--overview">
-                    <article class="report-panel report-availability" aria-labelledby="availabilityReportTitle">
-                        <header class="report-panel__header">
-                            <div>
-                                <h2 id="availabilityReportTitle">Disponibilidade do acervo</h2>
-                                <p>Situação atual dos exemplares</p>
-                            </div>
-                        </header>
-
-                        <div class="report-availability__content">
-                            <div class="report-donut is-empty" id="reportAvailabilityChart" role="img" aria-label="Disponibilidade ainda não carregada">
-                                <div><strong id="reportAvailabilityPercentage">—</strong><span>disponibilidade</span></div>
-                            </div>
-                            <dl class="report-legend">
-                                <div><dt><i></i>Disponíveis</dt><dd id="reportAvailableCount">—</dd></div>
-                                <div><dt><i></i>Em empréstimo</dt><dd id="reportLoanedCount">—</dd></div>
-                            </dl>
-                        </div>
-                    </article>
-
-                    <article class="report-panel report-deadlines" aria-labelledby="deadlinesReportTitle">
-                        <header class="report-panel__header">
-                            <div>
-                                <h2 id="deadlinesReportTitle">Prazos de devolução</h2>
-                                <p>Quantidade de empréstimos por urgência</p>
-                            </div>
-                        </header>
-
-                        <div class="report-bars">
-                            <div class="report-bar report-bar--danger">
-                                <span>Atrasados</span><i><b id="reportOverdueBar" style="--bar-size: 0%;"></b></i><strong id="reportOverdueCount">—</strong>
-                            </div>
-                            <div class="report-bar report-bar--today">
-                                <span>Vencem hoje</span><i><b id="reportTodayBar" style="--bar-size: 0%;"></b></i><strong id="reportTodayCount">—</strong>
-                            </div>
-                            <div class="report-bar report-bar--soon">
-                                <span>Próximos 7 dias</span><i><b id="reportSoonBar" style="--bar-size: 0%;"></b></i><strong id="reportSoonCount">—</strong>
-                            </div>
-                            <div class="report-bar report-bar--safe">
-                                <span>Depois de 7 dias</span><i><b id="reportLaterBar" style="--bar-size: 0%;"></b></i><strong id="reportLaterCount">—</strong>
-                            </div>
-                        </div>
-                    </article>
-                </div>
-
-                <div class="reports-grid reports-grid--details">
-                    <article class="report-panel report-genres" aria-labelledby="genresReportTitle">
-                        <header class="report-panel__header">
-                            <div>
-                                <h2 id="genresReportTitle">Distribuição por gênero</h2>
-                                <p>Exemplares cadastrados no acervo</p>
-                            </div>
-                        </header>
-
-                        <div class="report-genre-list" id="reportsGenreList"></div>
-                        <div class="report-data-empty" id="reportsGenresEmpty" role="status">
-                            <span class="material-symbols-outlined" aria-hidden="true">bar_chart</span>
-                            <strong>Nenhum dado por gênero carregado</strong>
-                        </div>
-                    </article>
-
-                    <article class="report-panel report-attention" aria-labelledby="attentionReportTitle">
-                        <header class="report-panel__header">
-                            <div>
-                                <h2 id="attentionReportTitle">Empréstimos que exigem atenção</h2>
-                                <p>Prioridade para acompanhamento da equipe</p>
-                            </div>
-                        </header>
-
-                        <div class="report-attention__table" role="table" aria-label="Empréstimos que exigem atenção">
-                            <div class="report-attention__head" role="row">
-                                <span role="columnheader">Livro</span>
-                                <span role="columnheader">Leitor</span>
-                                <span role="columnheader">Prazo</span>
-                                <span role="columnheader">Status</span>
-                            </div>
-                            <div id="reportsAttentionBody" role="rowgroup"></div>
-                            <div class="report-data-empty report-data-empty--table" id="reportsAttentionEmpty" role="status">
-                                <span class="material-symbols-outlined" aria-hidden="true">event_available</span>
-                                <strong>Nenhum empréstimo carregado</strong>
-                            </div>
-                        </div>
-                    </article>
-                </div>
             </section>
 
             <!-- Formulário alinhado aos atributos previstos no banco SQLite. -->
@@ -1144,6 +1045,117 @@
                 </button>
             </footer>
         </form>
+    </dialog>
+
+    <dialog class="report-modal" id="returnedMonthReportModal" aria-labelledby="returnedMonthReportTitle">
+        <article class="report-modal__card">
+            <header class="report-modal__header">
+                <span class="report-modal__icon material-symbols-outlined" aria-hidden="true">assignment_return</span>
+                <div><p>RELATÓRIO MENSAL</p><h2 id="returnedMonthReportTitle">Livros devolvidos no mês</h2></div>
+                <button class="report-modal__close material-symbols-outlined" type="button" data-report-close aria-label="Fechar relatório">close</button>
+            </header>
+            <div class="report-modal__period">
+                <span class="material-symbols-outlined" aria-hidden="true">calendar_month</span>
+                <div><small>Período automático do relatório</small><strong data-report-current-month>—</strong></div>
+            </div>
+            <section class="report-modal__summary" aria-label="Resumo das devoluções">
+                <div><small>Devoluções no mês</small><strong>—</strong></div>
+                <div><small>Dentro do prazo</small><strong>—</strong></div>
+                <div><small>Após o prazo</small><strong>—</strong></div>
+            </section>
+            <div class="report-modal__table-wrap">
+                <div class="report-modal__table-head" aria-hidden="true"><span>Livro</span><span>Leitor</span><span>Devolvido em</span><span>Situação</span></div>
+                <div class="report-modal__empty" role="status">
+                    <span class="material-symbols-outlined" aria-hidden="true">inventory_2</span>
+                    <strong>Os dados mensais aparecerão aqui</strong>
+                    <p>A estrutura visual está pronta para receber o histórico de devoluções quando a consulta for disponibilizada.</p>
+                </div>
+            </div>
+            <footer class="report-modal__actions"><button class="report-modal__secondary" type="button" data-report-close>Fechar</button></footer>
+        </article>
+    </dialog>
+
+    <dialog class="report-modal" id="loanedMonthReportModal" aria-labelledby="loanedMonthReportTitle">
+        <article class="report-modal__card">
+            <header class="report-modal__header">
+                <span class="report-modal__icon material-symbols-outlined" aria-hidden="true">output</span>
+                <div><p>RELATÓRIO MENSAL</p><h2 id="loanedMonthReportTitle">Livros emprestados no mês</h2></div>
+                <button class="report-modal__close material-symbols-outlined" type="button" data-report-close aria-label="Fechar relatório">close</button>
+            </header>
+            <div class="report-modal__period">
+                <span class="material-symbols-outlined" aria-hidden="true">calendar_month</span>
+                <div><small>Período automático do relatório</small><strong data-report-current-month>—</strong></div>
+            </div>
+            <section class="report-modal__summary" aria-label="Resumo dos empréstimos">
+                <div><small>Empréstimos no mês</small><strong>—</strong></div>
+                <div><small>Alunos atendidos</small><strong>—</strong></div>
+                <div><small>Turmas alcançadas</small><strong>—</strong></div>
+            </section>
+            <div class="report-modal__table-wrap">
+                <div class="report-modal__table-head" aria-hidden="true"><span>Livro</span><span>Leitor</span><span>Emprestado em</span><span>Prazo</span></div>
+                <div class="report-modal__empty" role="status">
+                    <span class="material-symbols-outlined" aria-hidden="true">menu_book</span>
+                    <strong>Os dados mensais aparecerão aqui</strong>
+                    <p>A estrutura visual está pronta para receber o histórico de empréstimos quando a consulta for disponibilizada.</p>
+                </div>
+            </div>
+            <footer class="report-modal__actions">
+                <button class="report-modal__secondary" type="button" data-report-close>Fechar</button>
+                <button class="pdf-action" type="button" data-pdf-demo aria-describedby="loanedPdfStatus">
+                    <span class="pdf-action__progress" aria-hidden="true"></span>
+                    <span class="pdf-action__icon material-symbols-outlined" aria-hidden="true">picture_as_pdf</span>
+                    <span class="pdf-action__label">Gerar PDF</span>
+                    <span class="pdf-action__check material-symbols-outlined" aria-hidden="true">check</span>
+                </button>
+                <span class="sr-only" id="loanedPdfStatus" data-pdf-status aria-live="polite"></span>
+            </footer>
+        </article>
+    </dialog>
+
+    <dialog class="report-modal report-modal--general" id="generalReportModal" aria-labelledby="generalReportTitle">
+        <article class="report-modal__card">
+            <header class="report-modal__header">
+                <span class="report-modal__icon material-symbols-outlined" aria-hidden="true">analytics</span>
+                <div><p>VISÃO COMPLETA</p><h2 id="generalReportTitle">Relatório geral</h2></div>
+                <button class="report-modal__close material-symbols-outlined" type="button" data-report-close aria-label="Fechar relatório">close</button>
+            </header>
+            <div class="report-modal__period">
+                <span class="material-symbols-outlined" aria-hidden="true">monitoring</span>
+                <div><small>Dados exibidos</small><strong>Indicadores atuais da biblioteca</strong></div>
+            </div>
+            <section class="reports-metrics" aria-label="Indicadores da biblioteca">
+                <article class="report-metric-card">
+                    <header><span>Acervo total</span><span class="material-symbols-outlined" aria-hidden="true">menu_book</span></header>
+                    <div><strong id="reportMetricTotal">—</strong><small id="reportMetricTotalStatus">Aguardando dados</small></div>
+                </article>
+                <article class="report-metric-card report-metric-card--available">
+                    <header><span>Disponíveis</span><span class="material-symbols-outlined" aria-hidden="true">check_circle</span></header>
+                    <div><strong id="reportMetricAvailable">—</strong><small id="reportMetricAvailableStatus">Aguardando dados</small></div>
+                </article>
+                <article class="report-metric-card report-metric-card--loaned">
+                    <header><span>Em empréstimo</span><span class="material-symbols-outlined" aria-hidden="true">swap_horiz</span></header>
+                    <div><strong id="reportMetricLoaned">—</strong><small id="reportMetricLoanedStatus">Aguardando dados</small></div>
+                </article>
+                <article class="report-metric-card report-metric-card--attention">
+                    <header><span>Atrasados</span><span class="material-symbols-outlined" aria-hidden="true">warning</span></header>
+                    <div><strong id="reportMetricOverdue">—</strong><small id="reportMetricOverdueStatus">Aguardando dados</small></div>
+                </article>
+            </section>
+            <div class="report-modal__notice">
+                <span class="material-symbols-outlined" aria-hidden="true">info</span>
+                <p>Este resumo usa os indicadores já disponíveis no sistema. As análises históricas serão incorporadas quando as consultas específicas estiverem prontas.</p>
+            </div>
+            <footer class="report-modal__actions">
+                <button class="report-modal__secondary" type="button" data-report-close>Fechar</button>
+                <button class="pdf-action" type="button" data-pdf-demo aria-describedby="generalPdfStatus">
+                    <span class="pdf-action__progress" aria-hidden="true"></span>
+                    <span class="pdf-action__icon material-symbols-outlined" aria-hidden="true">picture_as_pdf</span>
+                    <span class="pdf-action__label">Gerar PDF</span>
+                    <span class="pdf-action__check material-symbols-outlined" aria-hidden="true">check</span>
+                </button>
+                <span class="sr-only" id="generalPdfStatus" data-pdf-status aria-live="polite"></span>
+            </footer>
+        </article>
     </dialog>
 
     <script src="script.js"></script>
