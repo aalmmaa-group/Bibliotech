@@ -81,7 +81,37 @@ function setupThemeToggle() {
 
   themeToggle.addEventListener('click', () => {
     const nextTheme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-    applyTheme(nextTheme);
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const bounds = themeToggle.getBoundingClientRect();
+    const revealX = bounds.left + bounds.width / 2;
+    const revealY = bounds.top + bounds.height / 2;
+    const revealRadius = Math.hypot(
+      Math.max(revealX, window.innerWidth - revealX),
+      Math.max(revealY, window.innerHeight - revealY)
+    );
+
+    document.documentElement.style.setProperty('--theme-reveal-x', `${revealX}px`);
+    document.documentElement.style.setProperty('--theme-reveal-y', `${revealY}px`);
+    document.documentElement.style.setProperty('--theme-reveal-radius', `${revealRadius}px`);
+    document.documentElement.classList.add('is-theme-transitioning');
+    themeToggle.classList.remove('is-animating');
+    void themeToggle.offsetWidth;
+    themeToggle.classList.add('is-animating');
+
+    const finishToggleAnimation = () => {
+      themeToggle.classList.remove('is-animating');
+      document.documentElement.classList.remove('is-theme-transitioning');
+    };
+
+    if (!document.startViewTransition || reducedMotion) {
+      void document.documentElement.offsetWidth;
+      applyTheme(nextTheme);
+      window.setTimeout(finishToggleAnimation, reducedMotion ? 20 : 680);
+      return;
+    }
+
+    const transition = document.startViewTransition(() => applyTheme(nextTheme));
+    transition.finished.finally(finishToggleAnimation);
   });
 }
 
@@ -188,6 +218,132 @@ function showPending(message) {
   pendingMessageTimer = window.setTimeout(() => {
     notice.hidden = true;
   }, 3500);
+}
+
+/**
+ * Controla a central de relatórios, suas minitelas e a demonstração visual do PDF.
+ * As consultas mensais permanecem desacopladas até que o back-end exponha os dados.
+ */
+function setupReportCenter() {
+  const reportDialogs = {
+    returnedMonth: document.querySelector('#returnedMonthReportModal'),
+    loanedMonth: document.querySelector('#loanedMonthReportModal'),
+    general: document.querySelector('#generalReportModal')
+  };
+  const pdfTimers = new WeakMap();
+  const monthLabel = new Intl.DateTimeFormat('pt-BR', {
+    month: 'long',
+    year: 'numeric'
+  }).format(new Date());
+
+  document.querySelectorAll('[data-report-current-month]').forEach((element) => {
+    element.textContent = monthLabel.charAt(0).toLocaleUpperCase('pt-BR') + monthLabel.slice(1);
+  });
+
+  const resetPdfButton = (button) => {
+    const timers = pdfTimers.get(button) || [];
+    timers.forEach((timer) => window.clearTimeout(timer));
+    pdfTimers.delete(button);
+    button.disabled = false;
+    button.removeAttribute('aria-busy');
+    button.classList.remove('is-processing', 'is-complete', 'is-resetting', 'is-ready');
+    button.querySelector('.pdf-action__label').textContent = 'Gerar PDF';
+  };
+
+  Object.values(reportDialogs).forEach((dialog) => {
+    if (!dialog) return;
+    let closeTimer;
+    const closeDialog = () => {
+      if (!dialog.open || dialog.classList.contains('is-closing')) return;
+
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        dialog.close();
+        return;
+      }
+
+      dialog.classList.add('is-closing');
+      closeTimer = window.setTimeout(() => dialog.close(), 170);
+    };
+
+    dialog.querySelectorAll('[data-report-close]').forEach((button) => {
+      button.addEventListener('click', closeDialog);
+    });
+
+    dialog.addEventListener('click', (event) => {
+      if (event.target === dialog) closeDialog();
+    });
+
+    dialog.addEventListener('cancel', (event) => {
+      event.preventDefault();
+      closeDialog();
+    });
+
+    dialog.addEventListener('close', () => {
+      window.clearTimeout(closeTimer);
+      dialog.classList.remove('is-closing');
+      dialog.querySelectorAll('[data-pdf-demo]').forEach(resetPdfButton);
+      dialog.querySelectorAll('[data-pdf-status]').forEach((status) => {
+        status.textContent = '';
+      });
+    });
+  });
+
+  document.querySelectorAll('[data-report-open]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const dialog = reportDialogs[button.dataset.reportOpen];
+      if (!dialog) return;
+      dialog.showModal();
+    });
+  });
+
+  document.querySelectorAll('[data-report-pending]').forEach((button) => {
+    button.addEventListener('click', () => {
+      showPending(`O relatório de ${button.dataset.reportPending} será conectado pela próxima entrega do front-end.`);
+    });
+  });
+
+  document.querySelectorAll('[data-pdf-demo]').forEach((button) => {
+    button.addEventListener('click', () => {
+      if (button.disabled) return;
+
+      const status = button.parentElement.querySelector('[data-pdf-status]');
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const processingTime = reducedMotion ? 120 : 950;
+      const completeTime = reducedMotion ? 350 : 1150;
+
+      button.disabled = true;
+      button.setAttribute('aria-busy', 'true');
+      button.classList.add('is-processing');
+      button.querySelector('.pdf-action__label').textContent = 'Preparando';
+      if (status) status.textContent = 'Preparando a visualização do relatório em PDF.';
+
+      const completeTimer = window.setTimeout(() => {
+        button.classList.remove('is-processing');
+        button.classList.add('is-complete');
+        if (status) status.textContent = 'Animação concluída. A geração do arquivo será conectada em uma etapa futura.';
+
+        const resetTimer = window.setTimeout(() => {
+          button.classList.add('is-resetting');
+
+          const readyTimer = window.setTimeout(() => {
+            resetPdfButton(button);
+            button.classList.add('is-ready');
+            if (status) status.textContent = 'Botão pronto para uma nova visualização.';
+
+            const cleanupTimer = window.setTimeout(() => {
+              button.classList.remove('is-ready');
+              pdfTimers.delete(button);
+            }, 190);
+            pdfTimers.set(button, [cleanupTimer]);
+          }, reducedMotion ? 20 : 320);
+          pdfTimers.set(button, [readyTimer]);
+        }, completeTime);
+        pdfTimers.set(button, [resetTimer]);
+      }, processingTime);
+
+      pdfTimers.set(button, [completeTimer]);
+    });
+  });
 }
 
 /** Remove acentos para tornar a busca mais flexível. */
@@ -1479,7 +1635,7 @@ function setupNavigation() {
           delete button.dataset.navigating;
           button.removeAttribute('aria-busy');
           openView(targetView);
-        }, 520);
+        }, 680);
         return;
       }
 
@@ -2217,6 +2373,11 @@ const exibirErroNoGeral = () => {
   });
 };
 
+  if (!window.bibliotech?.reports?.getDashboard) {
+    exibirErroNoGeral();
+    return { ok: false, message: 'Relatórios disponíveis somente no Electron' };
+  }
+
   try {
     const resultado = await window.bibliotech.reports.getDashboard();
     if (resultado.ok) {
@@ -2280,6 +2441,11 @@ const exibirErroNoRelatorio = () => {
 };
 	
 async function carregarRelatorio() {
+  if (!window.bibliotech?.reports?.getDashboard) {
+    exibirErroNoRelatorio();
+    return { ok: false, message: 'Relatórios disponíveis somente no Electron' };
+  }
+
   try {
     const resultado = await window.bibliotech.reports.getDashboard();
     if (resultado.ok) {
@@ -2338,6 +2504,7 @@ function initializeApp() {
   setupDeadlineExtensionModal(); // Controla a mini tela de extensão do prazo.
   setupReturnConfirmationModal(); // Controla a confirmação personalizada da devolução.
   setupReturnsList(); //Configura a renderização da lista de devoluções pendentes
+  setupReportCenter(); // Controla a central, as minitelas e a animação visual do PDF.
   loadActiveLoans(); //Busca na tabela emprestimos os empréstimos ainda não devolvidos, através da API disponibilizada pelo preload
   setupBookAutocomplete();
   carregarRelatorio();
