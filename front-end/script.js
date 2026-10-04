@@ -39,26 +39,6 @@ const viewHistory = ['inicio'];
 // Exemplos visuais exibidos somente quando não há empréstimos ativos no banco.
 // Assim que o back-end retornar um registro real, esta prévia deixa de aparecer.
 const RETURNS_LAYOUT_EXAMPLES = [
-  {
-    id: 'layout-example-student',
-    bookTitle: 'O Pequeno Príncipe',
-    studentName: 'Ana Souza',
-    borrowerType: 'student',
-    classroom: '8º A',
-    loanDate: '2026-09-15',
-    expectedReturnDate: '2026-09-29',
-    isLayoutExample: true
-  },
-  {
-    id: 'layout-example-non-student',
-    bookTitle: 'Dom Casmurro',
-    studentName: 'Marcos Oliveira',
-    borrowerType: 'non_student',
-    classroom: '',
-    loanDate: '2026-09-18',
-    expectedReturnDate: '2026-10-02',
-    isLayoutExample: true
-  }
 ];
 
 // --- Configurações das microinterações do menu lateral. ---
