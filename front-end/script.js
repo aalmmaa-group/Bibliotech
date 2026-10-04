@@ -22,6 +22,10 @@ const notificationPanel = document.querySelector('#notificationPanel');
 const themeToggle = document.querySelector('#themeToggle');
 const sidebar = document.querySelector('#sidebar');
 const sidebarToggle = document.querySelector('#sidebarToggle');
+const btnAbrirRelatorioDevolvido = document.querySelector('[data-report-open="returnedMonth"]');
+const modalRelatorioMes = document.getElementById('returnedMonthReportModal');
+const btnAbrirRelatorioEmprestados = document.querySelector('[data-report-open="loanedMonth"]');
+const modalRelatorioEmprestados = document.getElementById('loanedMonthReportModal');
 let pendingMessageTimer;
 let formMessageTimer;
 let loanMessageTimer;
@@ -1705,6 +1709,133 @@ function setupPendingActions() {
     });
   });
 }
+
+async function carregarDevolucoes() {
+  try {
+    const resposta = await window.bibliotech.loans.getReturnedThisMonth();
+    
+    // Procura o modal específico pelo ID que está na sua imagem
+    const modal = document.getElementById('returnedMonthReportModal');
+    const containerTabela = modal.querySelector('.report-modal__table-wrap');
+    const estadoVazio = modal.querySelector('.report-modal__empty');
+    
+    // Limpa as linhas antigas para não duplicar se abrir o modal duas vezes
+    modal.querySelectorAll('.linha-devolucao').forEach(linha => linha.remove());
+
+    if (resposta.ok) {
+      const devolvidos = resposta.data;
+
+      // Se não houver dados, garante que a mensagem de "Os dados mensais aparecerão aqui" aparece
+      if (devolvidos.length === 0) {
+        estadoVazio.style.display = 'block'; 
+        return;
+      }
+
+      // Se houver dados, esconde a mensagem de vazio
+      estadoVazio.style.display = 'none';
+
+      // Cria uma linha para cada livro
+      devolvidos.forEach(emp => {
+        const dataFormatada = new Date(emp.data_devolucao_efetiva).toLocaleDateString('pt-BR');
+        
+        const linhaHTML = document.createElement('div');
+        // Adiciona a classe da linha e uma classe extra para apagarmos depois
+        linhaHTML.className = 'report-modal__table-row linha-devolucao'; 
+
+        // Insere as 4 colunas na ordem da sua imagem: Livro, Leitor, Devolvido em, Situação
+        linhaHTML.innerHTML = `
+          <span>${emp.nome_livro}</span>
+          <span>${emp.nome_solicitante}</span>
+          <span>${dataFormatada}</span>
+          <span>Devolvido</span> 
+        `;
+
+        containerTabela.appendChild(linhaHTML);
+      });
+      
+    }
+  } catch (erro) {
+    console.error("Erro ao carregar devoluções:", erro);
+  }
+}
+// O evento para abrir o modal
+if (btnAbrirRelatorioDevolvido && modalRelatorioMes) {
+  btnAbrirRelatorioDevolvido.addEventListener('click', async () => {
+    await carregarDevolucoes(); 
+    modalRelatorioMes.showModal(); 
+  });
+}
+
+// O evento para fechar o modal
+const botoesFechar = modalRelatorioMes.querySelectorAll('[data-report-close]');
+botoesFechar.forEach(botao => {
+  botao.addEventListener('click', () => {
+    modalRelatorioMes.close(); 
+  });
+});
+
+async function carregarEmprestimos() {
+  try {
+    // Substitua 'getLoanedThisMonth' pela função correta da sua API para empréstimos
+    const resposta = await window.bibliotech.loans.getLoanedThisMonth();
+
+    // Procura os elementos DENTRO do modal de empréstimos
+    const containerTabela = modalRelatorioEmprestados.querySelector('.report-modal__table-wrap');
+    const estadoVazio = modalRelatorioEmprestados.querySelector('.report-modal__empty');
+
+    // Limpa os dados antigos usando uma classe específica para esta tabela
+    modalRelatorioEmprestados.querySelectorAll('.linha-emprestimo').forEach(linha => linha.remove());
+
+    if (resposta.ok) {
+      const emprestados = resposta.data;
+
+      if (emprestados.length === 0) {
+        estadoVazio.style.display = 'block';
+        return;
+      }
+      estadoVazio.style.display = 'none';
+
+      emprestados.forEach(emp => {
+        // Altere 'data_emprestimo' para o nome correto que vem da sua base de dados
+        const dataFormatada = new Date(emp.data_emprestimo).toLocaleDateString('pt-BR');
+
+        const linhaHTML = document.createElement('div');
+        linhaHTML.className = 'report-modal__table-row linha-emprestimo';
+        linhaHTML.innerHTML = `
+          <span>${emp.nome_livro}</span>
+          <span>${emp.nome_solicitante}</span>
+          <span>${dataFormatada}</span>
+        `;
+        
+        containerTabela.appendChild(linhaHTML);
+      });
+
+    } else {
+      console.error("Erro ao buscar dados de empréstimos:", resposta.message);
+    }
+  } catch (erro) {
+    console.error("Erro de comunicação (Empréstimos):", erro);
+  }
+}
+
+// O evento para abrir o modal de Emprestados
+if (btnAbrirRelatorioEmprestados && modalRelatorioEmprestados) {
+  btnAbrirRelatorioEmprestados.addEventListener('click', async () => {
+    await carregarEmprestimos(); 
+    modalRelatorioEmprestados.showModal(); 
+  });
+}
+
+// O evento para fechar o modal de Emprestados
+if (modalRelatorioEmprestados) {
+  const botoesFecharEmprestados = modalRelatorioEmprestados.querySelectorAll('[data-report-close]');
+  botoesFecharEmprestados.forEach(botao => {
+    botao.addEventListener('click', () => {
+      modalRelatorioEmprestados.close(); 
+    });
+  });
+}
+
 /** Cria o autocomplete de livros e preserva o ID selecionado para o empréstimo. */
 function setupBookAutocomplete() {
   const bookInput = document.querySelector('input[name="bookName"]');

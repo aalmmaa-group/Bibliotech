@@ -15,7 +15,9 @@ contextBridge.exposeInMainWorld('bibliotech', {
     create: (data) => ipcRenderer.invoke('loans:create', data),
     return: (idEmprestimo) => ipcRenderer.invoke('loans:return', idEmprestimo),
     updateDate: (idEmprestimo, novaData) => ipcRenderer.invoke('loans:updateDate', idEmprestimo, novaData),
-    listActive: () =>  ipcRenderer.invoke('loans:listActive')
+    listActive: () =>  ipcRenderer.invoke('loans:listActive'),
+    getReturnedThisMonth: () => ipcRenderer.invoke('loans:getReturnedThisMonth'),
+    getLoanedThisMonth: () => ipcRenderer.invoke('loans:getLoanedThisMonth')
   },
   reports: {
   getDashboard: (filtros) => ipcRenderer.invoke('reports:getDashboard', filtros)

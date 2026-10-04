@@ -48,9 +48,17 @@ ipcMain.handle('loans:listActive', async() => {
   return listarEmprestimosAtivos(); 
 })
 
-ipcMain.handle('loand:updateStatus', async() => {
+ipcMain.handle('loans:updateStatus', async() => {
   return atualizarStatusDevolução();
 })
+
+ipcMain.handle('loans:getReturnedThisMonth', async () => {
+  return buscarDevolucoesDoMes();
+});
+
+ipcMain.handle('loans:getLoanedThisMonth', async () => {
+  return buscarEmprestimosDoMes();
+});
 
 // função de cadastrar os livros 
 function cadastrarLivro(bookData) {
@@ -517,6 +525,62 @@ function montarRelatorio(filtros) {
   }
 }
 
+function buscarDevolucoesDoMes() {
+  try {
+    const dataAtual = new Date();
+    const ano = dataAtual.getFullYear();
+    const mes = String(dataAtual.getMonth() + 1).padStart(2, '0');
+    const anoMesAtual = `${ano}-${mes}`; 
+
+    const stmt = db.db.prepare(`
+      SELECT 
+        e.id_emprestimo,
+        e.nome_solicitante,
+        e.data_devolucao_efetiva,
+        l.nome AS nome_livro
+      FROM emprestimos e
+      JOIN livros l ON e.id_livro = l.id_livro
+      WHERE e.status_emprestimo = 'devolvido' 
+        AND strftime('%Y-%m', e.data_devolucao_efetiva) = ?
+      ORDER BY e.data_devolucao_efetiva DESC
+    `);
+
+    const devolvidos = stmt.all(anoMesAtual);
+    return { ok: true, data: devolvidos };
+  } catch (erro) {
+    console.error("Erro ao buscar devoluções do mês:", erro);
+    return { ok: false, message: "Erro na base de dados: " + erro.message };
+  }
+}
+
+function buscarEmprestimosDoMes() {
+  try {
+    // Pega o ano e mês atuais
+    const dataAtual = new Date();
+    const ano = dataAtual.getFullYear();
+    const mes = String(dataAtual.getMonth() + 1).padStart(2, '0');
+    const anoMesAtual = `${ano}-${mes}`; 
+
+    // A query agora filtra pela data_emprestimo
+    const stmt = db.db.prepare(`
+      SELECT 
+        e.id_emprestimo,
+        e.nome_solicitante,
+        e.data_emprestimo,
+        e.status_emprestimo,
+        l.nome AS nome_livro
+      FROM emprestimos e
+      JOIN livros l ON e.id_livro = l.id_livro
+      WHERE strftime('%Y-%m', e.data_emprestimo) = ?
+      ORDER BY e.data_emprestimo DESC
+    `);
+    const emprestados = stmt.all(anoMesAtual);
+    return { ok: true, data: emprestados };
+  } catch (erro) {
+    console.error("Erro ao buscar empréstimos do mês:", erro);
+    return { ok: false, message: "Erro na base de dados: " + erro.message };
+  }
+}
 
 /** Inicializa dependências locais e abre a primeira janela do aplicativo. */
 app.whenReady().then(() => {
