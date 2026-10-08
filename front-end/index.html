@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,500,0,0">
-    <link rel="stylesheet" href="style.css/style.css">
+    <link rel="stylesheet" href="style.css/style.css?v=6">
 </head>
 <body>
     <aside class="sidebar" id="sidebar" aria-label="Menu principal">
@@ -75,8 +75,6 @@
             </nav>
 
             <div class="topbar-actions">
-                <button class="help-button" id="helpButton" type="button">Ajuda</button>
-
                 <button class="theme-toggle" id="themeToggle" type="button" aria-label="Ativar modo escuro" aria-pressed="false" title="Ativar modo escuro">
                     <span class="theme-toggle__track" aria-hidden="true">
                         <svg class="theme-toggle__icon theme-toggle__icon--sun" viewBox="0 0 24 24" fill="none">
@@ -89,6 +87,8 @@
                         <span class="theme-toggle__thumb"></span>
                     </span>
                 </button>
+
+                <button class="help-button" id="helpButton" type="button">Ajuda</button>
 
                 <div class="notification-area">
                     <button class="notification" id="notificationButton" type="button" aria-label="Abrir notificações" aria-controls="notificationPanel" aria-expanded="false" aria-haspopup="true">
@@ -599,9 +599,9 @@
                 </header>
 
                 <section class="report-launcher-grid" aria-label="Tipos de relatório">
-                    <button class="report-launcher report-launcher--returned" type="button" data-report-open="returnedMonth">
-                        <span class="report-launcher__icon material-symbols-outlined" aria-hidden="true">assignment_return</span>
-                        <span class="report-launcher__content"><small>Movimentação mensal</small><strong>Livros devolvidos no mês</strong><span>Consulte as devoluções registradas no período.</span></span>
+                    <button class="report-launcher report-launcher--featured" type="button" data-report-open="general">
+                        <span class="report-launcher__icon material-symbols-outlined" aria-hidden="true">analytics</span>
+                        <span class="report-launcher__content"><small>Visão completa</small><strong>Relatório geral</strong><span>Reúna os principais indicadores da biblioteca.</span></span>
                         <span class="report-launcher__arrow material-symbols-outlined" aria-hidden="true">arrow_forward</span>
                     </button>
                     <button class="report-launcher report-launcher--loaned" type="button" data-report-open="loanedMonth">
@@ -609,24 +609,24 @@
                         <span class="report-launcher__content"><small>Movimentação mensal</small><strong>Livros emprestados no mês</strong><span>Acompanhe os empréstimos realizados no período.</span></span>
                         <span class="report-launcher__arrow material-symbols-outlined" aria-hidden="true">arrow_forward</span>
                     </button>
-                    <button class="report-launcher" type="button" data-report-pending="turma mais leitora no mês">
+                    <button class="report-launcher" type="button" data-report-open="topClassMonth">
                         <span class="report-launcher__icon material-symbols-outlined" aria-hidden="true">school</span>
-                        <span class="report-launcher__content"><small>Engajamento</small><strong>Turma mais leitora no mês</strong><span>Compare o engajamento das turmas.</span></span>
-                        <span class="report-launcher__tag">Em desenvolvimento</span>
+                        <span class="report-launcher__content"><small>Engajamento</small><strong>Turma destaque em leitura</strong><span>Compare o engajamento das turmas.</span></span>
+                        <span class="report-launcher__arrow material-symbols-outlined" aria-hidden="true">arrow_forward</span>
                     </button>
-                    <button class="report-launcher" type="button" data-report-pending="livros mais lidos do mês">
+                    <button class="report-launcher" type="button" data-report-open="topBooksMonth">
                         <span class="report-launcher__icon material-symbols-outlined" aria-hidden="true">auto_stories</span>
                         <span class="report-launcher__content"><small>Destaques</small><strong>Livros mais lidos do mês</strong><span>Veja os títulos que se destacaram no período.</span></span>
-                        <span class="report-launcher__tag">Em desenvolvimento</span>
+                        <span class="report-launcher__arrow material-symbols-outlined" aria-hidden="true">arrow_forward</span>
                     </button>
-                    <button class="report-launcher" type="button" data-report-pending="livros mais lidos de todos os tempos">
+                    <button class="report-launcher" type="button" data-report-open="topBooksAllTime">
                         <span class="report-launcher__icon material-symbols-outlined" aria-hidden="true">workspace_premium</span>
                         <span class="report-launcher__content"><small>Histórico</small><strong>Livros mais lidos de todos</strong><span>Consulte o ranking histórico do acervo.</span></span>
-                        <span class="report-launcher__tag">Em desenvolvimento</span>
+                        <span class="report-launcher__arrow material-symbols-outlined" aria-hidden="true">arrow_forward</span>
                     </button>
-                    <button class="report-launcher report-launcher--featured" type="button" data-report-open="general">
-                        <span class="report-launcher__icon material-symbols-outlined" aria-hidden="true">analytics</span>
-                        <span class="report-launcher__content"><small>Visão completa</small><strong>Relatório geral</strong><span>Reúna os principais indicadores da biblioteca.</span></span>
+                    <button class="report-launcher report-launcher--returned" type="button" data-report-open="returnedMonth">
+                        <span class="report-launcher__icon material-symbols-outlined" aria-hidden="true">assignment_return</span>
+                        <span class="report-launcher__content"><small>Movimentação mensal</small><strong>Livros devolvidos no mês</strong><span>Consulte as devoluções registradas no período.</span></span>
                         <span class="report-launcher__arrow material-symbols-outlined" aria-hidden="true">arrow_forward</span>
                     </button>
                 </section>
@@ -1054,9 +1054,26 @@
                 <div><p>RELATÓRIO MENSAL</p><h2 id="returnedMonthReportTitle">Livros devolvidos no mês</h2></div>
                 <button class="report-modal__close material-symbols-outlined" type="button" data-report-close aria-label="Fechar relatório">close</button>
             </header>
-            <div class="report-modal__period">
-                <span class="material-symbols-outlined" aria-hidden="true">calendar_month</span>
-                <div><small>Período automático do relatório</small><strong data-report-current-month>—</strong></div>
+            <div class="report-date-picker" data-report-date-picker>
+                <button class="report-date-picker__trigger" type="button" aria-expanded="false" aria-controls="returnedMonthPicker">
+                    <span class="material-symbols-outlined" aria-hidden="true">calendar_month</span>
+                    <span><small>Escolher período do relatório</small><strong data-report-current-month>—</strong></span>
+                    <span class="report-date-picker__arrow material-symbols-outlined" aria-hidden="true">expand_more</span>
+                </button>
+                <div class="report-date-picker__popover" id="returnedMonthPicker" hidden>
+                    <header>
+                        <button type="button" data-report-year-change="-1" aria-label="Ano anterior"><span class="material-symbols-outlined" aria-hidden="true">chevron_left</span></button>
+                        <strong data-report-picker-year></strong>
+                        <button type="button" data-report-year-change="1" aria-label="Próximo ano"><span class="material-symbols-outlined" aria-hidden="true">chevron_right</span></button>
+                    </header>
+                    <div class="report-date-picker__months" role="grid" aria-label="Escolha o mês">
+                        <button type="button" data-report-month="0">Jan</button><button type="button" data-report-month="1">Fev</button><button type="button" data-report-month="2">Mar</button>
+                        <button type="button" data-report-month="3">Abr</button><button type="button" data-report-month="4">Mai</button><button type="button" data-report-month="5">Jun</button>
+                        <button type="button" data-report-month="6">Jul</button><button type="button" data-report-month="7">Ago</button><button type="button" data-report-month="8">Set</button>
+                        <button type="button" data-report-month="9">Out</button><button type="button" data-report-month="10">Nov</button><button type="button" data-report-month="11">Dez</button>
+                    </div>
+                    <button class="report-date-picker__today" type="button" data-report-current-date>Usar mês atual</button>
+                </div>
             </div>
             <section class="report-modal__summary" aria-label="Resumo das devoluções">
                 <div><small>Devoluções no mês</small><strong>—</strong></div>
@@ -1082,9 +1099,26 @@
                 <div><p>RELATÓRIO MENSAL</p><h2 id="loanedMonthReportTitle">Livros emprestados no mês</h2></div>
                 <button class="report-modal__close material-symbols-outlined" type="button" data-report-close aria-label="Fechar relatório">close</button>
             </header>
-            <div class="report-modal__period">
-                <span class="material-symbols-outlined" aria-hidden="true">calendar_month</span>
-                <div><small>Período automático do relatório</small><strong data-report-current-month>—</strong></div>
+            <div class="report-date-picker" data-report-date-picker>
+                <button class="report-date-picker__trigger" type="button" aria-expanded="false" aria-controls="loanedMonthPicker">
+                    <span class="material-symbols-outlined" aria-hidden="true">calendar_month</span>
+                    <span><small>Escolher período do relatório</small><strong data-report-current-month>—</strong></span>
+                    <span class="report-date-picker__arrow material-symbols-outlined" aria-hidden="true">expand_more</span>
+                </button>
+                <div class="report-date-picker__popover" id="loanedMonthPicker" hidden>
+                    <header>
+                        <button type="button" data-report-year-change="-1" aria-label="Ano anterior"><span class="material-symbols-outlined" aria-hidden="true">chevron_left</span></button>
+                        <strong data-report-picker-year></strong>
+                        <button type="button" data-report-year-change="1" aria-label="Próximo ano"><span class="material-symbols-outlined" aria-hidden="true">chevron_right</span></button>
+                    </header>
+                    <div class="report-date-picker__months" role="grid" aria-label="Escolha o mês">
+                        <button type="button" data-report-month="0">Jan</button><button type="button" data-report-month="1">Fev</button><button type="button" data-report-month="2">Mar</button>
+                        <button type="button" data-report-month="3">Abr</button><button type="button" data-report-month="4">Mai</button><button type="button" data-report-month="5">Jun</button>
+                        <button type="button" data-report-month="6">Jul</button><button type="button" data-report-month="7">Ago</button><button type="button" data-report-month="8">Set</button>
+                        <button type="button" data-report-month="9">Out</button><button type="button" data-report-month="10">Nov</button><button type="button" data-report-month="11">Dez</button>
+                    </div>
+                    <button class="report-date-picker__today" type="button" data-report-current-date>Usar mês atual</button>
+                </div>
             </div>
             <section class="report-modal__summary" aria-label="Resumo dos empréstimos">
                 <div><small>Empréstimos no mês</small><strong>—</strong></div>
@@ -1108,6 +1142,142 @@
                     <span class="pdf-action__check material-symbols-outlined" aria-hidden="true">check</span>
                 </button>
                 <span class="sr-only" id="loanedPdfStatus" data-pdf-status aria-live="polite"></span>
+            </footer>
+        </article>
+    </dialog>
+
+    <dialog class="report-modal" id="topClassMonthReportModal" aria-labelledby="topClassMonthReportTitle">
+        <article class="report-modal__card">
+            <header class="report-modal__header">
+                <span class="report-modal__icon material-symbols-outlined" aria-hidden="true">school</span>
+                <div><p>ENGAJAMENTO MENSAL</p><h2 id="topClassMonthReportTitle">Turma destaque em leitura</h2></div>
+                <button class="report-modal__close material-symbols-outlined" type="button" data-report-close aria-label="Fechar relatório">close</button>
+            </header>
+            <div class="report-date-picker" data-report-date-picker>
+                <button class="report-date-picker__trigger" type="button" aria-expanded="false" aria-controls="topClassMonthPicker">
+                    <span class="material-symbols-outlined" aria-hidden="true">calendar_month</span>
+                    <span><small>Escolher período do relatório</small><strong data-report-current-month>—</strong></span>
+                    <span class="report-date-picker__arrow material-symbols-outlined" aria-hidden="true">expand_more</span>
+                </button>
+                <div class="report-date-picker__popover" id="topClassMonthPicker" hidden>
+                    <header>
+                        <button type="button" data-report-year-change="-1" aria-label="Ano anterior"><span class="material-symbols-outlined" aria-hidden="true">chevron_left</span></button>
+                        <strong data-report-picker-year></strong>
+                        <button type="button" data-report-year-change="1" aria-label="Próximo ano"><span class="material-symbols-outlined" aria-hidden="true">chevron_right</span></button>
+                    </header>
+                    <div class="report-date-picker__months" role="grid" aria-label="Escolha o mês">
+                        <button type="button" data-report-month="0">Jan</button><button type="button" data-report-month="1">Fev</button><button type="button" data-report-month="2">Mar</button>
+                        <button type="button" data-report-month="3">Abr</button><button type="button" data-report-month="4">Mai</button><button type="button" data-report-month="5">Jun</button>
+                        <button type="button" data-report-month="6">Jul</button><button type="button" data-report-month="7">Ago</button><button type="button" data-report-month="8">Set</button>
+                        <button type="button" data-report-month="9">Out</button><button type="button" data-report-month="10">Nov</button><button type="button" data-report-month="11">Dez</button>
+                    </div>
+                    <button class="report-date-picker__today" type="button" data-report-current-date>Usar mês atual</button>
+                </div>
+            </div>
+            <section class="report-modal__summary" aria-label="Resumo da turma destaque em leitura">
+                <div><small>Turma destaque</small><strong>—</strong></div>
+                <div><small>Livros retirados</small><strong>—</strong></div>
+                <div><small>Alunos leitores</small><strong>—</strong></div>
+            </section>
+            <div class="report-modal__table-wrap">
+                <div class="report-modal__table-head" aria-hidden="true"><span>Posição</span><span>Turma</span><span>Leituras</span><span>Alunos</span></div>
+                <div class="report-modal__empty" role="status">
+                    <span class="material-symbols-outlined" aria-hidden="true">leaderboard</span>
+                    <strong>O ranking das turmas aparecerá aqui</strong>
+                    <p>A estrutura está pronta para receber os dados de engajamento quando a consulta for disponibilizada.</p>
+                </div>
+            </div>
+            <footer class="report-modal__actions"><button class="report-modal__secondary" type="button" data-report-close>Fechar</button></footer>
+        </article>
+    </dialog>
+
+    <dialog class="report-modal" id="topBooksMonthReportModal" aria-labelledby="topBooksMonthReportTitle">
+        <article class="report-modal__card">
+            <header class="report-modal__header">
+                <span class="report-modal__icon material-symbols-outlined" aria-hidden="true">auto_stories</span>
+                <div><p>DESTAQUES DO MÊS</p><h2 id="topBooksMonthReportTitle">Livros mais lidos do mês</h2></div>
+                <button class="report-modal__close material-symbols-outlined" type="button" data-report-close aria-label="Fechar relatório">close</button>
+            </header>
+            <div class="report-date-picker" data-report-date-picker>
+                <button class="report-date-picker__trigger" type="button" aria-expanded="false" aria-controls="topBooksMonthPicker">
+                    <span class="material-symbols-outlined" aria-hidden="true">calendar_month</span>
+                    <span><small>Escolher período do relatório</small><strong data-report-current-month>—</strong></span>
+                    <span class="report-date-picker__arrow material-symbols-outlined" aria-hidden="true">expand_more</span>
+                </button>
+                <div class="report-date-picker__popover" id="topBooksMonthPicker" hidden>
+                    <header>
+                        <button type="button" data-report-year-change="-1" aria-label="Ano anterior"><span class="material-symbols-outlined" aria-hidden="true">chevron_left</span></button>
+                        <strong data-report-picker-year></strong>
+                        <button type="button" data-report-year-change="1" aria-label="Próximo ano"><span class="material-symbols-outlined" aria-hidden="true">chevron_right</span></button>
+                    </header>
+                    <div class="report-date-picker__months" role="grid" aria-label="Escolha o mês">
+                        <button type="button" data-report-month="0">Jan</button><button type="button" data-report-month="1">Fev</button><button type="button" data-report-month="2">Mar</button>
+                        <button type="button" data-report-month="3">Abr</button><button type="button" data-report-month="4">Mai</button><button type="button" data-report-month="5">Jun</button>
+                        <button type="button" data-report-month="6">Jul</button><button type="button" data-report-month="7">Ago</button><button type="button" data-report-month="8">Set</button>
+                        <button type="button" data-report-month="9">Out</button><button type="button" data-report-month="10">Nov</button><button type="button" data-report-month="11">Dez</button>
+                    </div>
+                    <button class="report-date-picker__today" type="button" data-report-current-date>Usar mês atual</button>
+                </div>
+            </div>
+            <section class="report-modal__summary" aria-label="Resumo dos livros mais lidos">
+                <div><small>Livro destaque</small><strong>—</strong></div>
+                <div><small>Total de leituras</small><strong>—</strong></div>
+                <div><small>Títulos diferentes</small><strong>—</strong></div>
+            </section>
+            <div class="report-modal__table-wrap">
+                <div class="report-modal__table-head" aria-hidden="true"><span>Posição</span><span>Livro</span><span>Autor</span><span>Leituras</span></div>
+                <div class="report-modal__empty" role="status">
+                    <span class="material-symbols-outlined" aria-hidden="true">menu_book</span>
+                    <strong>Os livros mais lidos aparecerão aqui</strong>
+                    <p>A estrutura está pronta para receber o ranking mensal quando a consulta for disponibilizada.</p>
+                </div>
+            </div>
+            <footer class="report-modal__actions">
+                <button class="report-modal__secondary" type="button" data-report-close>Fechar</button>
+                <button class="pdf-action" type="button" data-pdf-demo aria-describedby="topBooksMonthPdfStatus">
+                    <span class="pdf-action__progress" aria-hidden="true"></span>
+                    <span class="pdf-action__icon material-symbols-outlined" aria-hidden="true">picture_as_pdf</span>
+                    <span class="pdf-action__label">Gerar PDF</span>
+                    <span class="pdf-action__check material-symbols-outlined" aria-hidden="true">check</span>
+                </button>
+                <span class="sr-only" id="topBooksMonthPdfStatus" data-pdf-status aria-live="polite"></span>
+            </footer>
+        </article>
+    </dialog>
+
+    <dialog class="report-modal" id="topBooksAllTimeReportModal" aria-labelledby="topBooksAllTimeReportTitle">
+        <article class="report-modal__card">
+            <header class="report-modal__header">
+                <span class="report-modal__icon material-symbols-outlined" aria-hidden="true">workspace_premium</span>
+                <div><p>RANKING HISTÓRICO</p><h2 id="topBooksAllTimeReportTitle">Livros mais lidos de todos</h2></div>
+                <button class="report-modal__close material-symbols-outlined" type="button" data-report-close aria-label="Fechar relatório">close</button>
+            </header>
+            <div class="report-modal__period">
+                <span class="material-symbols-outlined" aria-hidden="true">history</span>
+                <div><small>Período analisado</small><strong>Todo o histórico da biblioteca</strong></div>
+            </div>
+            <section class="report-modal__summary" aria-label="Resumo histórico de leituras">
+                <div><small>Livro mais lido</small><strong>—</strong></div>
+                <div><small>Total de leituras</small><strong>—</strong></div>
+                <div><small>Livros no ranking</small><strong>—</strong></div>
+            </section>
+            <div class="report-modal__table-wrap">
+                <div class="report-modal__table-head" aria-hidden="true"><span>Posição</span><span>Livro</span><span>Autor</span><span>Leituras</span></div>
+                <div class="report-modal__empty" role="status">
+                    <span class="material-symbols-outlined" aria-hidden="true">military_tech</span>
+                    <strong>O ranking histórico aparecerá aqui</strong>
+                    <p>A estrutura está pronta para receber o histórico completo quando a consulta for disponibilizada.</p>
+                </div>
+            </div>
+            <footer class="report-modal__actions">
+                <button class="report-modal__secondary" type="button" data-report-close>Fechar</button>
+                <button class="pdf-action" type="button" data-pdf-demo aria-describedby="topBooksAllTimePdfStatus">
+                    <span class="pdf-action__progress" aria-hidden="true"></span>
+                    <span class="pdf-action__icon material-symbols-outlined" aria-hidden="true">picture_as_pdf</span>
+                    <span class="pdf-action__label">Gerar PDF</span>
+                    <span class="pdf-action__check material-symbols-outlined" aria-hidden="true">check</span>
+                </button>
+                <span class="sr-only" id="topBooksAllTimePdfStatus" data-pdf-status aria-live="polite"></span>
             </footer>
         </article>
     </dialog>
@@ -1158,6 +1328,6 @@
         </article>
     </dialog>
 
-    <script src="script.js"></script>
+    <script src="script.js?v=4"></script>
 </body>
 </html>

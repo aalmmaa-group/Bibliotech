@@ -43,26 +43,6 @@ const viewHistory = ['inicio'];
 // Exemplos visuais exibidos somente quando não há empréstimos ativos no banco.
 // Assim que o back-end retornar um registro real, esta prévia deixa de aparecer.
 const RETURNS_LAYOUT_EXAMPLES = [
-  {
-    id: 'layout-example-student',
-    bookTitle: 'O Pequeno Príncipe',
-    studentName: 'Ana Souza',
-    borrowerType: 'student',
-    classroom: '8º A',
-    loanDate: '2026-09-15',
-    expectedReturnDate: '2026-09-29',
-    isLayoutExample: true
-  },
-  {
-    id: 'layout-example-non-student',
-    bookTitle: 'Dom Casmurro',
-    studentName: 'Marcos Oliveira',
-    borrowerType: 'non_student',
-    classroom: '',
-    loanDate: '2026-09-18',
-    expectedReturnDate: '2026-10-02',
-    isLayoutExample: true
-  }
 ];
 
 // --- Configurações das microinterações do menu lateral. ---
@@ -232,16 +212,116 @@ function setupReportCenter() {
   const reportDialogs = {
     returnedMonth: document.querySelector('#returnedMonthReportModal'),
     loanedMonth: document.querySelector('#loanedMonthReportModal'),
+    topClassMonth: document.querySelector('#topClassMonthReportModal'),
+    topBooksMonth: document.querySelector('#topBooksMonthReportModal'),
+    topBooksAllTime: document.querySelector('#topBooksAllTimeReportModal'),
     general: document.querySelector('#generalReportModal')
   };
   const pdfTimers = new WeakMap();
-  const monthLabel = new Intl.DateTimeFormat('pt-BR', {
-    month: 'long',
-    year: 'numeric'
-  }).format(new Date());
+  const today = new Date();
+  const datePickers = [...document.querySelectorAll('[data-report-date-picker]')];
+  const formatReportPeriod = (month, year) => {
+    const label = new Intl.DateTimeFormat('pt-BR', {
+      month: 'long',
+      year: 'numeric'
+    }).format(new Date(year, month, 1));
+    return label.charAt(0).toLocaleUpperCase('pt-BR') + label.slice(1);
+  };
 
-  document.querySelectorAll('[data-report-current-month]').forEach((element) => {
-    element.textContent = monthLabel.charAt(0).toLocaleUpperCase('pt-BR') + monthLabel.slice(1);
+  const closeDatePicker = (picker) => {
+    const trigger = picker.querySelector('.report-date-picker__trigger');
+    const popover = picker.querySelector('.report-date-picker__popover');
+    picker.classList.remove('is-open');
+    trigger.setAttribute('aria-expanded', 'false');
+    popover.hidden = true;
+  };
+
+  datePickers.forEach((picker) => {
+    const trigger = picker.querySelector('.report-date-picker__trigger');
+    const popover = picker.querySelector('.report-date-picker__popover');
+    const periodLabel = picker.querySelector('[data-report-current-month]');
+    const yearLabel = picker.querySelector('[data-report-picker-year]');
+    const monthButtons = [...picker.querySelectorAll('[data-report-month]')];
+    const yearButtons = [...picker.querySelectorAll('[data-report-year-change]')];
+    const currentDateButton = picker.querySelector('[data-report-current-date]');
+    let selectedMonth = today.getMonth();
+    let selectedYear = today.getFullYear();
+    let visibleYear = selectedYear;
+
+    const updatePeriod = () => {
+      periodLabel.textContent = formatReportPeriod(selectedMonth, selectedYear);
+      picker.dataset.reportMonth = String(selectedMonth + 1);
+      picker.dataset.reportYear = String(selectedYear);
+    };
+
+    const renderCalendar = () => {
+      yearLabel.textContent = String(visibleYear);
+      monthButtons.forEach((button) => {
+        const isSelected = Number(button.dataset.reportMonth) === selectedMonth && visibleYear === selectedYear;
+        button.classList.toggle('is-selected', isSelected);
+        button.setAttribute('aria-pressed', String(isSelected));
+      });
+      yearButtons.forEach((button) => {
+        const nextYear = visibleYear + Number(button.dataset.reportYearChange);
+        button.disabled = nextYear < 2026 || nextYear > 2045;
+      });
+    };
+
+    trigger.addEventListener('click', (event) => {
+      event.stopPropagation();
+      const willOpen = popover.hidden;
+      datePickers.forEach((otherPicker) => closeDatePicker(otherPicker));
+      if (!willOpen) return;
+      visibleYear = selectedYear;
+      renderCalendar();
+      popover.hidden = false;
+      picker.classList.add('is-open');
+      trigger.setAttribute('aria-expanded', 'true');
+    });
+
+    popover.addEventListener('click', (event) => event.stopPropagation());
+
+    yearButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        visibleYear += Number(button.dataset.reportYearChange);
+        renderCalendar();
+      });
+    });
+
+    monthButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        selectedMonth = Number(button.dataset.reportMonth);
+        selectedYear = visibleYear;
+        updatePeriod();
+        renderCalendar();
+        closeDatePicker(picker);
+        trigger.focus();
+      });
+    });
+
+    currentDateButton.addEventListener('click', () => {
+      selectedMonth = today.getMonth();
+      selectedYear = today.getFullYear();
+      visibleYear = selectedYear;
+      updatePeriod();
+      renderCalendar();
+      closeDatePicker(picker);
+      trigger.focus();
+    });
+
+    picker.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape' || popover.hidden) return;
+      event.stopPropagation();
+      closeDatePicker(picker);
+      trigger.focus();
+    });
+
+    updatePeriod();
+    renderCalendar();
+  });
+
+  document.addEventListener('click', () => {
+    datePickers.forEach((picker) => closeDatePicker(picker));
   });
 
   const resetPdfButton = (button) => {
@@ -285,6 +365,7 @@ function setupReportCenter() {
     dialog.addEventListener('close', () => {
       window.clearTimeout(closeTimer);
       dialog.classList.remove('is-closing');
+      dialog.querySelectorAll('[data-report-date-picker]').forEach(closeDatePicker);
       dialog.querySelectorAll('[data-pdf-demo]').forEach(resetPdfButton);
       dialog.querySelectorAll('[data-pdf-status]').forEach((status) => {
         status.textContent = '';
@@ -780,6 +861,7 @@ function setupBookEditModal() {
     
     if (resposta.ok) {
       notifyCollectionUpdated();
+      loadActiveLoans();
       closeModal();
       showPending('Alterações aplicadas e guardadas na base de dados com sucesso.');
     } else {
