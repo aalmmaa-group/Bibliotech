@@ -873,7 +873,6 @@ function setupBookEditModal() {
     if (resposta.ok) {
       notifyCollectionUpdated();
       loadActiveLoans();
-      atualizarRelatorios();
       closeModal();
       showPending('Alterações aplicadas e guardadas na base de dados com sucesso.');
     } else {
@@ -2159,11 +2158,11 @@ function setupReturnConfirmationModal() {
       }
       await loadActiveLoans();
       await loadCollectionBooks(); 
-
       const returnedLoanIndex = sessionActiveLoans.findIndex((loan) => loan.id === selectedLoan.id);
       if (returnedLoanIndex >= 0) sessionActiveLoans.splice(returnedLoanIndex, 1);
       notifyReturnsUpdated();
       closeModal();
+      await atualizarRelatorios();
     } catch (error) {
       console.error('Erro ao registrar a devolução:', error);
       message.textContent = 'Ocorreu um erro inesperado ao registrar a devolução.';
@@ -2347,6 +2346,7 @@ async function handleBookSubmit(event) {
       setFormMessage(resultado.message, 'success');
       bookForm.reset();
       clearBookFormErrors();
+      await atualizarRelatorios();
       bookForm.querySelector('[name="title"]').focus();
     } else {
       setFormMessage(`Erro ao cadastrar: ${resultado.message}`);
@@ -2435,6 +2435,7 @@ async function handleLoanSubmit(event) {
       setLoanMessage(resultado.message, 'success');
       await loadActiveLoans();
       await loadCollectionBooks();
+      await atualizarRelatorios();
     } else {
       setLoanMessage(`Erro ao emprestar: ${resultado.message}`);
     }
@@ -2585,8 +2586,6 @@ async function atualizarRelatorios() {
     carregarRelatorio(),
     carregarVisaoGeral(),
     livrosMaisLidosGeral(),
-    DevolucoesDoMes(),
-    EmprestimosDoMes(),
     livrosMaisLidosDoMes()
   ]);
 }
