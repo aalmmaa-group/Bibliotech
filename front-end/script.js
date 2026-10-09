@@ -3063,15 +3063,30 @@ async function exportarModalParaPDF(modalId, tituloRelatorio) {
     return;
   }
 
+
   // Extrai os dados dos cartões de resumo
   let summaryHTML = '<div class="summary">';
-  const summaryItems = modal.querySelectorAll('.report-modal__summary > div, .report-modal__card');
   
+  // Procura por todos os tipos de cartões possíveis
+  const summaryItems = modal.querySelectorAll('.report-metric-card, .report-modal__summary > div, .report-modal__card');
+
   if (summaryItems.length > 0) {
     summaryItems.forEach(item => {
-      const label = item.querySelector('small, span, p')?.textContent?.trim() || '';
-      const valor = item.querySelector('strong, h3')?.textContent?.trim() || '—';
-      if (label || valor !== '—') {
+      let label = '';
+      let valor = '—';
+
+      // Verifica qual é o tipo de cartão para procurar nas tags corretas
+      if (item.classList.contains('report-metric-card')) {
+        // Estrutura do Relatório Geral
+        label = item.querySelector('header span:first-of-type')?.textContent?.trim() || '';
+        valor = item.querySelector('div strong')?.textContent?.trim() || '—';
+      } else {
+        // Estrutura dos outros relatórios (Devoluções, Empréstimos, etc.)
+        label = item.querySelector('small, span, p')?.textContent?.trim() || '';
+        valor = item.querySelector('strong, h3')?.textContent?.trim() || '—';
+      }
+      
+      if (label || (valor !== '—' && valor !== '-')) {
         summaryHTML += `
           <div class="card">
             <span>${label}</span>
@@ -3084,38 +3099,48 @@ async function exportarModalParaPDF(modalId, tituloRelatorio) {
   summaryHTML += '</div>';
 
   // Extrai a tabela
-  let tableHTML = '<table>';
+
+  let tableHTML = '';
   const tabelaNativa = modal.querySelector('table');
-
-  if (tabelaNativa) {
-    tableHTML += tabelaNativa.innerHTML;
-  } else {
-    const cabecalhos = modal.querySelectorAll('.report-modal__table-head span');
-    if (cabecalhos.length > 0) {
-      tableHTML += '<thead><tr>';
-      cabecalhos.forEach(h => { tableHTML += `<th>${h.textContent.trim()}</th>`; });
-      tableHTML += '</tr></thead>';
-    }
-
-    tableHTML += '<tbody>';
-    const linhas = modal.querySelectorAll('.report-modal__table-row:not(.report-modal__table-head)');
-    if (linhas.length === 0) {
-      tableHTML += `<tr><td colspan="${cabecalhos.length || 1}" style="text-align: center;">Nenhum registo encontrado.</td></tr>`;
+  const cabecalhos = modal.querySelectorAll('.report-modal__table-head span');
+  
+  // Só constrói a tabela se existirem elementos de tabela
+  if (tabelaNativa || cabecalhos.length > 0) {
+    tableHTML += '<table>';
+    
+    if (tabelaNativa) {
+      tableHTML += tabelaNativa.innerHTML;
     } else {
-      linhas.forEach(linha => {
-        tableHTML += '<tr>';
-        const colunas = linha.querySelectorAll('span, td');
-        colunas.forEach(c => { tableHTML += `<td>${c.textContent.trim()}</td>`; });
-        tableHTML += '</tr>';
-      });
+      if (cabecalhos.length > 0) {
+        tableHTML += '<thead><tr>';
+        cabecalhos.forEach(h => { tableHTML += `<th>${h.textContent.trim()}</th>`; });
+        tableHTML += '</tr></thead>';
+      }
+      
+      tableHTML += '<tbody>';
+      const linhas = modal.querySelectorAll('.report-modal__table-row:not(.report-modal__table-head)');
+      
+      if (linhas.length === 0) {
+        tableHTML += `<tr><td colspan="${cabecalhos.length || 1}" style="text-align: center;">Nenhum registo encontrado.</td></tr>`;
+      } else {
+        linhas.forEach(linha => {
+          tableHTML += '<tr>';
+          const colunas = linha.querySelectorAll('span, td');
+          colunas.forEach(c => { tableHTML += `<td>${c.textContent.trim()}</td>`; });
+          tableHTML += '</tr>';
+        });
+      }
+      tableHTML += '</tbody>';
     }
-    tableHTML += '</tbody>';
+    
+    tableHTML += '</table>';
   }
-  tableHTML += '</table>';
 
+  // Junta os cartões e a tabela 
   const htmlConteudo = summaryHTML + tableHTML;
 
-  // Envia os dados para a ponte do IPC no Electron
+
+  // Envia os dados para a ponte IPC
   try {
     const resposta = await window.bibliotech.reports.generatePDF({
       titulo: tituloRelatorio,
@@ -3131,6 +3156,7 @@ async function exportarModalParaPDF(modalId, tituloRelatorio) {
     console.error("Erro na comunicação do PDF:", erro);
   }
 }
+
 // Botão PDF - Relatório Geral
 document.querySelector('#generalReportModal .pdf-action')?.addEventListener('click', async () => {
   await exportarModalParaPDF('generalReportModal', 'Relatório Geral');
