@@ -4692,6 +4692,45 @@ html[data-theme="dark"] .return-modal__confirm:focus-visible {
 .report-attention__row .is-safe { color: var(--primary-dark); background: #e5f5f3; }
 .report-attention__row .is-planned { color: #3c7892; background: #edf5f8; }
 
+.report-modal__table-wrap.catalog-table-wrap {
+margin-top: 0;
+overflow: hidden;
+}
+
+.report-modal__table.catalog-table {
+width: 100%;
+table-layout: fixed;
+border-collapse: collapse;
+text-align: center;
+}
+
+.report-modal__table.catalog-table th,
+.report-modal__table.catalog-table td {
+width: 25%;
+padding: 13px 15px;
+border-bottom: 1px solid #e5edeb;
+font-size: 12px;
+}
+
+.report-modal__table.catalog-table th {
+color: #718184;
+background: #f4f8f7;
+font-size: 10px;
+font-weight: 800;
+letter-spacing: 0.05em;
+text-transform: uppercase;
+}
+
+.report-modal__table.catalog-table tbody tr:last-child td {
+border-bottom: 0;
+}
+
+.report-modal__table.catalog-table .catalog-table__title {
+color: var(--text);
+font-weight: 800;
+overflow-wrap: anywhere;
+}
+
 
 /* Formulário de cadastro e estados de validação. */
 .book-form {
