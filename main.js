@@ -1,5 +1,6 @@
 /** Processo principal: cria a janela e recebe chamadas seguras da interface. */
-const { app, BrowserWindow, ipcMain } = require('electron/main');
+const { app, BrowserWindow, ipcMain, dialog } = require('electron/main');
+const fs = require('fs');
 const path = require('node:path');
 let db;
 
@@ -60,6 +61,13 @@ ipcMain.handle('loans:getLoanedThisMonth', async () => {
   return buscarEmprestimosDoMes();
 });
 
+ipcMain.handle('loans:getTopBooksAllTime', () => {
+  return buscarRankingHistorico();
+});
+
+ipcMain.handle('reports:generatePDF', async (event, dados) => {
+  return geradorPDF(event, dados);
+});
 // função de cadastrar os livros 
 function cadastrarLivro(bookData) {
   // Prevenção: verifica se o banco de dados carregou corretamente
@@ -536,6 +544,8 @@ function buscarDevolucoesDoMes() {
       SELECT 
         e.id_emprestimo,
         e.nome_solicitante,
+        e.data_emprestimo,
+        e.data_devolucao_prevista, 
         e.data_devolucao_efetiva,
         l.nome AS nome_livro
       FROM emprestimos e
@@ -561,12 +571,13 @@ function buscarEmprestimosDoMes() {
     const mes = String(dataAtual.getMonth() + 1).padStart(2, '0');
     const anoMesAtual = `${ano}-${mes}`; 
 
-    // A query agora filtra pela data_emprestimo
     const stmt = db.db.prepare(`
       SELECT 
         e.id_emprestimo,
         e.nome_solicitante,
+        e.turma_serie,
         e.data_emprestimo,
+        e.data_devolucao_prevista,
         e.status_emprestimo,
         l.nome AS nome_livro
       FROM emprestimos e
@@ -579,6 +590,103 @@ function buscarEmprestimosDoMes() {
   } catch (erro) {
     console.error("Erro ao buscar empréstimos do mês:", erro);
     return { ok: false, message: "Erro na base de dados: " + erro.message };
+  }
+}
+
+function buscarRankingHistorico(){
+  try {
+    // Busca os 10 livros mais lidos
+    const stmtRanking = db.db.prepare(`
+      SELECT 
+        l.nome AS nome_livro,
+        l.autor,
+        COUNT(e.id_emprestimo) AS total_leituras
+      FROM livros l
+      JOIN emprestimos e ON l.id_livro = e.id_livro
+      GROUP BY l.id_livro
+      ORDER BY total_leituras DESC
+      LIMIT 10
+    `);
+    const ranking = stmtRanking.all();
+
+    // Busca o total geral de leituras da biblioteca inteira
+    const stmtTotal = db.db.prepare(`SELECT COUNT(id_emprestimo) AS total FROM emprestimos`);
+    const totalGeral = stmtTotal.get().total;
+
+    return { ok: true, data: ranking, totalGeral: totalGeral };
+  } catch (erro) {
+    console.error("Erro ao buscar ranking histórico:", erro);
+    return { ok: false, message: erro.message };
+  }
+}
+
+async function geradorPDF(ipcEvent, dados){
+  try {
+    const titulo = dados?.titulo || 'Relatório';
+    const htmlConteudo = dados?.htmlConteudo || '';
+    // Abre a caixa de diálogo para o utilizador escolher onde salvar
+    const { filePath, canceled } = await dialog.showSaveDialog({
+      title: `Salvar Relatório - ${titulo}`,
+      defaultPath: path.join(app.getPath('downloads'), `${titulo.toLowerCase().replace(/\s+/g, '_')}.pdf`),
+      filters: [{ name: 'Documentos PDF', extensions: ['pdf'] }]
+    });
+
+    if (canceled || !filePath) {
+      return { ok: false, message: 'Operação cancelada pelo utilizador.' };
+    }
+
+    // Cria uma janela oculta para renderizar o layout do PDF
+    const winPDF = new BrowserWindow({
+      show: false,
+      webPreferences: { nodeIntegration: false }
+    });
+
+    // Estrutura HTML/CSS limpa para impressão em folha A4
+    const htmlCompleto = `
+      <!DOCTYPE html>
+      <html lang="pt-BR">
+      <head>
+        <meta charset="UTF-8">
+        <title>${titulo}</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 30px; color: #1a1a1a; }
+          h1 { font-size: 22px; margin-bottom: 5px; color: #0d1b2a; }
+          .meta-info { font-size: 11px; color: #666; margin-bottom: 25px; border-bottom: 1px solid #ddd; padding-bottom: 8px; }
+          .summary { display: flex; gap: 15px; margin-bottom: 25px; }
+          .card { border: 1px solid #e0e0e0; padding: 12px 16px; border-radius: 6px; flex: 1; background-color: #f9fbfd; }
+          .card span { font-size: 11px; color: #555; text-transform: uppercase; display: block; margin-bottom: 4px; }
+          .card strong { font-size: 18px; color: #111; }
+          table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+          th, td { border: 1px solid #e2e8f0; padding: 10px 12px; text-align: left; font-size: 12px; }
+          th { background-color: #f1f5f9; font-weight: bold; color: #334155; text-transform: uppercase; font-size: 10px; }
+          tr:nth-child(even) { background-color: #f8fafc; }
+        </style>
+      </head>
+      <body>
+        <h1>${titulo}</h1>
+        <div class="meta-info">Relatório emitido em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}</div>
+        ${htmlConteudo}
+      </body>
+      </html>
+    `;
+
+    await winPDF.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(htmlCompleto)}`);
+
+    // Converte a janela em PDF A4
+    const pdfBuffer = await winPDF.webContents.printToPDF({
+      printBackground: true,
+      pageSize: 'A4',
+      margins: { top: 0.5, bottom: 0.5, left: 0.5, right: 0.5 }
+    });
+
+    // Grava o ficheiro no disco e fecha a janela oculta
+    fs.writeFileSync(filePath, pdfBuffer);
+    winPDF.close();
+
+    return { ok: true, filePath };
+  } catch (erro) {
+    console.error("Erro ao gerar PDF:", erro);
+    return { ok: false, message: erro.message };
   }
 }
 

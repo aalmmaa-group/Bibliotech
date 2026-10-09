@@ -26,6 +26,8 @@ const btnAbrirRelatorioDevolvido = document.querySelector('[data-report-open="re
 const modalRelatorioMes = document.getElementById('returnedMonthReportModal');
 const btnAbrirRelatorioEmprestados = document.querySelector('[data-report-open="loanedMonth"]');
 const modalRelatorioEmprestados = document.getElementById('loanedMonthReportModal');
+const btnAbrirRanking = document.querySelector('[data-report-open="topBooksAllTime"]'); 
+const modalRanking = document.getElementById('topBooksAllTimeReportModal');
 let pendingMessageTimer;
 let formMessageTimer;
 let loanMessageTimer;
@@ -1792,54 +1794,94 @@ function setupPendingActions() {
   });
 }
 
+document.addEventListener('click', (evento) => {
+  // Verifica se o elemento clicado (ou um ancestral dele) possui o atributo 'data-report-close'
+  const btnFechar = evento.target.closest('[data-report-close]');
+  
+  if (btnFechar) {
+    // Encontra o <dialog> em que este botão de fechar está inserido
+    const modal = btnFechar.closest('dialog');
+    if (modal) {
+      modal.close(); // Fecha o modal
+    }
+  }
+});
+
 async function carregarDevolucoes() {
   try {
     const resposta = await window.bibliotech.loans.getReturnedThisMonth();
-    
-    // Procura o modal específico pelo ID que está na sua imagem
     const modal = document.getElementById('returnedMonthReportModal');
     const containerTabela = modal.querySelector('.report-modal__table-wrap');
     const estadoVazio = modal.querySelector('.report-modal__empty');
-    
-    // Limpa as linhas antigas para não duplicar se abrir o modal duas vezes
+
     modal.querySelectorAll('.linha-devolucao').forEach(linha => linha.remove());
 
     if (resposta.ok) {
       const devolvidos = resposta.data;
 
-      // Se não houver dados, garante que a mensagem de "Os dados mensais aparecerão aqui" aparece
-      if (devolvidos.length === 0) {
-        estadoVazio.style.display = 'block'; 
+      // Variáveis para contagem
+      let totalDevolucoes = devolvidos.length;
+      let dentroDoPrazo = 0;
+      let aposOPrazo = 0;
+
+      if (totalDevolucoes === 0) {
+        estadoVazio.style.display = 'block';
+        atualizarCards(modal, 0, 0, 0);
         return;
       }
 
-      // Se houver dados, esconde a mensagem de vazio
       estadoVazio.style.display = 'none';
 
-      // Cria uma linha para cada livro
+      // Percorre os registos e compara as datas
       devolvidos.forEach(emp => {
-        const dataFormatada = new Date(emp.data_devolucao_efetiva).toLocaleDateString('pt-BR');
-        
-        const linhaHTML = document.createElement('div');
-        // Adiciona a classe da linha e uma classe extra para apagarmos depois
-        linhaHTML.className = 'report-modal__table-row linha-devolucao'; 
+        const strDevolucao = String(emp.data_devolucao || emp.data_devolucao_efetiva || '').slice(0, 10);
+        const strPrevista = String(emp.data_prevista_devolucao || emp.data_prevista || emp.prazo || '').slice(0, 10);
 
-        // Insere as 4 colunas na ordem da sua imagem: Livro, Leitor, Devolvido em, Situação
+        if (strPrevista && strDevolucao) {
+          if (strDevolucao <= strPrevista) {
+            dentroDoPrazo++;
+          } else {
+            aposOPrazo++;
+          }
+        } else {
+          // Caso não exista data prevista cadastrada, contabiliza dentro do prazo por padrão
+          dentroDoPrazo++;
+        }
+
+        let dataFormatada = '—';
+          if (strDevolucao) {
+            const [ano, mes, dia] = strDevolucao.split('-');
+            dataFormatada = `${dia}/${mes}/${ano}`;
+          }
+
+        const linhaHTML = document.createElement('div');
+        linhaHTML.className = 'report-modal__table-row linha-devolucao';
         linhaHTML.innerHTML = `
           <span>${emp.nome_livro}</span>
           <span>${emp.nome_solicitante}</span>
           <span>${dataFormatada}</span>
-          <span>Devolvido</span> 
+          <span>Devolvido</span>
         `;
-
         containerTabela.appendChild(linhaHTML);
       });
-      
+
+      const valoresResumo = modal.querySelectorAll('.report-modal__summary strong');
+
+      if (valoresResumo.length >= 3) {
+        valoresResumo[0].textContent = totalDevolucoes; // Preenche "Devoluções no mês"
+        valoresResumo[1].textContent = dentroDoPrazo;   // Preenche "Dentro do prazo"
+        valoresResumo[2].textContent = aposOPrazo;      // Preenche "Após o prazo"
+        }
+      }
+      else {
+      console.error("Erro ao procurar devoluções:", resposta.message);
     }
   } catch (erro) {
     console.error("Erro ao carregar devoluções:", erro);
   }
 }
+
+
 // O evento para abrir o modal
 if (btnAbrirRelatorioDevolvido && modalRelatorioMes) {
   btnAbrirRelatorioDevolvido.addEventListener('click', async () => {
@@ -1848,52 +1890,78 @@ if (btnAbrirRelatorioDevolvido && modalRelatorioMes) {
   });
 }
 
-// O evento para fechar o modal
-const botoesFechar = modalRelatorioMes.querySelectorAll('[data-report-close]');
-botoesFechar.forEach(botao => {
-  botao.addEventListener('click', () => {
-    modalRelatorioMes.close(); 
-  });
-});
-
 async function carregarEmprestimos() {
   try {
-    // Substitua 'getLoanedThisMonth' pela função correta da sua API para empréstimos
     const resposta = await window.bibliotech.loans.getLoanedThisMonth();
-
-    // Procura os elementos DENTRO do modal de empréstimos
     const containerTabela = modalRelatorioEmprestados.querySelector('.report-modal__table-wrap');
     const estadoVazio = modalRelatorioEmprestados.querySelector('.report-modal__empty');
 
-    // Limpa os dados antigos usando uma classe específica para esta tabela
+    // Limpa registros anteriores da tabela
     modalRelatorioEmprestados.querySelectorAll('.linha-emprestimo').forEach(linha => linha.remove());
 
     if (resposta.ok) {
       const emprestados = resposta.data;
 
-      if (emprestados.length === 0) {
-        estadoVazio.style.display = 'block';
+      // Cálculo das métricas
+      const totalEmprestimos = emprestados.length;
+
+      // Filtra e conta leitores únicos (sem repetir nomes)
+      const alunosUnicos = new Set(
+        emprestados.map(emp => emp.nome_solicitante?.trim()).filter(Boolean)
+      ).size;
+
+      // Filtra e conta turmas únicas (sem repetir turmas)
+      const turmasUnicas = new Set(
+        emprestados.map(emp => emp.turma_serie?.trim()).filter(Boolean)
+      ).size;
+
+      // Preenche os cartões do topo do modal
+      const valoresResumo = modalRelatorioEmprestados.querySelectorAll('.report-modal__summary strong');
+      if (valoresResumo.length >= 3) {
+        valoresResumo[0].textContent = totalEmprestimos;
+        valoresResumo[1].textContent = alunosUnicos;
+        valoresResumo[2].textContent = turmasUnicas;
+      }
+
+      if (totalEmprestimos === 0) {
+        if (estadoVazio) estadoVazio.style.display = 'block';
         return;
       }
-      estadoVazio.style.display = 'none';
 
+      if (estadoVazio) estadoVazio.style.display = 'none';
+
+      // Renderiza cada linha na tabela
       emprestados.forEach(emp => {
-        // Altere 'data_emprestimo' para o nome correto que vem da sua base de dados
-        const dataFormatada = new Date(emp.data_emprestimo).toLocaleDateString('pt-BR');
+        const strEmprestimo = String(emp.data_emprestimo || '').slice(0, 10);
+          let dataEmprestimoFormatada = '—';
+          if (strEmprestimo) {
+            const [ano, mes, dia] = strEmprestimo.split('-');
+            dataEmprestimoFormatada = `${dia}/${mes}/${ano}`;
+          }
+
+        const strPrazo = String(emp.data_devolucao_prevista || emp.prazo || '').slice(0, 10);
+          let dataPrazoFormatada = '—';
+          if (strPrazo) {
+            const [ano, mes, dia] = strPrazo.split('-');
+            dataPrazoFormatada = `${dia}/${mes}/${ano}`;
+          }
+          
 
         const linhaHTML = document.createElement('div');
         linhaHTML.className = 'report-modal__table-row linha-emprestimo';
+
         linhaHTML.innerHTML = `
           <span>${emp.nome_livro}</span>
           <span>${emp.nome_solicitante}</span>
-          <span>${dataFormatada}</span>
+          <span>${dataEmprestimoFormatada}</span>
+          <span>${dataPrazoFormatada}</span>
         `;
         
         containerTabela.appendChild(linhaHTML);
       });
 
     } else {
-      console.error("Erro ao buscar dados de empréstimos:", resposta.message);
+      console.error("Erro ao procurar empréstimos:", resposta.message);
     }
   } catch (erro) {
     console.error("Erro de comunicação (Empréstimos):", erro);
@@ -1908,13 +1976,155 @@ if (btnAbrirRelatorioEmprestados && modalRelatorioEmprestados) {
   });
 }
 
-// O evento para fechar o modal de Emprestados
-if (modalRelatorioEmprestados) {
-  const botoesFecharEmprestados = modalRelatorioEmprestados.querySelectorAll('[data-report-close]');
-  botoesFecharEmprestados.forEach(botao => {
-    botao.addEventListener('click', () => {
-      modalRelatorioEmprestados.close(); 
+async function carregarRankingHistorico() {
+  try {
+    const resposta = await window.bibliotech.loans.getTopBooksAllTime();
+    
+    const modal = document.getElementById('topBooksAllTimeReportModal'); 
+    const containerTabela = modal.querySelector('.report-modal__table-wrap');
+    const estadoVazio = modal.querySelector('.report-modal__empty');
+
+    modal.querySelectorAll('.linha-ranking').forEach(linha => linha.remove());
+
+    if (resposta.ok) {
+      const ranking = resposta.data;
+      const valoresResumo = modal.querySelectorAll('.report-modal__summary strong');
+
+      if (ranking.length === 0) { 
+        if (estadoVazio) estadoVazio.style.display = 'flex'; 
+        if (valoresResumo.length >= 3) {
+          valoresResumo[0].textContent = '—';
+          valoresResumo[1].textContent = '0';
+          valoresResumo[2].textContent = '0';
+        }
+        return;
+      }
+
+      if (estadoVazio) estadoVazio.style.display = 'none';
+
+      if (valoresResumo.length >= 3) {
+        valoresResumo[0].textContent = ranking[0].nome_livro;    
+        valoresResumo[1].textContent = resposta.totalGeral;      
+        valoresResumo[2].textContent = ranking.length;           
+      }
+
+      ranking.forEach((livro, index) => {
+        const linhaHTML = document.createElement('div');
+        linhaHTML.className = 'report-modal__table-row linha-ranking';
+        
+        linhaHTML.innerHTML = `
+          <span>${index + 1}º</span>
+          <span>${livro.nome_livro}</span>
+          <span>${livro.autor || 'Desconhecido'}</span>
+          <span>${livro.total_leituras}</span>
+        `;
+        
+        containerTabela.appendChild(linhaHTML);
+      });
+
+    } else {
+      console.error("Erro ao buscar o ranking:", resposta.message);
+    }
+  } catch (erro) {
+    console.error("Erro de comunicação (Top Books):", erro);
+  }
+}
+
+if (btnAbrirRanking && modalRanking) {
+  btnAbrirRanking.addEventListener('click', async () => {
+    await carregarRankingHistorico(); 
+    modalRanking.showModal(); 
+  });
+}
+
+async function exportarModalParaPDF(modalId, tituloRelatorio) {
+  const modal = document.getElementById(modalId);
+  if (!modal) return;
+
+  // Extrai os dados dos cartões de resumo
+  let summaryHTML = '<div class="summary">';
+  const summaryItems = modal.querySelectorAll('.report-modal__summary > div');
+  
+  summaryItems.forEach(item => {
+    const label = item.querySelector('small')?.textContent || '';
+    const valor = item.querySelector('strong')?.textContent || '—';
+    summaryHTML += `
+      <div class="card">
+        <span>${label}</span>
+        <strong>${valor}</strong>
+      </div>
+    `;
+  });
+  summaryHTML += '</div>';
+
+  // Extrai o cabeçalho da tabela
+  let tableHTML = '<table><thead><tr>';
+  const headers = modal.querySelectorAll('.report-modal__table-head span');
+  headers.forEach(h => {
+    tableHTML += `<th>${h.textContent}</th>`;
+  });
+  tableHTML += '</tr></thead><tbody>';
+
+  // Extrai as linhas da tabela
+  const rows = modal.querySelectorAll('.report-modal__table-row');
+  
+  if (rows.length === 0) {
+    tableHTML += `<tr><td colspan="${headers.length || 1}" style="text-align: center;">Nenhum registo encontrado.</td></tr>`;
+  } else {
+    rows.forEach(row => {
+      tableHTML += '<tr>';
+      const cols = row.querySelectorAll('span');
+      cols.forEach(c => {
+        tableHTML += `<td>${c.textContent}</td>`;
+      });
+      tableHTML += '</tr>';
     });
+  }
+  
+  tableHTML += '</tbody></table>';
+
+  const htmlConteudo = summaryHTML + tableHTML;
+
+  // Envia o conteúdo montado para o main process
+  const resposta = await window.bibliotech.reports.generatePDF({
+    titulo: tituloRelatorio,
+    htmlConteudo: htmlConteudo
+  });
+
+  if (resposta.ok) {
+    console.log(`PDF guardado com sucesso em: ${resposta.filePath}`);
+  } else if (resposta.message !== 'Operação cancelada pelo utilizador.') {
+    alert(`Erro ao gerar PDF: ${resposta.message}`);
+  }
+}
+const btnPdfGeral = document.querySelector('#generalReportModal .pdf-action');
+if (btnPdfGeral) {
+  btnPdfGeral.addEventListener('click', async () => {
+    await exportarModalParaPDF('generalReportModal', 'Relatório do Geral do Mês');
+  });
+}
+
+// Empréstimos do Mês
+const btnPdfEmprestimos = document.querySelector('#loanedMonthReportModal .pdf-action');
+if (btnPdfEmprestimos) {
+  btnPdfEmprestimos.addEventListener('click', async () => {
+    await exportarModalParaPDF('loanedMonthReportModal', 'Relatório de Empréstimos do Mês');
+  });
+}
+
+// Ranking Histórico (Top 10)
+const btnPdfRanking = document.querySelector('#topBooksAllTimeReportModal .pdf-action');
+if (btnPdfRanking) {
+  btnPdfRanking.addEventListener('click', async () => {
+    await exportarModalParaPDF('topBooksAllTimeReportModal', 'Ranking Histórico - Top 10 Livros Mais Lidos');
+  });
+}
+
+// . Devoluções do Mês
+const btnPdfDevolucoes = document.querySelector('#returnedMonthReportModal .pdf-action');
+if (btnPdfDevolucoes) {
+  btnPdfDevolucoes.addEventListener('click', async () => {
+    await exportarModalParaPDF('returnedMonthReportModal', 'Relatório de Devoluções do Mês');
   });
 }
 

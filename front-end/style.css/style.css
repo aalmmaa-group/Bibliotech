@@ -6895,6 +6895,14 @@ html[data-theme="dark"] .catalog-summary__icon:not(.catalog-summary__icon--avail
     letter-spacing: 0.04em;
     text-transform: uppercase;
 }
+.report-modal__table-row {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr 0.8fr;
+  gap: 12px;
+  padding: 10px 14px;
+  align-items: center;
+  border-bottom: 1px solid #f0f0f0; 
+}
 
 .report-modal__empty {
     display: grid;
@@ -7259,6 +7267,7 @@ html[data-theme="dark"] .report-launcher__tag,
 html[data-theme="dark"] .report-modal__period,
 html[data-theme="dark"] .report-date-picker__trigger,
 html[data-theme="dark"] .report-modal__table-head,
+html[data-theme="dark"] .report-modal__table-row,
 html[data-theme="dark"] .report-modal__close {
     color: #a8babc;
     background: #12252b;
@@ -7377,6 +7386,7 @@ html.is-theme-transitioning :is(
     .report-date-picker__popover,
     .report-modal__summary div,
     .report-modal__table-head,
+    .report-modal__table-row,
     .report-modal__notice,
     .report-modal__secondary,
     .reports-header__badge,
