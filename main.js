@@ -1,5 +1,6 @@
 /** Processo principal: cria a janela e recebe chamadas seguras da interface. */
-const { app, BrowserWindow, ipcMain } = require('electron/main');
+const { app, BrowserWindow, ipcMain, dialog } = require('electron/main');
+const fs = require('fs');
 const path = require('node:path');
 let db;
 
@@ -51,6 +52,10 @@ ipcMain.handle('loans:listActive', async() => {
 ipcMain.handle('loand:updateStatus', async() => {
   return atualizarStatusDevolução();
 })
+
+ipcMain.handle('reports:generatePDF', async (event, dados) => {
+  return geradorPDF(event, dados);
+});
 
 // função de cadastrar os livros 
 function cadastrarLivro(bookData) {
@@ -461,7 +466,7 @@ ipcMain.handle('reports:getDashboard', async (event, filtros = {}) => {
 
 //A seguinte função tem como objetivo agrupar as principais queries para a tela de relatorio. 
 // Obs.: Alguns filtros foram usados na visão geral.
-function montarRelatorio(filtros) {
+function montarRelatorio(filtros = {}) {
   if (!db || !db.db) {
     return {
       ok: false,
@@ -482,7 +487,7 @@ function montarRelatorio(filtros) {
       FROM livros
     `).get();
 
-
+    
     const emprestimos = db.db.prepare(`
       SELECT count(status_emprestimo) AS emprestimos
       FROM emprestimos
@@ -500,16 +505,92 @@ function montarRelatorio(filtros) {
       const emprestimosGrafico = db.db.prepare(`
         SELECT e.id_emprestimo, l.nome AS nome_livro, e.turma_serie, e.nome_solicitante, e.data_devolucao_prevista, e.tipo_solicitante, e.status_emprestimo
         FROM emprestimos e
-        JOIN livros l on l.id_livro = e.id_livro
-        WHERE e.status_emprestimo IN ('emprestado', 'devolução pendente') 
-        AND (date(e.data_devolucao_prevista) = date('now', 'localtime', '+3 days') OR  date(e.data_devolucao_prevista) < date('now', 'localtime')) 
-        LIMIT 10`).get()
+        JOIN livros l ON l.id_livro = e.id_livro
+        GROUP BY e.id_livro
+        ORDER BY totalEmprestimos DESC
+      `).all();
+
+      //Livro mais lido
+      const livroMaisLidoGeral = livrosMaisLidosGeral[0] || null;
+
+      //Total de leituras
+        const totalLeiturasGeral = db.db.prepare(`
+        SELECT COUNT(*) AS total 
+        FROM emprestimos
+      `).get().total;
+
+      //Livros no ranking
+      const livrosNoRankingGeral = db.db.prepare(`
+      SELECT COUNT(DISTINCT id_livro) AS total 
+      FROM emprestimos
+      `).get().total;
+
+      // Livros mais lidos no mês de referência.
+      const livrosMaisLidosMes = db.db.prepare(`
+        SELECT l.nome AS livro,
+        l.autor,
+        COUNT(*) AS totalEmprestimos
+        FROM emprestimos e
+        JOIN livros l ON l.id_livro = e.id_livro
+        WHERE strftime('%Y-%m', e.data_emprestimo) = ?
+        GROUP BY e.id_livro
+        ORDER BY totalEmprestimos DESC
+      `).all(mesReferencia);
+
+      // Devoluções do mês
+      const devolucoesMes = db.db.prepare(`
+      SELECT 
+        e.id_emprestimo,
+        e.nome_solicitante,
+        e.data_emprestimo,
+        e.data_devolucao_prevista,
+        e.data_devolucao_efetiva,
+        l.nome AS nome_livro
+      FROM emprestimos e
+      JOIN livros l ON e.id_livro = l.id_livro
+      WHERE e.status_emprestimo = 'devolvido'
+        AND strftime('%Y-%m', e.data_devolucao_efetiva) = ?
+      ORDER BY e.data_devolucao_efetiva DESC
+    `).all(mesReferencia);
+
+      // Empréstimos do mês
+      const emprestimosMes = db.db.prepare(`
+      SELECT 
+        e.id_emprestimo,
+        e.nome_solicitante,
+        e.turma_serie,
+        e.data_emprestimo,
+        e.data_devolucao_prevista,
+        e.status_emprestimo,
+        l.nome AS nome_livro
+      FROM emprestimos e
+      JOIN livros l ON e.id_livro = l.id_livro
+      WHERE strftime('%Y-%m', e.data_emprestimo) = ?
+      ORDER BY e.data_emprestimo DESC
+    `).all(mesReferencia);
+
+
 
     return {
       ok: true,
       code: 'SUCCESS',
       message: 'Relatório carregado com sucesso!',
-      payload: { acervoTotal, disponiveis, emprestimos, atrasados,emprestimosGrafico}
+      payload: {
+        acervoTotal,
+        disponiveis,
+        emprestimos,
+        atrasados,
+        mesReferencia,
+        turmaDestaqueMes,
+        resumoTurmasMes,
+        livrosMaisLidosGeral,
+        livroMaisLidoGeral,
+        totalLeiturasGeral,
+        livrosNoRankingGeral,
+        livrosMaisLidosMes,
+        devolucoesMes,  
+        emprestimosMes
+      }
     };
   } catch (erro) {
     console.error('Erro ao montar o relatório:', erro);
@@ -517,6 +598,75 @@ function montarRelatorio(filtros) {
   }
 }
 
+async function geradorPDF(ipcEvent, dados) {
+  try {
+    const titulo = dados?.titulo || 'Relatório';
+    const htmlConteudo = dados?.htmlConteudo || '';
+
+    // Abre a caixa de diálogo para salvar o ficheiro
+    const { filePath, canceled } = await dialog.showSaveDialog({
+      title: `Salvar Relatório - ${titulo}`,
+      defaultPath: path.join(app.getPath('downloads'), `${titulo.toLowerCase().replace(/\s+/g, '_')}.pdf`),
+      filters: [{ name: 'Documentos PDF', extensions: ['pdf'] }]
+    });
+
+    if (canceled || !filePath) {
+      return { ok: false, message: 'Operação cancelada pelo utilizador.' };
+    }
+
+    // Janela oculta para renderização
+    const winPDF = new BrowserWindow({
+      show: false,
+      webPreferences: { nodeIntegration: false }
+    });
+
+    // Layout HTML/CSS para impressão em folha A4
+    const htmlCompleto = `
+      <!DOCTYPE html>
+      <html lang="pt-BR">
+      <head>
+        <meta charset="UTF-8">
+        <title>${titulo}</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 30px; color: #1a1a1a; }
+          h1 { font-size: 22px; margin-bottom: 5px; color: #0d1b2a; }
+          .meta-info { font-size: 11px; color: #666; margin-bottom: 25px; border-bottom: 1px solid #ddd; padding-bottom: 8px; }
+          .summary { display: flex; gap: 15px; margin-bottom: 25px; }
+          .card { border: 1px solid #e0e0e0; padding: 12px 16px; border-radius: 6px; flex: 1; background-color: #f9fbfd; }
+          .card span { font-size: 11px; color: #555; text-transform: uppercase; display: block; margin-bottom: 4px; }
+          .card strong { font-size: 18px; color: #111; }
+          table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+          th, td { border: 1px solid #e2e8f0; padding: 10px 12px; text-align: left; font-size: 12px; }
+          th { background-color: #f1f5f9; font-weight: bold; color: #334155; text-transform: uppercase; font-size: 10px; }
+          tr:nth-child(even) { background-color: #f8fafc; }
+        </style>
+      </head>
+      <body>
+        <h1>${titulo}</h1>
+        <div class="meta-info">Relatório emitido em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}</div>
+        ${htmlConteudo}
+      </body>
+      </html>
+    `;
+
+    await winPDF.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(htmlCompleto)}`);
+
+    // Geração do PDF
+    const pdfBuffer = await winPDF.webContents.printToPDF({
+      printBackground: true,
+      pageSize: 'A4',
+      margins: { top: 0.5, bottom: 0.5, left: 0.5, right: 0.5 }
+    });
+
+    fs.writeFileSync(filePath, pdfBuffer);
+    winPDF.close();
+
+    return { ok: true, filePath };
+  } catch (erro) {
+    console.error("Erro ao gerar PDF:", erro);
+    return { ok: false, message: erro.message };
+  }
+}
 
 /** Inicializa dependências locais e abre a primeira janela do aplicativo. */
 app.whenReady().then(() => {

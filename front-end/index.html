@@ -1081,7 +1081,21 @@
                 <div><small>Após o prazo</small><strong>—</strong></div>
             </section>
             <div class="report-modal__table-wrap">
-                <div class="report-modal__table-head" aria-hidden="true"><span>Livro</span><span>Leitor</span><span>Devolvido em</span><span>Situação</span></div>
+                <div class="report-modal__table" id="report-top-class-table" role="status">
+                    <table class="catalog-table">
+                        <thead>
+                            <tr>
+                                <th>Livro</th>
+                                <th>Leitor</th>
+                                <th>Devolvido em</th>
+                                <th>Situação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="listaDevolucoes">
+
+                        </tbody>
+                    </table>
+                </div>
                 <div class="report-modal__empty" role="status">
                     <span class="material-symbols-outlined" aria-hidden="true">inventory_2</span>
                     <strong>Os dados mensais aparecerão aqui</strong>
@@ -1126,7 +1140,21 @@
                 <div><small>Turmas alcançadas</small><strong>—</strong></div>
             </section>
             <div class="report-modal__table-wrap">
-                <div class="report-modal__table-head" aria-hidden="true"><span>Livro</span><span>Leitor</span><span>Emprestado em</span><span>Prazo</span></div>
+                <div class="report-modal__table" id="report-top-class-table" role="status">
+                    <table class="catalog-table">
+                        <thead>
+                            <tr>
+                                <th>Livro</th>
+                                <th>Leitor</th>
+                                <th>Emprestadoem</th>
+                                <th>Prazo</th>
+                            </tr>
+                        </thead>
+                        <tbody id="listaEmprestimos">
+
+                        </tbody>
+                    </table>
+                </div>
                 <div class="report-modal__empty" role="status">
                     <span class="material-symbols-outlined" aria-hidden="true">menu_book</span>
                     <strong>Os dados mensais aparecerão aqui</strong>
@@ -1225,7 +1253,21 @@
                 <div><small>Títulos diferentes</small><strong>—</strong></div>
             </section>
             <div class="report-modal__table-wrap">
-                <div class="report-modal__table-head" aria-hidden="true"><span>Posição</span><span>Livro</span><span>Autor</span><span>Leituras</span></div>
+                <div class="report-modal__table" id="report-top-class-table" role="status">
+                    <table class="catalog-table">
+                        <thead>
+                            <tr>
+                                <th>Posição</th>
+                                <th>Livro</th>
+                                <th>Autor</th>
+                                <th>Leituras</th>
+                            </tr>
+                        </thead>
+                        <tbody id="listaLivrosMaisLidosMes">
+
+                        </tbody>
+                    </table>
+                </div>
                 <div class="report-modal__empty" role="status">
                     <span class="material-symbols-outlined" aria-hidden="true">menu_book</span>
                     <strong>Os livros mais lidos aparecerão aqui</strong>

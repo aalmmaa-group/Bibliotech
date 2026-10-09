@@ -370,12 +370,27 @@ function setupReportCenter() {
   });
 
   document.querySelectorAll('[data-report-open]').forEach((button) => {
-    button.addEventListener('click', () => {
-      const dialog = reportDialogs[button.dataset.reportOpen];
-      if (!dialog) return;
-      dialog.showModal();
-    });
+  button.addEventListener('click', async () => {
+    const reportType = button.dataset.reportOpen;
+    const dialog = reportDialogs[reportType];
+    
+    if (!dialog) return;
+
+    // Chama a função correspondente ao botão clicado
+    if (reportType === 'returnedMonth') {
+      await devolucoesDoMes();
+    } else if (reportType === 'loanedMonth') {
+      await emprestimosDoMes();
+    } else if (reportType === 'topClassMonth') {
+      await turmaDestaque();
+    } else if (reportType === 'topBooksMonth') {
+      await livrosMaisLidosDoMes();
+    }
+    
+
+    dialog.showModal();
   });
+});
 
   document.querySelectorAll('[data-report-pending]').forEach((button) => {
     button.addEventListener('click', () => {
@@ -2251,7 +2266,7 @@ function notifyReturnsUpdated() {
   if (typeof renderReturnsList === 'function') renderReturnsList();
 }
 
-/** Busca no banco de dados (via preload.js) os empréstimos ainda nãodevolvidos na tabela emprestimos, para exibir na tela de devoluções. */
+/** Busca no banco de dados (via preload.js) os empréstimos ainda não devolvidos na tabela emprestimos, para exibir na tela de devoluções. */
 async function loadActiveLoans() {
   try {
     const resultado = await window.bibliotech?.loans?.listActive();
@@ -2561,7 +2576,435 @@ async function carregarRelatorio() {
   
 }
 
+/** Recarrega todos os blocos que dependem dos dados do relatório
+ * (dashboard, Visão geral e ranking de livros mais lidos). */
+async function atualizarRelatorios() {
+  await Promise.all([
+    carregarRelatorio(),
+    carregarVisaoGeral(),
+    livrosMaisLidosGeral(),
+    DevolucoesDoMes(),
+    EmprestimosDoMes(),
+    livrosMaisLidosDoMes()
+  ]);
+}
 
+
+async function devolucoesDoMes() {
+  const modal = document.getElementById('returnedMonthReportModal');
+  const picker = modal?.querySelector('[data-report-date-picker]');
+  const tabela = modal?.querySelector('.report-modal__table-wrap') || modal?.querySelector('table');
+  const lista = modal?.querySelector('tbody') || modal?.querySelector('#listaDevolucoes');
+  const vazio = modal?.querySelector('.report-modal__empty') || modal?.querySelector('[id*="empty"]');
+  
+  // Captura os cartões de resumo
+  const cartoes = modal ? Array.from(modal.querySelectorAll('strong'))
+    .filter(el => !el.closest('[data-report-date-picker]') && !el.closest('.report-modal__empty')) : [];
+
+  if (!modal || !picker || !tabela || !lista) return;
+
+  let ultimaRequisicao = 0;
+
+  const zerarResumo = () => {
+    cartoes.forEach(c => c.textContent = '—');
+  };
+
+  const carregar = async () => {
+    const requisicao = ++ultimaRequisicao;
+
+    if (!window.bibliotech?.reports?.getDashboard) {
+      zerarResumo();
+      return;
+    }
+
+    try {
+      const mesSelecionado = typeof lerMesDoSeletor === 'function' ? lerMesDoSeletor(picker) : null;
+      const resultado = await window.bibliotech.reports.getDashboard(
+        mesSelecionado ? { mes: mesSelecionado } : {}
+      );
+
+      if (requisicao !== ultimaRequisicao) return;
+
+      if (!resultado.ok || !resultado.payload) {
+        zerarResumo();
+        return;
+      }
+
+      const devolucoes = resultado.payload.devolucoesMes || [];
+      const total = devolucoes.length;
+      let dentroDoPrazo = 0;
+      let aposOPrazo = 0;
+      // Cálculo das estatísticas (Total, Dentro do Prazo, Após o Prazo)
+      devolucoes.forEach(item => {
+        if (item.data_devolucao_efetiva && item.data_devolucao_prevista) {
+          const efetiva  = String(item.data_devolucao_efetiva).slice(0, 10);
+          const prevista = String(item.data_devolucao_prevista).slice(0, 10);
+          if (efetiva <= prevista) dentroDoPrazo++;
+          else aposOPrazo++;
+        } else {
+          dentroDoPrazo++;
+        }
+      });
+      // Preenche os 3 cartões de resumo
+      if (cartoes.length >= 3) {
+        cartoes[0].textContent = total;
+        cartoes[1].textContent = dentroDoPrazo;
+        cartoes[2].textContent = aposOPrazo;
+      }
+
+      lista.replaceChildren();
+      // Trata caso sem registos
+      if (total === 0) {
+        if (vazio) vazio.hidden = false;
+        tabela.hidden = true;
+        return;
+      }
+      // Preenche a tabela
+      if (vazio) vazio.hidden = true;
+      tabela.hidden = false;
+
+      devolucoes.forEach((item) => {
+        const linha = document.createElement('tr');
+        const livroNome = item.nome_livro || item.livro || '—';
+        const leitorNome = item.nome_solicitante || '—';
+        // Formatação da data (DD/MM/YYYY)
+        let dataDev = '—';
+        if (item.data_devolucao_efetiva) {
+          const p = String(item.data_devolucao_efetiva).slice(0, 10).split('-');
+          if (p.length === 3) dataDev = `${p[2]}/${p[1]}/${p[0]}`;
+        }
+        // Verificação da situação
+        const eAtrasado = item.data_devolucao_efetiva && item.data_devolucao_prevista
+          ? String(item.data_devolucao_efetiva).slice(0, 10) > String(item.data_devolucao_prevista).slice(0, 10)
+          : false;
+
+        const situacaoTexto = eAtrasado ? 'Após o prazo' : 'Dentro do prazo';
+        const situacaoClasse = eAtrasado ? 'status-atrasado' : 'status-no-prazo';
+
+        linha.innerHTML = `
+          <td>${livroNome}</td>
+          <td>${leitorNome}</td>
+          <td>${dataDev}</td>
+          <td><span class="${situacaoClasse}">${situacaoTexto}</span></td>
+        `;
+        lista.appendChild(linha);
+      });
+
+    } catch (erro) {
+      if (requisicao !== ultimaRequisicao) return;
+      console.error("Erro ao carregar devoluções do mês:", erro);
+      zerarResumo();
+    }
+  };
+  carregar();
+}
+
+async function emprestimosDoMes() {
+  const modal = document.getElementById('loanedMonthReportModal');
+  const picker = modal?.querySelector('[data-report-date-picker]');
+  const tabela = modal?.querySelector('.report-modal__table-wrap') || modal?.querySelector('table');
+  const lista = modal?.querySelector('tbody') || modal?.querySelector('#listaEmprestimos');
+  const vazio = modal?.querySelector('.report-modal__empty') || modal?.querySelector('[id*="empty"]');
+
+  // Captura os <strong> dos cartões
+  const cartoes = modal ? Array.from(modal.querySelectorAll('strong'))
+    .filter(el => !el.closest('[data-report-date-picker]') && !el.closest('.report-modal__empty')) : [];
+
+  if (!modal || !picker || !tabela || !lista) return;
+
+  let ultimaRequisicao = 0;
+
+  const zerarResumo = () => {
+    cartoes.forEach(c => c.textContent = '—');
+  };
+
+  const carregar = async () => {
+    const requisicao = ++ultimaRequisicao;
+
+    if (!window.bibliotech?.reports?.getDashboard) {
+      zerarResumo();
+      return;
+    }
+
+    try {
+      const mesSelecionado = typeof lerMesDoSeletor === 'function' ? lerMesDoSeletor(picker) : null;
+      const resultado = await window.bibliotech.reports.getDashboard(
+        mesSelecionado ? { mes: mesSelecionado } : {}
+      );
+
+      if (requisicao !== ultimaRequisicao) return;
+
+      if (!resultado.ok || !resultado.payload) {
+        zerarResumo();
+        return;
+      }
+
+      // Cálculo das estatísticas
+      const emprestimos = resultado.payload.emprestimosMes || [];
+      const total = emprestimos.length;
+      let pendentes = 0;
+      let devolvidos = 0; // "emprestado" ou "devolução pendente"
+
+      emprestimos.forEach(item => {
+        if (item.status_emprestimo === 'devolvido') devolvidos++;
+        else pendentes++;
+      });
+      // Preenche os cartões
+      if (cartoes.length >= 3) {
+        cartoes[0].textContent = total;
+        cartoes[1].textContent = pendentes;
+        cartoes[2].textContent = devolvidos;
+      }
+      
+      lista.replaceChildren();
+      // Trata o caso de lista vazia
+      if (total === 0) {
+        if (vazio) vazio.hidden = false;
+        tabela.hidden = true;
+        return;
+      }
+      // Preenche a tabela
+      if (vazio) vazio.hidden = true;
+      tabela.hidden = false;
+
+      emprestimos.forEach((item) => {
+        const linha = document.createElement('tr');
+        const livroNome = item.nome_livro || item.livro || '—';
+        const leitorNome = item.nome_solicitante || '—';
+        // Formatação da data de empréstimo (DD/MM/YYYY)
+        let dataEmp = '—';
+        if (item.data_emprestimo) {
+          const p = String(item.data_emprestimo).slice(0, 10).split('-');
+          if (p.length === 3) dataEmp = `${p[2]}/${p[1]}/${p[0]}`;
+        }
+
+        const statusTexto = item.status_emprestimo === 'devolvido' ? 'Devolvido' : 'Emprestado';
+        // Define uma classe CSS com base no status
+        const statusClasse = item.status_emprestimo === 'devolvido' ? 'status-no-prazo' : 'status-atrasado';
+
+        linha.innerHTML = `
+          <td>${livroNome}</td>
+          <td>${leitorNome}</td>
+          <td>${dataEmp}</td>
+          <td><span class="${statusClasse}">${statusTexto}</span></td>
+        `;
+        lista.appendChild(linha);
+      });
+
+    } catch (erro) {
+      if (requisicao !== ultimaRequisicao) return;
+      console.error("Erro ao carregar empréstimos do mês:", erro);
+      zerarResumo();
+    }
+  };
+  carregar();
+}
+
+async function livrosMaisLidosDoMes() {
+  const modal = document.getElementById('topBooksMonthReportModal');
+  const picker = modal?.querySelector('[data-report-date-picker]');
+  const tabela = modal?.querySelector('.report-modal__table-wrap') || modal?.querySelector('table');
+  const lista = modal?.querySelector('tbody') || modal?.querySelector('#listaLivrosMaisLidos');
+  const vazio = modal?.querySelector('.report-modal__empty') || modal?.querySelector('[id*="empty"]');
+  
+  const cartoes = modal ? Array.from(modal.querySelectorAll('strong'))
+    .filter(el => !el.closest('[data-report-date-picker]') && !el.closest('.report-modal__empty')) : [];
+
+  if (!modal || !picker || !tabela || !lista) return;
+
+  let ultimaRequisicao = 0;
+
+  const zerarResumo = () => {
+    cartoes.forEach(c => c.textContent = '—');
+  };
+
+  const carregar = async () => {
+    const requisicao = ++ultimaRequisicao;
+
+    if (!window.bibliotech?.reports?.getDashboard) {
+      zerarResumo();
+      return;
+    }
+
+    try {
+      const mesSelecionado = typeof lerMesDoSeletor === 'function' ? lerMesDoSeletor(picker) : null;
+      const resultado = await window.bibliotech.reports.getDashboard(
+        mesSelecionado ? { mes: mesSelecionado } : {}
+      );
+
+      if (requisicao !== ultimaRequisicao) return;
+
+      if (!resultado.ok || !resultado.payload) {
+        zerarResumo();
+        return;
+      }
+
+      const livros = resultado.payload.livrosMaisLidosMes || [];
+      const totalTitulos = livros.length;
+
+      // Calcula o total geral de leituras somando os empréstimos de todos os livros da lista
+      const totalLeiturasGeral = livros.reduce((acc, item) => acc + (item.totalEmprestimos || 0), 0);
+      
+      // O livro destaque
+      const livroDestaqueNome = totalTitulos > 0 ? (livros[0].livro || '—') : '—';
+
+      // Preenche os 3 cartões do topo
+      if (cartoes.length >= 3) {
+        cartoes[0].textContent = livroDestaqueNome;
+        cartoes[1].textContent = totalLeiturasGeral;
+        cartoes[2].textContent = totalTitulos;
+      }
+
+      lista.replaceChildren();
+
+      if (totalTitulos === 0) {
+        if (vazio) vazio.hidden = false;
+        tabela.hidden = true;
+        return;
+      }
+
+      if (vazio) vazio.hidden = true;
+      tabela.hidden = false;
+
+      livros.forEach((item, indice) => {
+        const linha = document.createElement('tr');
+        
+        const posicaoTd = document.createElement('td');
+        posicaoTd.textContent = indice + 1; 
+
+        const livroTd = document.createElement('td');
+        livroTd.textContent = item.livro || '—'; // Nome do livro
+
+        const autorTd = document.createElement('td');
+        autorTd.textContent = item.autor || '—'; // Nome do autor
+
+        const leiturasTd = document.createElement('td');
+        leiturasTd.textContent = item.totalEmprestimos || 0; // Total de leituras
+
+        linha.append(posicaoTd, livroTd, autorTd, leiturasTd);
+        lista.appendChild(linha);
+      });
+
+    } catch (erro) {
+      if (requisicao !== ultimaRequisicao) return;
+      console.error("Erro ao carregar livros mais lidos do mês:", erro);
+      zerarResumo();
+    }
+  };
+
+  carregar();
+}
+
+/**
+ * Extrai o conteúdo do modal (resumos e tabelas) e chama o gerador de PDF
+ * @param {string} modalId - ID do elemento <dialog> do modal
+ * @param {string} tituloRelatorio - Título que aparecerá no cabeçalho do PDF
+ */
+
+async function exportarModalParaPDF(modalId, tituloRelatorio) {
+  const modal = document.getElementById(modalId);
+  if (!modal) {
+    console.error(`Modal '${modalId}' não foi encontrado.`);
+    return;
+  }
+
+  // Extrai os dados dos cartões de resumo
+  let summaryHTML = '<div class="summary">';
+  const summaryItems = modal.querySelectorAll('.report-modal__summary > div, .report-modal__card');
+  
+  if (summaryItems.length > 0) {
+    summaryItems.forEach(item => {
+      const label = item.querySelector('small, span, p')?.textContent?.trim() || '';
+      const valor = item.querySelector('strong, h3')?.textContent?.trim() || '—';
+      if (label || valor !== '—') {
+        summaryHTML += `
+          <div class="card">
+            <span>${label}</span>
+            <strong>${valor}</strong>
+          </div>
+        `;
+      }
+    });
+  }
+  summaryHTML += '</div>';
+
+  // Extrai a tabela
+  let tableHTML = '<table>';
+  const tabelaNativa = modal.querySelector('table');
+
+  if (tabelaNativa) {
+    tableHTML += tabelaNativa.innerHTML;
+  } else {
+    const cabecalhos = modal.querySelectorAll('.report-modal__table-head span');
+    if (cabecalhos.length > 0) {
+      tableHTML += '<thead><tr>';
+      cabecalhos.forEach(h => { tableHTML += `<th>${h.textContent.trim()}</th>`; });
+      tableHTML += '</tr></thead>';
+    }
+
+    tableHTML += '<tbody>';
+    const linhas = modal.querySelectorAll('.report-modal__table-row:not(.report-modal__table-head)');
+    if (linhas.length === 0) {
+      tableHTML += `<tr><td colspan="${cabecalhos.length || 1}" style="text-align: center;">Nenhum registo encontrado.</td></tr>`;
+    } else {
+      linhas.forEach(linha => {
+        tableHTML += '<tr>';
+        const colunas = linha.querySelectorAll('span, td');
+        colunas.forEach(c => { tableHTML += `<td>${c.textContent.trim()}</td>`; });
+        tableHTML += '</tr>';
+      });
+    }
+    tableHTML += '</tbody>';
+  }
+  tableHTML += '</table>';
+
+  const htmlConteudo = summaryHTML + tableHTML;
+
+  // Envia os dados para a ponte do IPC no Electron
+  try {
+    const resposta = await window.bibliotech.reports.generatePDF({
+      titulo: tituloRelatorio,
+      htmlConteudo: htmlConteudo
+    });
+
+    if (resposta && resposta.ok) {
+      console.log(`PDF gerado com sucesso em: ${resposta.filePath}`);
+    } else if (resposta && resposta.message !== 'Operação cancelada pelo utilizador.') {
+      alert(`Erro ao gerar PDF: ${resposta.message}`);
+    }
+  } catch (erro) {
+    console.error("Erro na comunicação do PDF:", erro);
+  }
+}
+// Botão PDF - Relatório Geral
+document.querySelector('#generalReportModal .pdf-action')?.addEventListener('click', async () => {
+  await exportarModalParaPDF('generalReportModal', 'Relatório Geral');
+});
+
+// Botão PDF - Devoluções do Mês
+document.querySelector('#returnedMonthReportModal .pdf-action')?.addEventListener('click', async () => {
+  await exportarModalParaPDF('returnedMonthReportModal', 'Relatório de Devoluções do Mês');
+});
+
+// Botão PDF - Turma destaque
+document.querySelector('topClassMonthReportModal .pdf-action')?.addEventListener('click', async () => {
+  await exportarModalParaPDF('topClassMonthReportModal', 'Relatório da Turma Destaque');
+});
+
+// Botão PDF - Livro mais lido do Mês
+document.querySelector('#topBooksMonthReportModal .pdf-action')?.addEventListener('click', async () => {
+  await exportarModalParaPDF('topBooksMonthReportModal', 'Relatório dos Livros Mais Lidos do Mês');
+});
+
+// Botão PDF - Empréstimos do Mês
+document.querySelector('#loanedMonthReportModal .pdf-action')?.addEventListener('click', async () => {
+  await exportarModalParaPDF('loanedMonthReportModal', 'Relatório de Empréstimos do Mês');
+});
+
+// Botão PDF - Ranking Histórico (Top 10 Livros)
+document.querySelector('#topBooksAllTimeReportModal .pdf-action')?.addEventListener('click', async () => {
+  await exportarModalParaPDF('topBooksAllTimeReportModal', 'Ranking Histórico - Top 10 Livros Mais Lidos');
+});
 
 /** Inicializa os eventos após o carregamento do HTML. */
 function initializeApp() {
