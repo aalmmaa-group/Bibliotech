@@ -873,6 +873,7 @@ function setupBookEditModal() {
     if (resposta.ok) {
       notifyCollectionUpdated();
       loadActiveLoans();
+      atualizarRelatorios();
       closeModal();
       showPending('Alterações aplicadas e guardadas na base de dados com sucesso.');
     } else {
@@ -2434,6 +2435,7 @@ async function handleLoanSubmit(event) {
       setLoanMessage(resultado.message, 'success');
       await loadActiveLoans();
       await loadCollectionBooks();
+      await atualizarRelatorios();
     } else {
       setLoanMessage(`Erro ao emprestar: ${resultado.message}`);
     }
@@ -2472,7 +2474,7 @@ const exibirErroNoGeral = () => {
 
   if (!window.bibliotech?.reports?.getDashboard) {
     exibirErroNoGeral();
-    return { ok: false, message: 'Relatórios disponíveis somente no Electron' };
+    return { ok: false, message: 'Relatórios indisponivel' };
   }
 
   try {
@@ -2589,6 +2591,159 @@ async function atualizarRelatorios() {
   ]);
 }
 
+async function livrosMaisLidosGeral() {
+  const livroMaisLido = document.querySelector('#most-read-book');           
+  const totalLeituras = document.querySelector('#total-readings');
+  const livrosRanking = document.querySelector('#books-ranking');
+  const tabelaRankingVazia = document.querySelector('#report-modal__empty_ranking');
+  const lista = document.querySelector('#listaLivrosMaisLidos');
+  if (!window.bibliotech?.reports?.getDashboard) {
+    return { ok: false, message: 'Relatórios indisponivel' };
+  }
+  try {
+    const resultado = await window.bibliotech.reports.getDashboard();
+    if (resultado.ok) {
+      const payload = resultado.payload;
+      livroMaisLido.textContent = payload.livroMaisLidoGeral.livro || '-';
+      totalLeituras.textContent = resultado.payload.totalLeiturasGeral || 0;
+      livrosRanking.textContent = resultado.payload.livrosNoRankingGeral || 0;
+
+      
+      const livros = payload.livrosMaisLidosGeral || [];
+      lista.replaceChildren(); 
+
+      if (livros.length === 0) { 
+        tabelaRankingVazia.hidden = false;
+
+      }else{
+        tabelaRankingVazia.hidden =  true;
+      
+
+       livros.forEach((livro, indice) => {
+        const linha = document.createElement('tr');
+        const posicao = document.createElement('td');
+        posicao.textContent = indice + 1;
+        const titulo = document.createElement('td');
+        titulo.textContent = livro.livro;
+        const autor = document.createElement('td');
+        autor.textContent = livro.autor;
+        const total = document.createElement('td');
+        total.textContent = livro.totalEmprestimos;
+
+        linha.append(posicao, titulo, autor, total);
+        lista.appendChild(linha);
+       }
+      ); 
+      }
+
+    }else{
+        tabelaRankingVazia.hidden = false;
+        return{
+          ok: false,
+          message: 'Falha ao buscar dados do relatório'
+        };
+    }
+  }catch(erro){
+      tabelaRankingVazia.hidden = false;
+      console.error(erro);
+      return{
+        ok:false,
+        message: 'Erro interno'
+      }}
+}
+
+function lerMesDoSeletor(picker) {
+  const ano = picker?.dataset.reportYear;
+  const mes = picker?.dataset.reportMonth;
+  if (!ano || !mes) return undefined;
+  return `${ano}-${String(mes).padStart(2, '0')}`;
+}
+
+async function turmaDestaque() {
+  const dialog = document.querySelector('#topClassMonthReportModal');
+  const picker = dialog?.querySelector('[data-report-date-picker]');
+  const turmaDestaque = document.querySelector('#top-class-name');
+  const livrosRetirados = document.querySelector('#top-class-books');
+  const alunosLeitores = document.querySelector('#top-class-students');
+  const tabela = document.querySelector('#report-top-class-table'); // wrapper que contém a <table>
+  const lista = document.querySelector('#listaTurmasDestaque'); // <tbody> que recebe as linhas
+  const vazio = document.querySelector('#report-top-class-empty');
+  if (!dialog || !picker || !turmaDestaque || !livrosRetirados || !alunosLeitores || !tabela || !lista || !vazio) return;
+
+  // Cada carregamento recebe um número. Se o usuário trocar de mês antes da
+  // resposta anterior chegar, a resposta antiga é descartada em vez de
+  // sobrescrever a tela com o mês errado.
+  let ultimaRequisicao = 0;
+
+  const mostrarVazio = (titulo, detalhe) => {
+    tabela.hidden = true;
+    vazio.hidden = false;
+    vazio.querySelector('strong').textContent = titulo;
+    vazio.querySelector('p').textContent = detalhe;
+  };
+
+  const zerarResumo = () => {
+    turmaDestaque.textContent = '—';
+    livrosRetirados.textContent = '—';
+    alunosLeitores.textContent = '—';
+  };
+
+  const carregar = async () => {
+    const requisicao = ++ultimaRequisicao;
+
+    if (!window.bibliotech?.reports?.getDashboard) {
+      zerarResumo();
+      mostrarVazio('Relatório indisponível', 'Não foi possível acessar o banco de dados nesta máquina.');
+      return;
+    }
+
+    try {
+      const resultado = await window.bibliotech.reports.getDashboard({ mes: lerMesDoSeletor(picker) });
+      if (requisicao !== ultimaRequisicao) return; 
+
+      if (!resultado.ok) {
+        zerarResumo();
+        mostrarVazio('Não foi possível carregar o ranking', 'Feche e abra o relatório para tentar de novo.');
+        return;
+      }
+
+      const ranking = resultado.payload.turmaDestaqueMes || [];
+      const resumo = resultado.payload.resumoTurmasMes || {};
+
+      turmaDestaque.textContent = ranking[0]?.turma ?? '—';
+      livrosRetirados.textContent = resumo.livrosRetirados ?? 0;
+      alunosLeitores.textContent = resumo.alunosLeitores ?? 0;
+
+      lista.replaceChildren();
+      ranking.forEach((item, indice) => {
+        const linha = document.createElement('tr');
+        const posicao = document.createElement('td');
+        posicao.textContent = indice + 1;
+        const turma = document.createElement('td');
+        turma.textContent = item.turma;
+        const leituras = document.createElement('td');
+        leituras.textContent = item.leituras;
+        const alunos = document.createElement('td');
+        alunos.textContent = item.alunos;
+        linha.append(posicao, turma, leituras, alunos);
+        lista.appendChild(linha);
+      });
+
+      if (ranking.length === 0) {
+        mostrarVazio('Nenhuma leitura registrada neste mês', 'Quando houver empréstimos de alunos no período, o ranking das turmas aparecerá aqui.');
+      } else {
+        tabela.hidden = false;
+        vazio.hidden = true;
+      }
+    } catch (erro) {
+      if (requisicao !== ultimaRequisicao) return;
+      console.error(erro);
+      zerarResumo();
+      mostrarVazio('Não foi possível carregar o ranking', 'Feche e abra o relatório para tentar de novo.');
+    }
+  };
+  carregar();
+}
 
 async function devolucoesDoMes() {
   const modal = document.getElementById('returnedMonthReportModal');
@@ -3033,6 +3188,8 @@ function initializeApp() {
   loadActiveLoans(); //Busca na tabela emprestimos os empréstimos ainda não devolvidos, através da API disponibilizada pelo preload
   setupBookAutocomplete();
   carregarRelatorio();
+  livrosMaisLidosGeral();
+  turmaDestaque();
   carregarVisaoGeral();
   bookForm.addEventListener('submit', handleBookSubmit);
   loanForm.addEventListener('submit', handleLoanSubmit);

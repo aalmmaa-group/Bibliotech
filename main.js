@@ -502,8 +502,41 @@ function montarRelatorio(filtros = {}) {
       `).get();
 
       //Empréstimos que exigem atenção = Emprestimos com o prazo de devolução pendente ou prazo está para vencer
-      const emprestimosGrafico = db.db.prepare(`
-        SELECT e.id_emprestimo, l.nome AS nome_livro, e.turma_serie, e.nome_solicitante, e.data_devolucao_prevista, e.tipo_solicitante, e.status_emprestimo
+      //const emprestimosGrafico = db.db.prepare(`
+      //  SELECT e.id_emprestimo, l.nome AS nome_livro, e.turma_serie, e.nome_solicitante, e.data_devolucao_prevista, e.tipo_solicitante, e.status_emprestimo
+      //  FROM emprestimos e
+      //  JOIN livros l on l.id_livro = e.id_livro
+      //  WHERE e.status_emprestimo IN ('emprestado', 'devolução pendente') 
+      //  AND (date(e.data_devolucao_prevista) = date('now', 'localtime', '+3 days') OR  date(e.data_devolucao_prevista) < date('now', 'localtime')) 
+      //  LIMIT 10`).get()
+//
+      const mesReferencia = filtros.mes
+        || db.db.prepare(`SELECT strftime('%Y-%m', 'now', 'localtime') AS mes`).get().mes;
+
+    
+
+      // Ranking de turmas no mês de referência (mesmo filtro de aluno).
+      const turmaDestaqueMes = db.db.prepare(`
+        SELECT turma_serie AS turma, COUNT(*) AS leituras
+        FROM emprestimos
+        WHERE tipo_solicitante = 'aluno'
+          AND strftime('%Y-%m', data_emprestimo) = ?
+        GROUP BY turma_serie
+        ORDER BY leituras DESC
+      `).all(mesReferencia);
+
+      const resumoTurmasMes = db.db.prepare(`
+        SELECT COUNT(*) AS livrosRetirados,
+               COUNT(DISTINCT LOWER(TRIM(nome_solicitante)) || '|' || COALESCE(turma_serie, '')) AS alunosLeitores
+        FROM emprestimos
+        WHERE tipo_solicitante = 'aluno'
+          AND strftime('%Y-%m', data_emprestimo) = ?
+      `).get(mesReferencia);
+
+      // Livros mais lidos — histórico completo, contando todo mundo
+      // (aluno e não-aluno)
+      const livrosMaisLidosGeral = db.db.prepare(`
+        SELECT l.nome AS livro, l.autor AS autor, COUNT(*) AS totalEmprestimos
         FROM emprestimos e
         JOIN livros l ON l.id_livro = e.id_livro
         GROUP BY e.id_livro

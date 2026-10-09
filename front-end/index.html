@@ -1203,13 +1203,25 @@
                 </div>
             </div>
             <section class="report-modal__summary" aria-label="Resumo da turma destaque em leitura">
-                <div><small>Turma destaque</small><strong>—</strong></div>
-                <div><small>Livros retirados</small><strong>—</strong></div>
-                <div><small>Alunos leitores</small><strong>—</strong></div>
+                <div><small>Turma destaque</small><strong id="top-class-name">—</strong></div>
+                <div><small>Livros retirados</small><strong id="top-class-books">—</strong></div>
+                <div><small>Alunos leitores</small><strong id="top-class-students">—</strong></div>
             </section>
             <div class="report-modal__table-wrap">
-                <div class="report-modal__table-head" aria-hidden="true"><span>Posição</span><span>Turma</span><span>Leituras</span><span>Alunos</span></div>
-                <div class="report-modal__empty" role="status">
+                <div class="report-modal__table" id="report-top-class-table" role="status">
+                    <table class="catalog-table">
+                        <thead>
+                            <tr>
+                                <th>Posição</th>
+                                <th>Turma</th>
+                                <th>Leituras</th>
+                                <th>Alunos</th>
+                            </tr>
+                        </thead>
+                        <tbody id="listaTurmasDestaque"></tbody>
+                    </table>
+                </div>
+                <div class="report-modal__empty" id="report-top-class-empty" role="status">
                     <span class="material-symbols-outlined" aria-hidden="true">leaderboard</span>
                     <strong>O ranking das turmas aparecerá aqui</strong>
                     <p>A estrutura está pronta para receber os dados de engajamento quando a consulta for disponibilizada.</p>
@@ -1299,13 +1311,25 @@
                 <div><small>Período analisado</small><strong>Todo o histórico da biblioteca</strong></div>
             </div>
             <section class="report-modal__summary" aria-label="Resumo histórico de leituras">
-                <div><small>Livro mais lido</small><strong>—</strong></div>
-                <div><small>Total de leituras</small><strong>—</strong></div>
-                <div><small>Livros no ranking</small><strong>—</strong></div>
+                <div><small>Livro mais lido</small><strong id="most-read-book">—</strong></div>
+                <div><small>Total de leituras</small><strong id="total-readings">—</strong></div>
+                <div><small>Livros no ranking</small><strong id="books-ranking">—</strong></div>
             </section>
             <div class="report-modal__table-wrap">
-                <div class="report-modal__table-head" aria-hidden="true"><span>Posição</span><span>Livro</span><span>Autor</span><span>Leituras</span></div>
-                <div class="report-modal__empty" role="status">
+                <div class="report-modal__table" id="report-modal__table_ranking" role="status">
+                    <table class="catalog-table"> 
+                    <thead> 
+                        <tr> 
+                            <th>Posição</th> 
+                            <th>Livro</th> 
+                            <th>Autor</th> 
+                            <th>Leituras</th> 
+                        </tr> 
+                    </thead> 
+                    <tbody id="listaLivrosMaisLidos"> </tbody> 
+                </table>
+                </div>
+                <div class="report-modal__empty" id="report-modal__empty_ranking" role="status">
                     <span class="material-symbols-outlined" aria-hidden="true">military_tech</span>
                     <strong>O ranking histórico aparecerá aqui</strong>
                     <p>A estrutura está pronta para receber o histórico completo quando a consulta for disponibilizada.</p>
