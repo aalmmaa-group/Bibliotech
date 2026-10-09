@@ -2435,7 +2435,6 @@ async function handleLoanSubmit(event) {
       setLoanMessage(resultado.message, 'success');
       await loadActiveLoans();
       await loadCollectionBooks();
-      await atualizarRelatorios();
     } else {
       setLoanMessage(`Erro ao emprestar: ${resultado.message}`);
     }
@@ -2523,7 +2522,8 @@ const emprestimosStatus = document.querySelector('#reportMetricLoanedStatus');
 const atrasados = document.querySelector('#reportMetricOverdue');
 const atrasadosStatus = document.querySelector('#reportMetricOverdueStatus');
 
-
+const textoRelatorioGeral = document.querySelector('#report-modal-info');
+textoRelatorioGeral.hidden = true;
 const reportStatusElements = [
   acervoTotalStatus,
   disponiveisStatus,
