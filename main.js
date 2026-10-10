@@ -1,5 +1,5 @@
 /** Processo principal: cria a janela e recebe chamadas seguras da interface. */
-const { app, BrowserWindow, ipcMain, dialog } = require('electron/main');
+const { app, BrowserWindow, ipcMain, dialog, screen } = require('electron/main');
 const fs = require('fs');
 const path = require('node:path');
 let db;
@@ -8,11 +8,12 @@ let db;
 
 /** Cria a janela desktop e carrega a interface local do projeto. */
 function createWindow() {
+  const { width: availableWidth, height: availableHeight } = screen.getPrimaryDisplay().workAreaSize;
   const win = new BrowserWindow({
-    width: 1280,
-    height: 820,
-    minWidth: 1000,
-    minHeight: 680,
+    width: Math.min(1280, availableWidth),
+    height: Math.min(820, availableHeight),
+    minWidth: Math.min(760, availableWidth),
+    minHeight: Math.min(520, availableHeight),
     autoHideMenuBar: true,
     icon: path.join(__dirname, 'build', 'icon.png'),
     webPreferences: {
