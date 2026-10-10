@@ -3167,7 +3167,7 @@ document.querySelector('#returnedMonthReportModal .pdf-action')?.addEventListene
 });
 
 // Botão PDF - Turma destaque
-document.querySelector('topClassMonthReportModal .pdf-action')?.addEventListener('click', async () => {
+document.querySelector('#topClassMonthReportModal .pdf-action')?.addEventListener('click', async () => {
   await exportarModalParaPDF('topClassMonthReportModal', 'Relatório da Turma Destaque');
 });
 

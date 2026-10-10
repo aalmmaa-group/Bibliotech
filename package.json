@@ -10,6 +10,14 @@
   "build": {
     "appId": "com.aalmmaa-group.bibliotech",
     "productName": "Bibliotech",
+    "files": [
+      "main.js",
+      "preload.js",
+      "front-end/**/*",
+      "src/**/*",
+      "build/**/*",
+      "package.json"
+    ],
     "win": {
       "target": "nsis"
     }

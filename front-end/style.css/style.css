@@ -1,3 +1,29 @@
+@font-face {
+    font-family: "Material Symbols Outlined";
+    font-style: normal;
+    font-weight: 100 700;
+    font-display: block;
+    src: url("../assets/MaterialSymbolsOutlined.woff2") format("woff2");
+}
+
+.material-symbols-outlined {
+    display: inline-block;
+    font-family: "Material Symbols Outlined";
+    font-size: 24px;
+    font-style: normal;
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    font-feature-settings: "liga";
+    -webkit-font-feature-settings: "liga";
+    -webkit-font-smoothing: antialiased;
+    user-select: none;
+}
+
 :root {
     color-scheme: light;
     --sidebar-width: 248px;
@@ -6419,7 +6445,6 @@ html[data-theme="dark"] .catalog-summary__icon:not(.catalog-summary__icon--avail
         border-color 450ms ease,
         box-shadow 600ms cubic-bezier(0.16, 1, 0.3, 1),
         transform 600ms cubic-bezier(0.16, 1, 0.3, 1);
-    will-change: transform;
 }
 
 .report-launcher::after {
@@ -6438,29 +6463,6 @@ html[data-theme="dark"] .catalog-summary__icon:not(.catalog-summary__icon--avail
     border-color: #9fd4d1;
     box-shadow: 0 16px 32px rgba(19, 73, 76, 0.13);
     transform: translateY(-2px);
-}
-
-.report-launcher::before {
-    position: absolute;
-    z-index: 0;
-    top: -75%;
-    left: -38%;
-    width: 34%;
-    height: 250%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.48), transparent);
-    content: "";
-    pointer-events: none;
-    transform: rotate(18deg) translateX(-220%);
-    transition: transform 800ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.report-launcher:hover::before {
-    transform: rotate(18deg) translateX(650%);
-}
-
-/* O card destacado já tem gradiente próprio; o reflexo claro causava um flash no hover. */
-.report-launcher--featured::before {
-    display: none;
 }
 
 .report-launcher:focus-visible {
@@ -6610,7 +6612,7 @@ html[data-theme="dark"] .catalog-summary__icon:not(.catalog-summary__icon--avail
 
 @keyframes report-modal-in {
     from { opacity: 0; transform: translateY(14px) scale(0.985); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
+    to { opacity: 1; transform: none; }
 }
 
 @keyframes report-modal-out {
@@ -6620,7 +6622,7 @@ html[data-theme="dark"] .catalog-summary__icon:not(.catalog-summary__icon--avail
 
 @keyframes report-modal-content-in {
     from { opacity: 0; transform: translateY(9px); }
-    to { opacity: 1; transform: translateY(0); }
+    to { opacity: 1; transform: none; }
 }
 
 .report-modal__card {
@@ -6629,10 +6631,18 @@ html[data-theme="dark"] .catalog-summary__icon:not(.catalog-summary__icon--avail
     max-height: calc(100vh - 32px);
     padding: 26px;
     overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    overscroll-behavior: contain;
     background: #ffffff;
     border: 1px solid var(--border);
     border-radius: 18px;
     box-shadow: 0 28px 70px rgba(3, 26, 35, 0.28);
+}
+
+.report-modal__card::-webkit-scrollbar {
+    width: 0;
+    height: 0;
 }
 
 .report-modal__header {
@@ -6720,6 +6730,11 @@ html[data-theme="dark"] .catalog-summary__icon:not(.catalog-summary__icon--avail
 
 .report-date-picker {
     position: relative;
+    z-index: 1;
+}
+
+.report-date-picker.is-open {
+    z-index: 100;
 }
 
 .report-date-picker button,
@@ -6787,11 +6802,11 @@ html[data-theme="dark"] .catalog-summary__icon:not(.catalog-summary__icon--avail
 
 .report-date-picker__popover {
     position: absolute;
-    z-index: 20;
+    z-index: 101;
     top: calc(100% + 8px);
     left: 0;
-    width: min(330px, 100%);
-    padding: 14px;
+    width: min(360px, 100%);
+    padding: 8px;
     background: #ffffff;
     border: 1px solid var(--border);
     border-radius: 13px;
@@ -6804,17 +6819,17 @@ html[data-theme="dark"] .catalog-summary__icon:not(.catalog-summary__icon--avail
 
 .report-date-picker__popover > header {
     display: grid;
-    grid-template-columns: 34px 1fr 34px;
+    grid-template-columns: 28px 1fr 28px;
     align-items: center;
     gap: 8px;
-    margin-bottom: 12px;
+    margin-bottom: 6px;
     text-align: center;
 }
 
 .report-date-picker__popover > header button {
     display: grid;
-    width: 34px;
-    height: 34px;
+    width: 28px;
+    height: 28px;
     padding: 0;
     place-items: center;
     color: var(--primary-dark);
@@ -6837,18 +6852,18 @@ html[data-theme="dark"] .catalog-summary__icon:not(.catalog-summary__icon--avail
 }
 
 .report-date-picker__popover > header .material-symbols-outlined {
-    font-size: 20px;
+    font-size: 18px;
 }
 
 .report-date-picker__months {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 7px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 5px;
 }
 
 .report-date-picker__months button {
-    min-height: 36px;
-    padding: 7px;
+    min-height: 27px;
+    padding: 4px;
     color: var(--text);
     background: #f6fafb;
     border: 1px solid transparent;
@@ -6874,8 +6889,8 @@ html[data-theme="dark"] .catalog-summary__icon:not(.catalog-summary__icon--avail
 
 .report-date-picker__today {
     width: 100%;
-    min-height: 34px;
-    margin-top: 10px;
+    min-height: 28px;
+    margin-top: 6px;
     color: var(--primary-dark);
     background: transparent;
     border: 1px solid var(--border);
@@ -7192,24 +7207,26 @@ html[data-theme="dark"] .catalog-summary__icon:not(.catalog-summary__icon--avail
 .theme-toggle__thumb {
     position: absolute;
     z-index: 2;
-    top: 3px;
+    top: 50%;
     left: 3px;
     width: 22px;
     height: 22px;
     background: #ffffff;
     border-radius: 50%;
     box-shadow: 0 3px 9px rgba(27, 64, 71, 0.25);
+    transform: translateY(-50%);
     transition: transform 360ms cubic-bezier(0.22, 1, 0.36, 1), background 320ms ease;
 }
 
 .theme-toggle__icon {
     position: absolute;
     z-index: 3;
-    top: 7px;
+    top: 50%;
     display: block;
     width: 14px;
     height: 14px;
     pointer-events: none;
+    transform: translateY(-50%);
     transition: color 260ms ease, opacity 260ms ease, transform 360ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -7239,20 +7256,20 @@ html[data-theme="dark"] .theme-toggle__track {
 
 html[data-theme="dark"] .theme-toggle__thumb {
     background: #dbe9ec;
-    transform: translateX(28px);
+    transform: translate(26px, -50%);
 }
 
 html[data-theme="dark"] .theme-toggle__icon--sun {
     display: block;
     opacity: 0.45;
-    transform: rotate(-90deg) scale(0.78);
+    transform: translateY(-50%) rotate(-90deg) scale(0.78);
 }
 
 html[data-theme="dark"] .theme-toggle__icon--moon {
     display: block;
     color: #31576a;
     opacity: 1;
-    transform: rotate(-12deg);
+    transform: translateY(-50%) rotate(-12deg);
 }
 
 html[data-theme="dark"] .report-launcher:not(.report-launcher--featured),
