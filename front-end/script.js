@@ -1083,6 +1083,29 @@ function formatarData(data) {
     return `${dia}/${mes}/${ano}`;
 }
 
+function clearNotifications() {
+    const notificationList = document.getElementById('notification-panel-list');
+    const painelEmpty = document.getElementById('notification-panel__empty');
+    const notificationPainel = document.getElementById('notification-panel__info');
+    const notificationDot = document.getElementById('notification__dot');
+
+    notificationList.replaceChildren();
+    painelEmpty.hidden = false;
+    notificationPainel.hidden = true;
+
+    if (notificationDot) {
+        notificationDot.hidden = true;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const cleanButton = document.getElementById('clearNotificationsButton');
+
+    if (cleanButton) {
+        cleanButton.addEventListener('click', clearNotifications);
+    }
+});
+
 
 
 /**
