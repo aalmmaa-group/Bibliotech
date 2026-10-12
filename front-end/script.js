@@ -1019,7 +1019,7 @@ async function notificationItens(){
   const painelEmpty = document.querySelector('#notification-panel__empty')
   const notificationPainel= document.querySelector('#notification-panel__info')
   const notificationList = document.getElementById('notification-panel-list');
-
+  const notificationDot = document.getElementById('notification__dot');
   
     try{
       const response  = await window.bibliotech.notifications.listItens();
@@ -1037,7 +1037,7 @@ async function notificationItens(){
         }else{
             painelEmpty.hidden = true;
             notificationPainel.hidden = false;
-            notification__dot.hidden = false
+            notificationDot.hidden = false;
 
             itens.forEach((emprestimo) => {
                 const item = document.createElement('article');
@@ -1059,7 +1059,7 @@ async function notificationItens(){
               
                 item.appendChild(notificacao);
                 notificationList.appendChild(item);
-            });;
+            });
         }
 
     }catch(error){
