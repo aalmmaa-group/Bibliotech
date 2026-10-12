@@ -706,11 +706,10 @@ async function geradorPDF(ipcEvent, dados) {
   try {
     //Empréstimos que exigem atenção = Emprestimos que o prazo está para vencer
       const prazoParaVencer = db.db.prepare(`
-        SELECT l.nome AS nome_livro, e.turma_serie, e.nome_solicitante, e.data_devolucao_prevista      
+        SELECT l.nome AS nome_livro, e.turma_serie, e.nome_solicitante, e.data_devolucao_prevista, e.tipo_solicitante      
         FROM emprestimos e
         JOIN livros l on l.id_livro = e.id_livro
         WHERE e.status_emprestimo IN ('emprestado', 'devolução pendente') 
-        AND tipo_solicitante = 'aluno'
         AND (date(e.data_devolucao_prevista) = date('now', 'localtime', '+1 days'))`).all()
 
       return {

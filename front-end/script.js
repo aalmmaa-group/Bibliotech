@@ -1051,11 +1051,22 @@ async function notificationItens(){
                     emprestimo.data_devolucao_prevista
                 );
               
-                notificacao.textContent =
-                    `O livro ${emprestimo.nome_livro}, ` +
-                    `emprestado pelo aluno ${emprestimo.nome_solicitante}, ` +
-                    `da turma ${emprestimo.turma_serie}, ` +
-                    `deve ser devolvido amanhã (${data}).`;
+                let mensagem;
+
+                if (emprestimo.tipo_solicitante == 'aluno') {
+                    mensagem =
+                        `O livro ${emprestimo.nome_livro}, ` +
+                        `emprestado pelo aluno(a) ${emprestimo.nome_solicitante}, ` +
+                        `da turma ${emprestimo.turma_serie}, ` +
+                        `deve ser devolvido amanhã (${data}).`;
+                } else {
+                    mensagem =
+                        `O livro ${emprestimo.nome_livro}, ` +
+                        `emprestado por ${emprestimo.nome_solicitante}, ` +
+                        `deve ser devolvido amanhã (${data}).`;
+                }
+              
+                notificacao.textContent = mensagem;
               
                 item.appendChild(notificacao);
                 notificationList.appendChild(item);
