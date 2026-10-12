@@ -1321,9 +1321,27 @@
                 <div><p>RANKING HISTÓRICO</p><h2 id="topBooksAllTimeReportTitle">Livros mais lidos de todos</h2></div>
                 <button class="report-modal__close material-symbols-outlined" type="button" data-report-close aria-label="Fechar relatório">close</button>
             </header>
-            <div class="report-modal__period">
-                <span class="material-symbols-outlined" aria-hidden="true">history</span>
-                <div><small>Período analisado</small><strong>Todo o histórico da biblioteca</strong></div>
+            <div class="report-date-picker" data-report-date-picker>
+                <button class="report-date-picker__trigger" type="button" aria-expanded="false" aria-controls="topBooksAllTimePicker">
+                    <span class="material-symbols-outlined" aria-hidden="true">calendar_month</span>
+                    <span><small>Escolher período do relatório</small><strong data-report-current-month>—</strong></span>
+                    <span class="report-date-picker__arrow material-symbols-outlined" aria-hidden="true">expand_more</span>
+                </button>
+                <div class="report-date-picker__popover" id="topBooksAllTimePicker" hidden>
+                    <header>
+                        <button type="button" data-report-year-change="-1" aria-label="Ano anterior"><span class="material-symbols-outlined" aria-hidden="true">chevron_left</span></button>
+                        <strong data-report-picker-year></strong>
+                        <button type="button" data-report-year-change="1" aria-label="Próximo ano"><span class="material-symbols-outlined" aria-hidden="true">chevron_right</span></button>
+                    </header>
+                    <div class="report-date-picker__months" role="grid" aria-label="Escolha o mês">
+                        <button type="button" data-report-month="0">Jan</button><button type="button" data-report-month="1">Fev</button><button type="button" data-report-month="2">Mar</button>
+                        <button type="button" data-report-month="3">Abr</button><button type="button" data-report-month="4">Mai</button><button type="button" data-report-month="5">Jun</button>
+                        <button type="button" data-report-month="6">Jul</button><button type="button" data-report-month="7">Ago</button><button type="button" data-report-month="8">Set</button>
+                        <button type="button" data-report-month="9">Out</button><button type="button" data-report-month="10">Nov</button><button type="button" data-report-month="11">Dez</button>
+                    </div>
+                    <button class="report-date-picker__today" type="button" data-report-current-date>Usar mês atual</button>
+                </div>
+                <p class="report-date-picker__scope">Dados exibidos: todo o histórico da biblioteca.</p>
             </div>
             <section class="report-modal__summary" aria-label="Resumo histórico de leituras">
                 <div><small>Livro mais lido</small><strong id="most-read-book">—</strong></div>
@@ -1370,9 +1388,27 @@
                 <div><p>VISÃO COMPLETA</p><h2 id="generalReportTitle">Relatório geral</h2></div>
                 <button class="report-modal__close material-symbols-outlined" type="button" data-report-close aria-label="Fechar relatório">close</button>
             </header>
-            <div class="report-modal__period">
-                <span class="material-symbols-outlined" aria-hidden="true">monitoring</span>
-                <div><small>Dados exibidos</small><strong>Indicadores atuais da biblioteca</strong></div>
+            <div class="report-date-picker" data-report-date-picker>
+                <button class="report-date-picker__trigger" type="button" aria-expanded="false" aria-controls="generalReportPicker">
+                    <span class="material-symbols-outlined" aria-hidden="true">calendar_month</span>
+                    <span><small>Escolher período do relatório</small><strong data-report-current-month>—</strong></span>
+                    <span class="report-date-picker__arrow material-symbols-outlined" aria-hidden="true">expand_more</span>
+                </button>
+                <div class="report-date-picker__popover" id="generalReportPicker" hidden>
+                    <header>
+                        <button type="button" data-report-year-change="-1" aria-label="Ano anterior"><span class="material-symbols-outlined" aria-hidden="true">chevron_left</span></button>
+                        <strong data-report-picker-year></strong>
+                        <button type="button" data-report-year-change="1" aria-label="Próximo ano"><span class="material-symbols-outlined" aria-hidden="true">chevron_right</span></button>
+                    </header>
+                    <div class="report-date-picker__months" role="grid" aria-label="Escolha o mês">
+                        <button type="button" data-report-month="0">Jan</button><button type="button" data-report-month="1">Fev</button><button type="button" data-report-month="2">Mar</button>
+                        <button type="button" data-report-month="3">Abr</button><button type="button" data-report-month="4">Mai</button><button type="button" data-report-month="5">Jun</button>
+                        <button type="button" data-report-month="6">Jul</button><button type="button" data-report-month="7">Ago</button><button type="button" data-report-month="8">Set</button>
+                        <button type="button" data-report-month="9">Out</button><button type="button" data-report-month="10">Nov</button><button type="button" data-report-month="11">Dez</button>
+                    </div>
+                    <button class="report-date-picker__today" type="button" data-report-current-date>Usar mês atual</button>
+                </div>
+                <p class="report-date-picker__scope">Dados exibidos: indicadores atuais da biblioteca.</p>
             </div>
             <section class="reports-metrics" aria-label="Indicadores da biblioteca">
                 <article class="report-metric-card">

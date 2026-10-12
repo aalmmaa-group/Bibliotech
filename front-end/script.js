@@ -101,8 +101,72 @@ function setupThemeToggle() {
  */
 function replayEntranceAnimation(element) {
   element.classList.remove('is-entering');
+  element.querySelectorAll('.screen-motion').forEach((item) => item.classList.remove('screen-motion'));
+  if (element.matches('.page-intro:not(.reports-page)')) {
+    const sections = element.querySelectorAll(
+      ':scope > .page-intro__top, :scope > .catalog-page__header, :scope > .about-hero, ' +
+      ':scope > h1, .stats-grid > *, .management-options > article, ' +
+      ':scope > .collection-search, .overview-lower > section, .catalog-summary > article, ' +
+      ':scope > .catalog-list, :scope > .loan-tabs, :scope > form, ' +
+      ':scope > .loan-layout > *, :scope > .returns-panel, :scope > .team-section'
+    );
+    sections.forEach((item, index) => {
+      item.classList.add('screen-motion');
+      item.style.setProperty('--screen-motion-delay', `${Math.min(index * 45, 225)}ms`);
+    });
+  }
   void element.offsetWidth;
   element.classList.add('is-entering');
+}
+
+/** Mantém os calendários acima das áreas animadas e dos recortes dos modais. */
+function setupCalendarLayers() {
+  document.querySelectorAll('.loan-calendar, .report-date-picker__popover').forEach((calendar) => {
+    if (typeof calendar.showPopover !== 'function') return;
+    const picker = calendar.parentElement;
+    const trigger = picker.querySelector('.report-date-picker__trigger, .loan-date-picker__trigger');
+    if (!trigger) return;
+    calendar.setAttribute('popover', 'manual');
+    calendar.classList.add('calendar-layer');
+
+    const positionCalendar = () => {
+      if (!calendar.matches(':popover-open')) return;
+      const bounds = trigger.getBoundingClientRect();
+      const viewport = window.visualViewport;
+      const viewportLeft = viewport?.offsetLeft || 0;
+      const viewportTop = viewport?.offsetTop || 0;
+      const viewportWidth = viewport?.width || window.innerWidth;
+      const viewportHeight = viewport?.height || window.innerHeight;
+      const margin = 12;
+      const width = Math.min(calendar.classList.contains('loan-calendar') ? 320 : 360, viewportWidth - margin * 2);
+      calendar.style.width = `${width}px`;
+      calendar.style.maxHeight = `${viewportHeight - margin * 2}px`;
+      const height = calendar.getBoundingClientRect().height;
+      const below = bounds.bottom + 8;
+      const above = bounds.top - height - 8;
+      const top = below + height <= viewportTop + viewportHeight - margin ? below : above;
+      calendar.style.left = `${Math.max(viewportLeft + margin, Math.min(bounds.left, viewportLeft + viewportWidth - width - margin))}px`;
+      calendar.style.top = `${Math.max(viewportTop + margin, Math.min(top, viewportTop + viewportHeight - height - margin))}px`;
+    };
+    const syncCalendar = () => {
+      if (calendar.hidden || !trigger.getClientRects().length) {
+        if (calendar.matches(':popover-open')) calendar.hidePopover();
+        return;
+      }
+      if (!calendar.matches(':popover-open')) calendar.showPopover();
+      positionCalendar();
+    };
+    new MutationObserver(syncCalendar).observe(calendar, { attributes: true, attributeFilter: ['hidden'] });
+    window.addEventListener('resize', positionCalendar);
+    window.visualViewport?.addEventListener('resize', positionCalendar);
+    window.visualViewport?.addEventListener('scroll', positionCalendar);
+    document.addEventListener('scroll', positionCalendar, true);
+    picker.closest('dialog')?.addEventListener('close', () => {
+      calendar.hidden = true;
+      picker.classList.remove('is-open');
+      trigger.setAttribute('aria-expanded', 'false');
+    });
+  });
 }
 
 /**
@@ -110,6 +174,11 @@ function replayEntranceAnimation(element) {
  * @param {'inicio'|'gestao'|'emprestimos'|'acervo'|'cadastro'|'relatorios'|'sobre'} view Tela que deve ser exibida.
  */
 function openView(view, { fromHistory = false, resetHistory = false } = {}) {
+  document.querySelectorAll('.calendar-layer').forEach((calendar) => {
+    calendar.hidden = true;
+    calendar.parentElement.classList.remove('is-open');
+    calendar.parentElement.querySelector('[aria-expanded]')?.setAttribute('aria-expanded', 'false');
+  });
   if (resetHistory) {
     viewHistory.splice(0, viewHistory.length, 'inicio');
   } else if (!fromHistory && viewHistory[viewHistory.length - 1] !== view) {
@@ -3229,6 +3298,8 @@ function initializeApp() {
   setupReturnConfirmationModal(); // Controla a confirmação personalizada da devolução.
   setupReturnsList(); //Configura a renderização da lista de devoluções pendentes
   setupReportCenter(); // Controla a central, as minitelas e a animação visual do PDF.
+  setupCalendarLayers();
+  replayEntranceAnimation(overviewPage);
   loadActiveLoans(); //Busca na tabela emprestimos os empréstimos ainda não devolvidos, através da API disponibilizada pelo preload
   setupBookAutocomplete();
   carregarRelatorio();
