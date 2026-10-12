@@ -20,6 +20,9 @@ contextBridge.exposeInMainWorld('bibliotech', {
   reports: {
   getDashboard: (filtros) => ipcRenderer.invoke('reports:getDashboard', filtros),
   generatePDF: (dados) => ipcRenderer.invoke('reports:generatePDF', dados)
+  },
+  notifications: {
+    listItens: () => ipcRenderer.invoke('notification:listItens')
   }
   
 });
