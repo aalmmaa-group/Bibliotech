@@ -292,6 +292,8 @@ function setupReportCenter() {
         renderCalendar();
         closeDatePicker(picker);
         trigger.focus();
+
+        picker.dispatchEvent(new Event('change'));
       });
     });
 
@@ -303,6 +305,23 @@ function setupReportCenter() {
       renderCalendar();
       closeDatePicker(picker);
       trigger.focus();
+
+      picker.dispatchEvent(new Event('change'));
+    });
+
+
+    picker.addEventListener('change', () => {
+      const dialogId = picker.closest('dialog')?.id;
+      
+      if (dialogId === 'returnedMonthReportModal') {
+        devolucoesDoMes();
+      } else if (dialogId === 'loanedMonthReportModal') {
+        emprestimosDoMes();
+      } else if (dialogId === 'topClassMonthReportModal') {
+        turmaDestaque();
+      } else if (dialogId === 'topBooksMonthReportModal') {
+        livrosMaisLidosDoMes();
+      }
     });
 
     picker.addEventListener('keydown', (event) => {
