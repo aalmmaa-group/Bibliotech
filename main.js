@@ -58,6 +58,10 @@ ipcMain.handle('reports:generatePDF', async (event, dados) => {
   return geradorPDF(event, dados);
 });
 
+ipcMain.handle('notification:listItens', async () => {
+    return notificarPrazos();
+});
+
 // função de cadastrar os livros 
 function cadastrarLivro(bookData) {
   // Prevenção: verifica se o banco de dados carregou corretamente
@@ -502,15 +506,6 @@ function montarRelatorio(filtros = {}) {
       WHERE status_emprestimo IN ('emprestado', 'devolução pendente') AND date('now', 'localtime') > date(data_devolucao_prevista);
       `).get();
 
-      //Empréstimos que exigem atenção = Emprestimos com o prazo de devolução pendente ou prazo está para vencer
-      //const emprestimosGrafico = db.db.prepare(`
-      //  SELECT e.id_emprestimo, l.nome AS nome_livro, e.turma_serie, e.nome_solicitante, e.data_devolucao_prevista, e.tipo_solicitante, e.status_emprestimo
-      //  FROM emprestimos e
-      //  JOIN livros l on l.id_livro = e.id_livro
-      //  WHERE e.status_emprestimo IN ('emprestado', 'devolução pendente') 
-      //  AND (date(e.data_devolucao_prevista) = date('now', 'localtime', '+3 days') OR  date(e.data_devolucao_prevista) < date('now', 'localtime')) 
-      //  LIMIT 10`).get()
-//
       const mesReferencia = filtros.mes
         || db.db.prepare(`SELECT strftime('%Y-%m', 'now', 'localtime') AS mes`).get().mes;
 
@@ -701,6 +696,37 @@ async function geradorPDF(ipcEvent, dados) {
     return { ok: false, message: erro.message };
   }
 }
+
+
+  function notificarPrazos(){
+    if (!db || !db.db) {
+    return { ok: false, message: 'O banco de dados está indisponível.' };
+  }
+
+  try {
+    //Empréstimos que exigem atenção = Emprestimos que o prazo está para vencer
+      const prazoParaVencer = db.db.prepare(`
+        SELECT l.nome AS nome_livro, e.turma_serie, e.nome_solicitante, e.data_devolucao_prevista, e.tipo_solicitante      
+        FROM emprestimos e
+        JOIN livros l on l.id_livro = e.id_livro
+        WHERE e.status_emprestimo IN ('emprestado', 'devolução pendente') 
+        AND (date(e.data_devolucao_prevista) = date('now', 'localtime', '+1 days'))`).all()
+
+      return {
+      ok: true,
+      code: 'SUCCESS',
+      message: 'Notificações carregado com sucesso!',
+      payload: prazoParaVencer
+      };
+
+      } catch(erro){
+        console.error("Erro ao consultar notificações:", erro);
+       return {
+          ok: false,
+          code: 'SELECT_ERROR',
+          message: "Ocorreu um erro interno ao carregar as notificações."
+      };
+  }}
 
 /** Inicializa dependências locais e abre a primeira janela do aplicativo. */
 app.whenReady().then(() => {

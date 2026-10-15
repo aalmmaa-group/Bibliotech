@@ -93,14 +93,14 @@
                             <path d="M7.5 10.5a4.5 4.5 0 0 1 9 0c0 5 2 5.5 2 5.5h-13s2-.5 2-5.5Z"/>
                             <path d="M10 19h4"/>
                         </svg>
-                        <span class="notification__dot"></span>
+                        <span class="notification__dot" id="notification__dot" hidden></span>
                     </button>
 
                     <section class="notification-panel" id="notificationPanel" aria-labelledby="notificationPanelTitle" hidden>
                         <header class="notification-panel__header">
                             <h2 id="notificationPanelTitle">Notificações</h2>
                         </header>
-                        <div class="notification-panel__empty">
+                        <div class="notification-panel__empty" id="notification-panel__empty">
                             <span class="notification-panel__icon" aria-hidden="true">
                                 <svg viewBox="0 0 24 24" fill="none">
                                     <path d="M7.5 10.5a4.5 4.5 0 0 1 9 0c0 5 2 5.5 2 5.5h-13s2-.5 2-5.5Z"/>
@@ -109,6 +109,11 @@
                             </span>
                             <strong>Nenhuma notificação</strong>
                             <p>Quando houver novidades, elas aparecerão aqui.</p>
+                        </div>
+                        <div class="notification-panel__info" id="notification-panel__info" hidden>
+                            <!-- Necessidade de aplicar o estilo - To do Front-->
+                             <div class="notification-panel__list" id="notification-panel-list"></div>
+                             <button id="clearNotificationsButton" type="button">Limpar notificações</button>
                         </div>
                     </section>
                 </div>

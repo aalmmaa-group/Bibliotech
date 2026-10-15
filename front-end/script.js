@@ -15,7 +15,7 @@ const aboutPage = document.querySelector('#aboutPage');
 const pageTitle = document.querySelector('#pageTitle');
 const breadcrumbCurrent = document.querySelector('#breadcrumbCurrent');
 const viewBackButton = document.querySelector('#viewBackButton');
-const bookForm = document.querySelector('#bookForm');
+const bookForm = document.querySelector('#bookForm'); 
 const loanForm = document.querySelector('#loanForm');
 const notificationButton = document.querySelector('#notificationButton');
 const notificationPanel = document.querySelector('#notificationPanel');
@@ -1084,6 +1084,98 @@ function setupNotifications() {
     notificationButton.focus();
   });
 }
+async function notificationItens(){
+  const painelEmpty = document.querySelector('#notification-panel__empty')
+  const notificationPainel= document.querySelector('#notification-panel__info')
+  const notificationList = document.getElementById('notification-panel-list');
+  const notificationDot = document.getElementById('notification__dot');
+  
+    try{
+      const response  = await window.bibliotech.notifications.listItens();
+      if (!response.ok) {
+          console.error('Erro ao carregar notificações:',response.message);
+            return;
+        }
+
+        const itens = response.payload;
+        notificationList.replaceChildren();
+        if (itens.length === 0) {
+            painelEmpty.hidden = false;
+            notificationPainel.hidden = true;
+            return;
+        }else{
+            painelEmpty.hidden = true;
+            notificationPainel.hidden = false;
+            notificationDot.hidden = false;
+
+            itens.forEach((emprestimo) => {
+                const item = document.createElement('article');
+                item.className = 'notification-panel-item';
+            
+                const notificacao = document.createElement('p');
+                notificacao.className =
+                    'notification-panel-item__detail';
+            
+                const data = formatarData(
+                    emprestimo.data_devolucao_prevista
+                );
+              
+                let mensagem;
+
+                if (emprestimo.tipo_solicitante == 'aluno') {
+                    mensagem =
+                        `O livro ${emprestimo.nome_livro}, ` +
+                        `emprestado pelo aluno(a) ${emprestimo.nome_solicitante}, ` +
+                        `da turma ${emprestimo.turma_serie}, ` +
+                        `deve ser devolvido amanhã (${data}).`;
+                } else {
+                    mensagem =
+                        `O livro ${emprestimo.nome_livro}, ` +
+                        `emprestado por ${emprestimo.nome_solicitante}, ` +
+                        `deve ser devolvido amanhã (${data}).`;
+                }
+              
+                notificacao.textContent = mensagem;
+              
+                item.appendChild(notificacao);
+                notificationList.appendChild(item);
+            });
+        }
+
+    }catch(error){
+      console.error('Erro ao buscar notificações:', error);
+    }
+}
+
+function formatarData(data) {
+    const [ano, mes, dia] = data.slice(0, 10).split('-');
+    return `${dia}/${mes}/${ano}`;
+}
+
+function clearNotifications() {
+    const notificationList = document.getElementById('notification-panel-list');
+    const painelEmpty = document.getElementById('notification-panel__empty');
+    const notificationPainel = document.getElementById('notification-panel__info');
+    const notificationDot = document.getElementById('notification__dot');
+
+    notificationList.replaceChildren();
+    painelEmpty.hidden = false;
+    notificationPainel.hidden = true;
+
+    if (notificationDot) {
+        notificationDot.hidden = true;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const cleanButton = document.getElementById('clearNotificationsButton');
+
+    if (cleanButton) {
+        cleanButton.addEventListener('click', clearNotifications);
+    }
+});
+
+
 
 /**
  * Adiciona uma resposta breve de clique aos botões da interface. A classe é removida automaticamente para não interferir no hover.
@@ -2067,6 +2159,7 @@ function setupDeadlineExtensionModal() {
     renderCalendar();
     setCalendarOpen(false);
     dateButton.focus();
+    notificationItens();
   };
 
   openDeadlineModal = (loan, button) => {
@@ -2251,6 +2344,7 @@ function setupReturnConfirmationModal() {
       notifyReturnsUpdated();
       closeModal();
       await atualizarRelatorios();
+      await notificationItens();
     } catch (error) {
       console.error('Erro ao registrar a devolução:', error);
       message.textContent = 'Ocorreu um erro inesperado ao registrar a devolução.';
@@ -3302,6 +3396,7 @@ function initializeApp() {
   replayEntranceAnimation(overviewPage);
   loadActiveLoans(); //Busca na tabela emprestimos os empréstimos ainda não devolvidos, através da API disponibilizada pelo preload
   setupBookAutocomplete();
+  notificationItens();
   carregarRelatorio();
   livrosMaisLidosGeral();
   turmaDestaque();
