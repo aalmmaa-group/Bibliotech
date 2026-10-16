@@ -173,6 +173,10 @@ function setupCalendarLayers() {
  * @param {'inicio'|'gestao'|'emprestimos'|'acervo'|'cadastro'|'relatorios'|'sobre'} view Tela que deve ser exibida.
  */
 function openView(view, { fromHistory = false, resetHistory = false } = {}) {
+  if (!loanPage.hidden && view !== 'emprestimos') {
+    clearLoanForm();
+    setLoanMessage('');
+  }
   document.querySelectorAll('.calendar-layer').forEach((calendar) => {
     calendar.hidden = true;
     calendar.parentElement.classList.remove('is-open');
@@ -1315,7 +1319,7 @@ function setupLoanBorrowerType() {
     }
   }
 
-  const updateBorrowerType = () => {
+  const updateBorrowerType = ({ validate = true } = {}) => {
     const isStudent = loanForm.elements.borrowerType.value === 'student';
     loanForm.classList.toggle('is-non-student', !isStudent);
     classroomField.hidden = !isStudent;
@@ -1331,7 +1335,7 @@ function setupLoanBorrowerType() {
       classroomText.textContent = 'Não se aplica';
       classroomSelect.classList.add('has-value');
     }
-    classroomInput.dispatchEvent(new Event('input', { bubbles: true }));
+    if (validate) classroomInput.dispatchEvent(new Event('input', { bubbles: true }));
   };
 
   const setOpen = (isOpen) => {
@@ -1359,7 +1363,7 @@ function setupLoanBorrowerType() {
   });
 
   typeInputs.forEach((input) => input.addEventListener('change', updateBorrowerType));
-  loanForm.addEventListener('reset', () => window.setTimeout(updateBorrowerType));
+  loanForm.addEventListener('reset', () => window.setTimeout(() => updateBorrowerType({ validate: false })));
   updateBorrowerType();
 }
 
@@ -1513,7 +1517,9 @@ function setupLoanCalendar() {
 /** Prepara a validação progressiva do novo empréstimo. */
 function setupLoanForm() {
   loanForm.querySelectorAll('[required]').forEach((input) => {
-    if (input.type !== 'hidden') input.addEventListener('blur', () => validateLoanField(input));
+    if (input.type !== 'hidden') input.addEventListener('blur', () => {
+      if (!loanPage.hidden) validateLoanField(input);
+    });
     const validationEvent = input.name === 'returnDate' ? 'change' : 'input';
     input.addEventListener(validationEvent, () => {
       if (input.closest('label, .form-field').classList.contains('is-invalid')) validateLoanField(input);
@@ -2345,6 +2351,7 @@ function clearLoanForm({ focusName = false } = {}) {
   const returnDateCalendar = document.querySelector('#returnDateCalendar');
 
   loanForm.reset();
+  loanForm.querySelectorAll('input, select, textarea').forEach((control) => control.setCustomValidity(''));
   bookInput.dataset.bookId = '';
   returnDate.value = '';
   autocomplete?.replaceChildren();
