@@ -1812,7 +1812,7 @@ button.is-pressed {
 
 .overview-lower {
     display: grid;
-    grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+    grid-template-columns: minmax(0, 1fr);
     gap: 18px;
     margin-top: 18px;
 }
@@ -2003,6 +2003,20 @@ button.is-pressed {
 
 .quick-access__list {
     display: grid;
+}
+
+@media (min-width: 861px) {
+    .overview-lower .quick-access__list {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 18px;
+        padding-top: 16px;
+    }
+
+    .overview-lower .quick-access__list .quick-action {
+        padding: 14px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+    }
 }
 
 .quick-action {
