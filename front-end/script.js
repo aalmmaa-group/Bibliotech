@@ -25,7 +25,6 @@ const sidebarToggle = document.querySelector('#sidebarToggle');
 let pendingMessageTimer;
 let formMessageTimer;
 let loanMessageTimer;
-let collectionSearchTimer;
 const sessionCollectionBooks = []; //Array que aguarda tempoririamente o cadastro dos livros
 let collectionLoaded = false; //
 let renderCollectionCatalog = null;
@@ -174,6 +173,10 @@ function setupCalendarLayers() {
  * @param {'inicio'|'gestao'|'emprestimos'|'acervo'|'cadastro'|'relatorios'|'sobre'} view Tela que deve ser exibida.
  */
 function openView(view, { fromHistory = false, resetHistory = false } = {}) {
+  if (!loanPage.hidden && view !== 'emprestimos') {
+    clearLoanForm();
+    setLoanMessage('');
+  }
   document.querySelectorAll('.calendar-layer').forEach((calendar) => {
     calendar.hidden = true;
     calendar.parentElement.classList.remove('is-open');
@@ -537,34 +540,6 @@ function normalizeSearchText(value) {
     .replace(/[\u0300-\u036f]/g, '')
     .toLocaleLowerCase('pt-BR');
 }
-
-/** Mostra os resultados retornados pela busca sem inserir conteúdo como HTML. */
-function renderCollectionResults(resultsElement, books, message = '') {
-  resultsElement.replaceChildren();
-  resultsElement.hidden = false;
-
-  if (message || books.length === 0) {
-    const empty = document.createElement('p');
-    empty.className = 'collection-search__empty';
-    empty.textContent = message || 'Nenhum livro encontrado.';
-    resultsElement.append(empty);
-    return;
-  }
-
-  books.forEach((book) => {
-    const result = document.createElement('article');
-    result.className = 'collection-search__result';
-
-    const title = document.createElement('strong');
-    title.textContent = book.title;
-    const details = document.createElement('small');
-    details.textContent = `${book.author} · ${book.genre} · ${book.available}/${book.total} disponível(is)`;
-
-    result.append(title, details);
-    resultsElement.append(result);
-  });
-}
-
 
 //Função que possibilita carregar os livros cadastrados no acervo a partir doo banco de dados
 async function loadCollectionBooks() {
@@ -982,83 +957,6 @@ function setupBookEditModal() {
   modal.addEventListener('cancel', (event) => {
     event.preventDefault();
     closeModal();
-  });
-}
-
-/** Configura busca por título, autor ou gênero dos livros cadastrados. */
-function setupCollectionSearch() {
-  const form = document.querySelector('.collection-search__form');
-  const input = document.querySelector('#collectionSearchInput');
-  const filterButton = document.querySelector('#collectionSearchFilter');
-  const filterMenu = document.querySelector('#collectionSearchFilterMenu');
-  const filterOptions = [...filterMenu.querySelectorAll('[data-filter]')];
-  const results = document.querySelector('#collectionSearchResults');
-  let activeFilter = 'title';
-  const placeholderByFilter = {
-    title: 'Buscar por título',
-    author: 'Buscar por autor',
-    genre: 'Buscar por gênero'
-  };
-  const fieldByFilter = {
-    title: 'title',
-    author: 'author',
-    genre: 'genre'
-  };
-
-  const closeResults = () => {
-    results.hidden = true;
-    results.replaceChildren();
-  };
-
-  const setFilterMenuOpen = (isOpen) => {
-    filterMenu.hidden = !isOpen;
-    filterButton.setAttribute('aria-expanded', String(isOpen));
-  };
-
-  const searchBooks = async () => {
-    const term = normalizeSearchText(input.value.trim());
-    if (!term) {
-      closeResults();
-      return;
-    }
-
-    const field = fieldByFilter[activeFilter];
-    const filteredBooks = sessionCollectionBooks.filter((book) => normalizeSearchText(book[field]).includes(term));
-    const emptyMessage = sessionCollectionBooks.length === 0
-      ? 'Nenhum livro cadastrado nesta sessão.'
-      : '';
-    renderCollectionResults(results, filteredBooks, emptyMessage);
-  };
-
-  form.addEventListener('submit', (event) => event.preventDefault());
-  input.addEventListener('input', () => {
-    window.clearTimeout(collectionSearchTimer);
-    collectionSearchTimer = window.setTimeout(searchBooks, 180);
-  });
-  filterButton.addEventListener('click', (event) => {
-    event.stopPropagation();
-    setFilterMenuOpen(filterMenu.hidden);
-  });
-  filterOptions.forEach((option) => {
-    option.addEventListener('click', () => {
-      activeFilter = option.dataset.filter;
-      filterOptions.forEach((item) => {
-        item.setAttribute('aria-checked', String(item === option));
-      });
-      input.placeholder = placeholderByFilter[activeFilter];
-      setFilterMenuOpen(false);
-      if (input.value.trim()) searchBooks();
-      input.focus();
-    });
-  });
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') setFilterMenuOpen(false);
-  });
-  document.addEventListener('click', (event) => {
-    if (!event.target.closest('.collection-search__controls')) {
-      setFilterMenuOpen(false);
-      closeResults();
-    }
   });
 }
 
@@ -1513,7 +1411,7 @@ function setupLoanBorrowerType() {
     }
   }
 
-  const updateBorrowerType = () => {
+  const updateBorrowerType = ({ validate = true } = {}) => {
     const isStudent = loanForm.elements.borrowerType.value === 'student';
     loanForm.classList.toggle('is-non-student', !isStudent);
     classroomField.hidden = !isStudent;
@@ -1529,7 +1427,7 @@ function setupLoanBorrowerType() {
       classroomText.textContent = 'Não se aplica';
       classroomSelect.classList.add('has-value');
     }
-    classroomInput.dispatchEvent(new Event('input', { bubbles: true }));
+    if (validate) classroomInput.dispatchEvent(new Event('input', { bubbles: true }));
   };
 
   const setOpen = (isOpen) => {
@@ -1557,7 +1455,7 @@ function setupLoanBorrowerType() {
   });
 
   typeInputs.forEach((input) => input.addEventListener('change', updateBorrowerType));
-  loanForm.addEventListener('reset', () => window.setTimeout(updateBorrowerType));
+  loanForm.addEventListener('reset', () => window.setTimeout(() => updateBorrowerType({ validate: false })));
   updateBorrowerType();
 }
 
@@ -1711,7 +1609,9 @@ function setupLoanCalendar() {
 /** Prepara a validação progressiva do novo empréstimo. */
 function setupLoanForm() {
   loanForm.querySelectorAll('[required]').forEach((input) => {
-    if (input.type !== 'hidden') input.addEventListener('blur', () => validateLoanField(input));
+    if (input.type !== 'hidden') input.addEventListener('blur', () => {
+      if (!loanPage.hidden) validateLoanField(input);
+    });
     const validationEvent = input.name === 'returnDate' ? 'change' : 'input';
     input.addEventListener(validationEvent, () => {
       if (input.closest('label, .form-field').classList.contains('is-invalid')) validateLoanField(input);
@@ -1950,9 +1850,6 @@ function setupPendingActions() {
     button.addEventListener('click', () => showPending(`${button.dataset.pending} está em construção.`));
   });
 
-  document.querySelector('#viewHistoryButton').addEventListener('click', () => {
-    showPending('O histórico completo está em construção.');
-  });
   document.querySelector('#helpButton').addEventListener('click', () => {
     showPending('A central de ajuda está em construção.');
   });
@@ -2548,6 +2445,7 @@ function clearLoanForm({ focusName = false } = {}) {
   const returnDateCalendar = document.querySelector('#returnDateCalendar');
 
   loanForm.reset();
+  loanForm.querySelectorAll('input, select, textarea').forEach((control) => control.setCustomValidity(''));
   bookInput.dataset.bookId = '';
   returnDate.value = '';
   autocomplete?.replaceChildren();
@@ -3375,7 +3273,6 @@ function initializeApp() {
   setupNavigation(); // Controla a interface
   setupCollectionCatalog();// Configura a tabela do acervo. Renderiza os livros, atualiza os totais de livros disponíveis e emprestados e permite filtrar por gênero.
   setupBookEditModal(); // Controla a mini tela de atualização de livros no acervo.
-  setupCollectionSearch(); // Configura a busca de livros no acervo. Permite pesquisar por título, autor ou gênero e exibe os resultados encontrados. 
   loadCollectionBooks(); //Busca os livros através da API disponibilizada pelo preload
   setupNotifications(); //Controla o painel de notificações. Permite abrir, fechar, fechar ao clicar fora e fechar pressionando Escape.
   setupPendingActions(); //Configura botões de funcionalidades que ainda estão em construção, exibindo mensagens temporárias ao usuário.
