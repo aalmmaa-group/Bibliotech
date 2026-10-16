@@ -183,56 +183,7 @@
                     </article>
                 </div>
 
-                <section class="collection-search" aria-labelledby="collectionSearchTitle">
-                    <div class="collection-search__text">
-                        <h2 id="collectionSearchTitle">Consultar acervo</h2>
-                        <p>Busque por título, autor ou gênero entre os livros cadastrados.</p>
-                    </div>
-
-                    <div class="collection-search__controls">
-                        <div class="collection-search__filter">
-                            <button class="collection-search__filter-button" id="collectionSearchFilter" type="button" aria-label="Filtrar busca" aria-controls="collectionSearchFilterMenu" aria-expanded="false">
-                                <span>Filtrar</span>
-                            </button>
-                            <div class="collection-search__filter-menu" id="collectionSearchFilterMenu" role="menu" hidden>
-                                <button type="button" role="menuitemradio" data-filter="title" aria-checked="true">Título</button>
-                                <button type="button" role="menuitemradio" data-filter="author" aria-checked="false">Autor</button>
-                                <button type="button" role="menuitemradio" data-filter="genre" aria-checked="false">Gênero</button>
-                            </div>
-                        </div>
-
-                        <form class="collection-search__form" role="search">
-                            <label class="sr-only" for="collectionSearchInput">Buscar no acervo</label>
-                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                <circle cx="11" cy="11" r="6"/>
-                                <path d="m16 16 4 4"/>
-                            </svg>
-                            <input id="collectionSearchInput" type="search" placeholder="Buscar por título" autocomplete="off">
-                        </form>
-
-                        <section class="collection-search__results" id="collectionSearchResults" aria-live="polite" aria-label="Resultados da busca" hidden></section>
-                    </div>
-                </section>
-
                 <div class="overview-lower">
-                    <section class="recent-activity" aria-labelledby="recentActivityTitle">
-                        <header class="panel-heading">
-                            <div>
-                                <h2 id="recentActivityTitle">Movimentações recentes</h2>
-                                <p>Últimos registros da sala de leitura</p>
-                            </div>
-                            <button class="panel-link" id="viewHistoryButton" type="button">Ver histórico <span aria-hidden="true">→</span></button>
-                        </header>
-
-                        <div class="activity-list" id="recentActivityList" aria-live="polite">
-                            <div class="data-empty-state">
-                                <span class="data-empty-state__icon" aria-hidden="true">↔</span>
-                                <strong>Nenhuma movimentação carregada</strong>
-                                <p>Empréstimos e devoluções reais aparecerão aqui.</p>
-                            </div>
-                        </div>
-                    </section>
-
                     <section class="quick-access" aria-labelledby="quickAccessTitle">
                         <header class="panel-heading">
                             <div>
@@ -1100,7 +1051,6 @@
                 </div>
             </div>
             <footer class="report-modal__actions">
-                <button class="report-modal__secondary" type="button" data-report-close>Fechar</button>
                 <button class="pdf-action" type="button" data-pdf-demo aria-describedby="returnedMonthPdfStatus">
                     <span class="pdf-action__progress" aria-hidden="true"></span>
                     <span class="pdf-action__icon material-symbols-outlined" aria-hidden="true">picture_as_pdf</span>
@@ -1168,7 +1118,6 @@
                 </div>
             </div>
             <footer class="report-modal__actions">
-                <button class="report-modal__secondary" type="button" data-report-close>Fechar</button>
                 <button class="pdf-action" type="button" data-pdf-demo aria-describedby="loanedPdfStatus">
                     <span class="pdf-action__progress" aria-hidden="true"></span>
                     <span class="pdf-action__icon material-symbols-outlined" aria-hidden="true">picture_as_pdf</span>
@@ -1234,7 +1183,6 @@
                 </div>
             </div>
             <footer class="report-modal__actions">
-                <button class="report-modal__secondary" type="button" data-report-close>Fechar</button>
                 <button class="pdf-action" type="button" data-pdf-demo aria-describedby="topClassMonthPdfStatus">
                     <span class="pdf-action__progress" aria-hidden="true"></span>
                     <span class="pdf-action__icon material-symbols-outlined" aria-hidden="true">picture_as_pdf</span>
@@ -1302,7 +1250,6 @@
                 </div>
             </div>
             <footer class="report-modal__actions">
-                <button class="report-modal__secondary" type="button" data-report-close>Fechar</button>
                 <button class="pdf-action" type="button" data-pdf-demo aria-describedby="topBooksMonthPdfStatus">
                     <span class="pdf-action__progress" aria-hidden="true"></span>
                     <span class="pdf-action__icon material-symbols-outlined" aria-hidden="true">picture_as_pdf</span>
@@ -1369,7 +1316,6 @@
                 </div>
             </div>
             <footer class="report-modal__actions">
-                <button class="report-modal__secondary" type="button" data-report-close>Fechar</button>
                 <button class="pdf-action" type="button" data-pdf-demo aria-describedby="topBooksAllTimePdfStatus">
                     <span class="pdf-action__progress" aria-hidden="true"></span>
                     <span class="pdf-action__icon material-symbols-outlined" aria-hidden="true">picture_as_pdf</span>
@@ -1433,7 +1379,6 @@
                 <p>Este resumo usa os indicadores já disponíveis no sistema. As análises históricas serão incorporadas quando as consultas específicas estiverem prontas.</p>
             </div>
             <footer class="report-modal__actions">
-                <button class="report-modal__secondary" type="button" data-report-close>Fechar</button>
                 <button class="pdf-action" type="button" data-pdf-demo aria-describedby="generalPdfStatus">
                     <span class="pdf-action__progress" aria-hidden="true"></span>
                     <span class="pdf-action__icon material-symbols-outlined" aria-hidden="true">picture_as_pdf</span>
