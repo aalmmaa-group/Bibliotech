@@ -6639,7 +6639,9 @@ html[data-theme="dark"] .report-launcher:is(:hover, :focus-visible) {
 }
 
 .report-modal__card {
+    --report-card-padding: 26px;
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: 20px;
     max-height: calc(100vh - 32px);
     padding: 26px;
@@ -7027,10 +7029,17 @@ html[data-theme="dark"] .report-launcher:is(:hover, :focus-visible) {
 }
 
 .report-modal__actions {
+    position: sticky;
+    bottom: calc(-1 * var(--report-card-padding));
+    z-index: 2;
     display: flex;
     align-items: center;
     justify-content: flex-end;
+    flex-wrap: wrap;
     gap: 10px;
+    margin-bottom: calc(-1 * var(--report-card-padding));
+    padding-block: 12px var(--report-card-padding);
+    background: var(--surface);
 }
 
 .report-modal__secondary {
@@ -7623,7 +7632,7 @@ html[data-theme="dark"].is-theme-transitioning body::after {
     .report-launcher { grid-template-columns: auto minmax(0, 1fr); padding: 18px; }
     .report-launcher__arrow,
     .report-launcher__tag { grid-column: 2; justify-self: start; }
-    .report-modal__card { gap: 16px; padding: 18px; }
+    .report-modal__card { --report-card-padding: 18px; gap: 16px; padding: 18px; }
     .report-modal__summary,
     .report-modal--general .reports-metrics { grid-template-columns: 1fr; }
     .report-modal__table-head { display: none; }
