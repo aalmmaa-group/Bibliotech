@@ -1246,6 +1246,64 @@ html[data-theme="dark"] .theme-toggle__icon--sun {
     transform-origin: top right;
 }
 
+
+/* ===== To do Front: lista e botão ===== */
+.notification-panel__info {
+    display: flex;
+    flex-direction: column;
+    max-height: inherit; /* herda o limite do painel para a lista rolar */
+    min-height: 0;
+}
+
+.notification-panel__list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+/* itens gerados pelo JS (<p> ou <div>) */
+.notification-panel__list > * {
+    margin: 0;
+    padding: 14px 18px;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--primary-dark);
+    border-bottom: 1px solid var(--border);
+}
+
+.notification-panel__list > *:last-child {
+    border-bottom: 0;
+}
+
+.notification-panel__list > *:hover {
+    background: #f4fbfb;
+}
+
+#clearNotificationsButton {
+    width: 100%;
+    padding: 12px 18px;
+    border: 0;
+    border-top: 1px solid var(--border);
+    background: #f4fbfb;
+    color: var(--primary-dark);
+    font: inherit;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+#clearNotificationsButton:hover {
+    background: #e6f4f4;
+}
+
+#clearNotificationsButton:focus-visible {
+    outline: 2px solid var(--primary-dark);
+    outline-offset: -2px;
+}
+
+
 button.is-pressed {
     transform: translateY(1px) scale(0.98) !important;
 }
