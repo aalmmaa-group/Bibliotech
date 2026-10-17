@@ -14,6 +14,8 @@ function createWindow() {
     height: Math.min(820, availableHeight),
     minWidth: Math.min(760, availableWidth),
     minHeight: Math.min(520, availableHeight),
+    show: false,
+    backgroundColor: '#4154ff',
     autoHideMenuBar: true,
     icon: path.join(__dirname, 'build', 'icon.png'),
     webPreferences: {
@@ -24,6 +26,7 @@ function createWindow() {
     }
   })
 
+  win.once('ready-to-show', () => win.show());
   win.loadFile('front-end/index.html')
 }
 
@@ -38,6 +41,9 @@ ipcMain.handle('books:create', async (_event, book) => {
 });
 ipcMain.handle('books:update', async (event, dadosLivro) => {
   return atualizarLivro(dadosLivro);
+});
+ipcMain.handle('books:delete', async (_event, idLivro) => {
+  return excluirLivro(idLivro);
 });
 ipcMain.handle('loans:create', async (event, loanData) => {
   return realizarEmprestimo(loanData);
@@ -132,7 +138,7 @@ function atualizarLivro(dadosLivro) {
         quantidade_livros_total = ?, 
         quantidade_livros_disponiveis = ?, 
         observacao = ?
-      WHERE id_livro = ?
+      WHERE id_livro = ? AND ativo = 1
     `);
     
     // Executa a query injetando os dados exatos
@@ -155,6 +161,45 @@ function atualizarLivro(dadosLivro) {
   } catch (erro) {
     console.error("Erro ao atualizar o livro:", erro);
     return { ok: false, message: "Erro interno ao processar a edição." };
+  }
+}
+
+// Retira o livro do acervo visível, preservando o registro para o histórico.
+function excluirLivro(idLivro) {
+  if (!db || !db.db) {
+    return { ok: false, code: 'DB_UNAVAILABLE', message: 'O banco de dados está indisponível.' };
+  }
+
+  const id = Number(idLivro);
+  if (!Number.isInteger(id) || id <= 0) {
+    return { ok: false, code: 'VALIDATION_ERROR', message: 'Livro inválido para exclusão.' };
+  }
+
+  try {
+    const emprestimosAtivos = db.db.prepare(`
+      SELECT COUNT(*) AS total
+      FROM emprestimos
+      WHERE id_livro = ?
+        AND status_emprestimo IN ('emprestado', 'devolução pendente')
+    `).get(id).total;
+
+    if (emprestimosAtivos > 0) {
+      return {
+        ok: false,
+        code: 'BOOK_HAS_ACTIVE_LOANS',
+        message: 'Este livro possui empréstimo ativo. Registre a devolução antes de excluí-lo do acervo.'
+      };
+    }
+
+    const info = db.db.prepare('UPDATE livros SET ativo = 0 WHERE id_livro = ? AND ativo = 1').run(id);
+    if (info.changes === 0) {
+      return { ok: false, code: 'BOOK_NOT_FOUND', message: 'O livro não foi encontrado no acervo.' };
+    }
+
+    return { ok: true, code: 'SUCCESS', message: 'Livro excluído do acervo. O histórico foi preservado.' };
+  } catch (erro) {
+    console.error('Erro ao excluir o livro:', erro);
+    return { ok: false, code: 'DELETE_ERROR', message: 'Não foi possível excluir o livro.' };
   }
 }
 
@@ -196,7 +241,7 @@ function realizarEmprestimo(loanData) {
       const stmtAtualizarLivro = db.db.prepare(`
         UPDATE livros 
         SET quantidade_livros_disponiveis = quantidade_livros_disponiveis - 1 
-        WHERE id_livro = ? AND quantidade_livros_disponiveis > 0
+        WHERE id_livro = ? AND quantidade_livros_disponiveis > 0 AND ativo = 1
       `);
       
       const updateInfo = stmtAtualizarLivro.run(bookId);
@@ -349,7 +394,7 @@ function buscarLivrosPorNome(termoBusca) {
     const stmt = db.db.prepare(`
       SELECT id_livro, nome, quantidade_livros_disponiveis 
       FROM livros 
-      WHERE nome LIKE ? AND quantidade_livros_disponiveis > 0
+      WHERE nome LIKE ? AND quantidade_livros_disponiveis > 0 AND ativo = 1
       LIMIT 5
     `);
     
@@ -391,6 +436,7 @@ function listarLivros() {
         data_cadastro,
         observacao
       FROM livros
+      WHERE ativo = 1
       ORDER BY nome COLLATE NOCASE
     `).all();
 
@@ -485,11 +531,13 @@ function montarRelatorio(filtros = {}) {
     const acervoTotal = db.db.prepare(`
       SELECT SUM(quantidade_livros_total) AS acervoTotal
       FROM livros
+      WHERE ativo = 1
     `).get();
 
     const disponiveis = db.db.prepare(`
       SELECT SUM(quantidade_livros_disponiveis) AS disponiveis
       FROM livros
+      WHERE ativo = 1
     `).get();
 
     

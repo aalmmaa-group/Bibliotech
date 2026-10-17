@@ -8,7 +8,8 @@ contextBridge.exposeInMainWorld('bibliotech', {
 
     list: () => ipcRenderer.invoke('books:list'),
     search: (termo) => ipcRenderer.invoke('books:search', termo),
-    update: (data) => ipcRenderer.invoke('books:update', data)
+    update: (data) => ipcRenderer.invoke('books:update', data),
+    remove: (idLivro) => ipcRenderer.invoke('books:delete', idLivro)
   },
   loans: {
     /** Encaminha ao processo principal os emprestimo. */
