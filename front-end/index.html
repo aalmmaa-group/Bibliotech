@@ -4,14 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bibliotech</title>
-    <link rel="icon" type="image/svg+xml" href="assets/bibliotech-logo.svg?v=2">
-    <link rel="stylesheet" href="style.css/style.css?v=6">
+    <link rel="icon" type="image/png" href="assets/bibliotech-logo.png?v=3">
+    <link rel="stylesheet" href="style.css/style.css?v=7">
 </head>
-<body>
+<body class="is-loading" aria-busy="true">
+    <div class="app-loading-screen" id="appLoadingScreen" role="status" aria-label="Carregando o Bibliotech">
+        <img class="app-loading-screen__logo" src="assets/bibliotech-loading-logo.png" alt="Bibliotech">
+        <div class="app-loading-screen__dots" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+        <span class="sr-only">Carregando o Bibliotech</span>
+    </div>
+
     <aside class="sidebar" id="sidebar" aria-label="Menu principal">
         <button class="brand" id="brandHome" type="button" aria-label="Voltar à visão geral">
-            <img class="brand__icon" src="assets/bibliotech-logo.svg" alt="">
-            <img class="brand__wordmark" src="assets/bibliotech-brand-teal.png" alt="Bibliotech">
+            <img class="brand__icon" src="assets/bibliotech-logo.png" alt="">
+            <img class="brand__wordmark" src="assets/bibliotech-brand.png" alt="Bibliotech">
         </button>
 
         <button class="sidebar-toggle" id="sidebarToggle" type="button" aria-label="Recolher menu lateral" aria-controls="sidebar" aria-expanded="true">
@@ -98,7 +108,14 @@
 
                     <section class="notification-panel" id="notificationPanel" aria-labelledby="notificationPanelTitle" hidden>
                         <header class="notification-panel__header">
-                            <h2 id="notificationPanelTitle">Notificações</h2>
+                            <div>
+                                <span class="notification-panel__eyebrow">Central de avisos</span>
+                                <div class="notification-panel__title-row">
+                                    <h2 id="notificationPanelTitle">Notificações</h2>
+                                    <span class="notification-panel__count" id="notificationCount" aria-label="0 notificações" hidden>0</span>
+                                </div>
+                            </div>
+                            <button class="notification-panel__close material-symbols-outlined" id="notificationCloseButton" type="button" aria-label="Fechar notificações">close</button>
                         </header>
                         <div class="notification-panel__empty" id="notification-panel__empty">
                             <span class="notification-panel__icon" aria-hidden="true">
@@ -107,13 +124,15 @@
                                     <path d="M10 19h4"/>
                                 </svg>
                             </span>
-                            <strong>Nenhuma notificação</strong>
-                            <p>Quando houver novidades, elas aparecerão aqui.</p>
+                            <strong id="notificationEmptyTitle">Nenhuma notificação</strong>
+                            <p id="notificationEmptyDescription">Quando houver novidades, elas aparecerão aqui.</p>
                         </div>
                         <div class="notification-panel__info" id="notification-panel__info" hidden>
-                            <!-- Necessidade de aplicar o estilo - To do Front-->
-                             <div class="notification-panel__list" id="notification-panel-list"></div>
-                             <button id="clearNotificationsButton" type="button">Limpar notificações</button>
+                            <div class="notification-panel__list" id="notification-panel-list" role="list" aria-label="Avisos de devolução"></div>
+                            <footer class="notification-panel__footer">
+                                <span id="notificationSummary">Avisos pendentes</span>
+                                <button id="clearNotificationsButton" type="button">Limpar</button>
+                            </footer>
                         </div>
                     </section>
                 </div>
@@ -697,9 +716,8 @@
                         </p>
 
                         <div class="about-hero__signature" aria-label="Identidade do projeto">
-                            <img src="assets/bibliotech-logo.svg" alt="">
+                            <img class="about-hero__brand" src="assets/bibliotech-loading-logo.png" alt="Bibliotech">
                             <div>
-                                <strong>Bibliotech</strong>
                                 <span>Tecnologia a serviço da leitura</span>
                             </div>
                         </div>
@@ -873,15 +891,15 @@
                     <small>Calculado a partir dos empréstimos ativos.</small>
                 </label>
 
-                <label class="book-edit-modal__field book-edit-modal__field--wide">
+                <label class="book-edit-modal__field">
                     <span>Data de cadastro</span>
                     <input name="registeredAt" type="text" readonly aria-readonly="true">
                     <small>Informação preservada pelo sistema.</small>
                 </label>
 
-                <label class="book-edit-modal__field book-edit-modal__field--wide">
+                <label class="book-edit-modal__field">
                     <span>Observação</span>
-                    <textarea name="notes" rows="3" maxlength="500"></textarea>
+                    <textarea name="notes" rows="1" maxlength="500"></textarea>
                     <small></small>
                 </label>
             </div>
@@ -893,6 +911,40 @@
                 <button class="book-edit-modal__confirm" type="submit">
                     <span class="material-symbols-outlined" aria-hidden="true">save</span>
                     <span>Salvar alterações</span>
+                </button>
+            </footer>
+        </form>
+    </dialog>
+
+    <dialog class="deadline-modal book-delete-modal" id="bookDeleteModal" aria-labelledby="bookDeleteModalTitle">
+        <form class="deadline-modal__card book-delete-modal__card" id="bookDeleteForm" method="dialog">
+            <header class="deadline-modal__header">
+                <span class="deadline-modal__icon book-delete-modal__icon" aria-hidden="true">delete</span>
+                <div>
+                    <p>EXCLUSÃO DO ACERVO</p>
+                    <h2 id="bookDeleteModalTitle">Excluir livro</h2>
+                </div>
+                <button class="deadline-modal__close" type="button" data-book-delete-close aria-label="Fechar">close</button>
+            </header>
+
+            <div class="deadline-modal__loan book-delete-modal__book">
+                <span>Livro selecionado</span>
+                <strong id="bookDeleteTitle">Livro</strong>
+                <small id="bookDeleteAuthor">Autor</small>
+            </div>
+
+            <div class="book-delete-modal__notice">
+                <span class="material-symbols-outlined" aria-hidden="true">warning</span>
+                <p>O livro deixará de aparecer no acervo. Os empréstimos antigos permanecerão no histórico.</p>
+            </div>
+
+            <p class="book-delete-modal__message" id="bookDeleteMessage" role="status" aria-live="polite"></p>
+
+            <footer class="deadline-modal__actions">
+                <button class="deadline-modal__cancel" type="button" data-book-delete-close>Cancelar</button>
+                <button class="book-delete-modal__confirm" id="bookDeleteConfirmButton" type="submit">
+                    <span class="material-symbols-outlined" aria-hidden="true">delete</span>
+                    <span>Excluir livro</span>
                 </button>
             </footer>
         </form>
@@ -1395,6 +1447,6 @@
         </article>
     </dialog>
 
-    <script src="script.js?v=4"></script>
+    <script src="script.js?v=5"></script>
 </body>
 </html>

@@ -29,10 +29,12 @@ const sessionCollectionBooks = []; //Array que aguarda tempoririamente o cadastr
 let collectionLoaded = false; //
 let renderCollectionCatalog = null;
 const sessionActiveLoans = [];
+const dismissedNotificationKeys = new Set();
 let renderReturnsList = null;
 let openDeadlineModal = null;
 let openReturnModal = null;
 let openBookEditModal = null;
+let openBookDeleteModal = null;
 const viewHistory = ['inicio'];
 
 // Exemplos visuais exibidos somente quando não há empréstimos ativos no banco.
@@ -683,7 +685,24 @@ function setupCollectionCatalog() {
       editText.textContent = 'Editar';
       editButton.append(editIcon, editText);
       editButton.addEventListener('click', () => openBookEditModal?.(book, editButton));
-      actionsCell.append(editButton);
+
+      const deleteButton = document.createElement('button');
+      deleteButton.type = 'button';
+      deleteButton.className = 'catalog-delete-button';
+      deleteButton.setAttribute('aria-label', `Excluir ${book.title}`);
+      deleteButton.setAttribute('aria-haspopup', 'dialog');
+
+      const deleteIcon = document.createElement('span');
+      deleteIcon.className = 'material-symbols-outlined';
+      deleteIcon.setAttribute('aria-hidden', 'true');
+      deleteIcon.textContent = 'delete';
+
+      const deleteText = document.createElement('span');
+      deleteText.textContent = 'Excluir';
+      deleteButton.append(deleteIcon, deleteText);
+      deleteButton.addEventListener('click', () => openBookDeleteModal?.(book, deleteButton));
+
+      actionsCell.append(editButton, deleteButton);
       row.append(actionsCell);
       tableBody.append(row);
     });
@@ -960,18 +979,102 @@ function setupBookEditModal() {
   });
 }
 
+/** Controla a confirmação e retira o livro do acervo sem apagar seu histórico. */
+function setupBookDeleteModal() {
+  const modal = document.querySelector('#bookDeleteModal');
+  const form = document.querySelector('#bookDeleteForm');
+  const title = document.querySelector('#bookDeleteTitle');
+  const author = document.querySelector('#bookDeleteAuthor');
+  const message = document.querySelector('#bookDeleteMessage');
+  const confirmButton = document.querySelector('#bookDeleteConfirmButton');
+  const closeButtons = [...modal.querySelectorAll('[data-book-delete-close]')];
+  let selectedBook = null;
+  let triggerButton = null;
+
+  const resetConfirmButton = () => {
+    confirmButton.disabled = false;
+    confirmButton.removeAttribute('aria-busy');
+    confirmButton.querySelector('span:last-child').textContent = 'Excluir livro';
+  };
+
+  const closeModal = ({ restoreFocus = true } = {}) => {
+    if (!modal.open) return;
+    modal.close();
+    selectedBook = null;
+    resetConfirmButton();
+    if (restoreFocus) triggerButton?.focus();
+    triggerButton = null;
+  };
+
+  openBookDeleteModal = (book, button) => {
+    selectedBook = book;
+    triggerButton = button;
+    title.textContent = book.title || 'Livro sem título';
+    author.textContent = book.author || 'Autor não informado';
+    message.textContent = '';
+    resetConfirmButton();
+    modal.showModal();
+    closeButtons.at(-1)?.focus();
+  };
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!selectedBook || confirmButton.disabled) return;
+
+    confirmButton.disabled = true;
+    confirmButton.setAttribute('aria-busy', 'true');
+    confirmButton.querySelector('span:last-child').textContent = 'Excluindo...';
+    message.textContent = '';
+
+    try {
+      const response = await window.bibliotech?.books?.remove(selectedBook.id);
+      if (!response?.ok) {
+        message.textContent = response?.message || 'Não foi possível excluir o livro do acervo.';
+        resetConfirmButton();
+        return;
+      }
+
+      closeModal({ restoreFocus: false });
+      await loadCollectionBooks();
+      carregarVisaoGeral();
+      showPending(response.message);
+    } catch (error) {
+      console.error('Erro ao excluir o livro do acervo:', error);
+      message.textContent = 'Não foi possível comunicar com o banco de dados.';
+      resetConfirmButton();
+    }
+  });
+
+  closeButtons.forEach((button) => button.addEventListener('click', () => closeModal()));
+  modal.addEventListener('click', (event) => {
+    if (event.target === modal) closeModal();
+  });
+  modal.addEventListener('cancel', (event) => {
+    event.preventDefault();
+    closeModal();
+  });
+}
+
 /** Abre e fecha exclusivamente o painel acionado pelo botão de notificações. */
 function setupNotifications() {
   const setPanelOpen = (isOpen) => {
     notificationPanel.hidden = !isOpen;
     notificationButton.setAttribute('aria-expanded', String(isOpen));
 
-    if (isOpen) replayEntranceAnimation(notificationPanel);
+    if (isOpen) {
+      replayEntranceAnimation(notificationPanel);
+      notificationItens();
+    }
   };
 
   notificationButton.addEventListener('click', (event) => {
     event.stopPropagation();
     setPanelOpen(notificationPanel.hidden);
+  });
+
+  document.querySelector('#notificationCloseButton')?.addEventListener('click', () => {
+    setPanelOpen(false);
+    notificationButton.focus();
   });
 
   notificationPanel.addEventListener('click', (event) => event.stopPropagation());
@@ -982,87 +1085,133 @@ function setupNotifications() {
     notificationButton.focus();
   });
 }
-async function notificationItens(){
-  const painelEmpty = document.querySelector('#notification-panel__empty')
-  const notificationPainel= document.querySelector('#notification-panel__info')
-  const notificationList = document.getElementById('notification-panel-list');
-  const notificationDot = document.getElementById('notification__dot');
-  
-    try{
-      const response  = await window.bibliotech.notifications.listItens();
-      if (!response.ok) {
-          console.error('Erro ao carregar notificações:',response.message);
-            return;
-        }
 
-        const itens = response.payload;
-        notificationList.replaceChildren();
-        if (itens.length === 0) {
-            painelEmpty.hidden = false;
-            notificationPainel.hidden = true;
-            return;
-        }else{
-            painelEmpty.hidden = true;
-            notificationPainel.hidden = false;
-            notificationDot.hidden = false;
+function getNotificationKey(item) {
+  return [
+    item.nome_livro,
+    item.nome_solicitante,
+    item.tipo_solicitante,
+    item.turma_serie,
+    item.data_devolucao_prevista
+  ].map((value) => String(value ?? '')).join('|');
+}
 
-            itens.forEach((emprestimo) => {
-                const item = document.createElement('article');
-                item.className = 'notification-panel-item';
-            
-                const notificacao = document.createElement('p');
-                notificacao.className =
-                    'notification-panel-item__detail';
-            
-                const data = formatarData(
-                    emprestimo.data_devolucao_prevista
-                );
-              
-                let mensagem;
+function showNotificationEmptyState(title = 'Nenhuma notificação', description = 'Quando houver novidades, elas aparecerão aqui.') {
+  const emptyState = document.querySelector('#notification-panel__empty');
+  const notificationInfo = document.querySelector('#notification-panel__info');
+  const notificationList = document.querySelector('#notification-panel-list');
+  const notificationDot = document.querySelector('#notification__dot');
+  const notificationCount = document.querySelector('#notificationCount');
 
-                if (emprestimo.tipo_solicitante == 'aluno') {
-                    mensagem =
-                        `O livro ${emprestimo.nome_livro}, ` +
-                        `emprestado pelo aluno(a) ${emprestimo.nome_solicitante}, ` +
-                        `da turma ${emprestimo.turma_serie}, ` +
-                        `deve ser devolvido amanhã (${data}).`;
-                } else {
-                    mensagem =
-                        `O livro ${emprestimo.nome_livro}, ` +
-                        `emprestado por ${emprestimo.nome_solicitante}, ` +
-                        `deve ser devolvido amanhã (${data}).`;
-                }
-              
-                notificacao.textContent = mensagem;
-              
-                item.appendChild(notificacao);
-                notificationList.appendChild(item);
-            });
-        }
+  notificationList.replaceChildren();
+  document.querySelector('#notificationEmptyTitle').textContent = title;
+  document.querySelector('#notificationEmptyDescription').textContent = description;
+  emptyState.hidden = false;
+  notificationInfo.hidden = true;
+  notificationDot.hidden = true;
+  notificationCount.textContent = '0';
+  notificationCount.hidden = true;
+  notificationCount.setAttribute('aria-label', '0 notificações');
+}
 
-    }catch(error){
-      console.error('Erro ao buscar notificações:', error);
+function createNotificationItem(loan) {
+  const item = document.createElement('article');
+  const icon = document.createElement('span');
+  const content = document.createElement('div');
+  const title = document.createElement('strong');
+  const detail = document.createElement('p');
+  const meta = document.createElement('div');
+  const borrower = document.createElement('span');
+  const dueDate = document.createElement('time');
+  const key = getNotificationKey(loan);
+  const rawDate = String(loan.data_devolucao_prevista ?? '').slice(0, 10);
+  const studentClass = loan.tipo_solicitante === 'aluno' && loan.turma_serie
+    ? ` · ${loan.turma_serie}`
+    : '';
+
+  item.className = 'notification-panel-item';
+  item.dataset.notificationKey = key;
+  item.setAttribute('role', 'listitem');
+
+  icon.className = 'notification-panel-item__icon material-symbols-outlined';
+  icon.setAttribute('aria-hidden', 'true');
+  icon.textContent = 'event_upcoming';
+
+  content.className = 'notification-panel-item__content';
+  title.className = 'notification-panel-item__title';
+  title.textContent = 'Devolução amanhã';
+  detail.className = 'notification-panel-item__detail';
+  detail.textContent = `“${loan.nome_livro || 'Livro não informado'}” precisa ser devolvido.`;
+
+  meta.className = 'notification-panel-item__meta';
+  borrower.textContent = `${loan.nome_solicitante || 'Leitor não informado'}${studentClass}`;
+  dueDate.dateTime = rawDate;
+  dueDate.textContent = formatarData(loan.data_devolucao_prevista);
+  meta.append(borrower, dueDate);
+  content.append(title, detail, meta);
+  item.append(icon, content);
+
+  return item;
+}
+
+function renderNotificationItems(items) {
+  const emptyState = document.querySelector('#notification-panel__empty');
+  const notificationInfo = document.querySelector('#notification-panel__info');
+  const notificationList = document.querySelector('#notification-panel-list');
+  const notificationDot = document.querySelector('#notification__dot');
+  const notificationCount = document.querySelector('#notificationCount');
+  const notificationSummary = document.querySelector('#notificationSummary');
+  const count = items.length;
+
+  notificationList.replaceChildren(...items.map(createNotificationItem));
+  emptyState.hidden = true;
+  notificationInfo.hidden = false;
+  notificationDot.hidden = false;
+  notificationCount.hidden = false;
+  notificationCount.textContent = String(count);
+  notificationCount.setAttribute('aria-label', `${count} ${count === 1 ? 'notificação' : 'notificações'}`);
+  notificationSummary.textContent = `${count} ${count === 1 ? 'aviso pendente' : 'avisos pendentes'}`;
+}
+
+async function notificationItens() {
+  try {
+    const response = await window.bibliotech.notifications.listItens();
+
+    if (!response.ok) {
+      console.error('Erro ao carregar notificações:', response.message);
+      showNotificationEmptyState('Não foi possível carregar', 'Tente abrir as notificações novamente.');
+      return;
     }
+
+    const items = Array.isArray(response.payload)
+      ? response.payload.filter((item) => !dismissedNotificationKeys.has(getNotificationKey(item)))
+      : [];
+
+    if (items.length === 0) {
+      showNotificationEmptyState();
+      return;
+    }
+
+    renderNotificationItems(items);
+  } catch (error) {
+    console.error('Erro ao buscar notificações:', error);
+    showNotificationEmptyState('Não foi possível carregar', 'Tente abrir as notificações novamente.');
+  }
 }
 
 function formatarData(data) {
-    const [ano, mes, dia] = data.slice(0, 10).split('-');
-    return `${dia}/${mes}/${ano}`;
+  const normalizedDate = String(data ?? '').slice(0, 10);
+  const [ano, mes, dia] = normalizedDate.split('-');
+
+  if (!ano || !mes || !dia) return 'Data não informada';
+  return `${dia}/${mes}/${ano}`;
 }
 
 function clearNotifications() {
-    const notificationList = document.getElementById('notification-panel-list');
-    const painelEmpty = document.getElementById('notification-panel__empty');
-    const notificationPainel = document.getElementById('notification-panel__info');
-    const notificationDot = document.getElementById('notification__dot');
-
-    notificationList.replaceChildren();
-    painelEmpty.hidden = false;
-    notificationPainel.hidden = true;
-
-    if (notificationDot) {
-        notificationDot.hidden = true;
-    }
+  document.querySelectorAll('#notification-panel-list [data-notification-key]').forEach((item) => {
+    dismissedNotificationKeys.add(item.dataset.notificationKey);
+  });
+  showNotificationEmptyState('Tudo certo por aqui', 'Você limpou todos os avisos atuais.');
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -3266,6 +3415,41 @@ document.querySelector('#topBooksAllTimeReportModal .pdf-action')?.addEventListe
   await exportarModalParaPDF('topBooksAllTimeReportModal', 'Ranking Histórico - Top 10 Livros Mais Lidos');
 });
 
+/**
+ * Mantém a identidade de abertura visível por tempo suficiente para ser percebida
+ * e a remove com uma transição curta assim que a janela termina de carregar.
+ */
+function setupLoadingScreen() {
+  const loadingScreen = document.getElementById('appLoadingScreen');
+  if (!loadingScreen) return;
+
+  const startedAt = performance.now();
+  const minimumDuration = 2000;
+  let isDismissed = false;
+
+  const dismiss = () => {
+    if (isDismissed) return;
+    isDismissed = true;
+
+    const remainingTime = Math.max(0, minimumDuration - (performance.now() - startedAt));
+    window.setTimeout(() => {
+      loadingScreen.classList.add('is-leaving');
+      document.body.classList.remove('is-loading');
+      document.body.removeAttribute('aria-busy');
+      window.setTimeout(() => loadingScreen.remove(), 420);
+    }, remainingTime);
+  };
+
+  if (document.readyState === 'complete') {
+    requestAnimationFrame(dismiss);
+  } else {
+    window.addEventListener('load', dismiss, { once: true });
+  }
+
+  // Evita prender a interface caso algum recurso opcional demore para responder.
+  window.setTimeout(dismiss, 4000);
+}
+
 /** Inicializa os eventos após o carregamento do HTML. */
 function initializeApp() {
   setupThemeToggle(); // Alterna entre os temas claro e escuro e salva a preferência.
@@ -3273,6 +3457,7 @@ function initializeApp() {
   setupNavigation(); // Controla a interface
   setupCollectionCatalog();// Configura a tabela do acervo. Renderiza os livros, atualiza os totais de livros disponíveis e emprestados e permite filtrar por gênero.
   setupBookEditModal(); // Controla a mini tela de atualização de livros no acervo.
+  setupBookDeleteModal(); // Controla a confirmação e retira livros do acervo preservando o histórico.
   loadCollectionBooks(); //Busca os livros através da API disponibilizada pelo preload
   setupNotifications(); //Controla o painel de notificações. Permite abrir, fechar, fechar ao clicar fora e fechar pressionando Escape.
   setupPendingActions(); //Configura botões de funcionalidades que ainda estão em construção, exibindo mensagens temporárias ao usuário.
@@ -3302,4 +3487,5 @@ function initializeApp() {
   loanForm.addEventListener('submit', handleLoanSubmit);
 }
 
+setupLoadingScreen();
 initializeApp();

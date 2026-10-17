@@ -19,7 +19,8 @@ setUpDataBase(){
             quantidade_livros_total INTEGER NOT NULL DEFAULT 1 CHECK (quantidade_livros_total >= 0),
             quantidade_livros_disponiveis INTEGER NOT NULL DEFAULT 1 CHECK (quantidade_livros_disponiveis >= 0),
             data_cadastro TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
-            observacao TEXT
+            observacao TEXT,
+            ativo INTEGER NOT NULL DEFAULT 1 CHECK (ativo IN (0, 1))
         );
 
         CREATE TABLE IF NOT EXISTS emprestimos(
@@ -34,7 +35,15 @@ setUpDataBase(){
             status_emprestimo TEXT NOT NULL DEFAULT 'emprestado' CHECK (status_emprestimo IN ('emprestado', 'devolvido', 'devolução pendente'))
         );
     `);
+    this.migrarTabelaLivros();
     this.migrarTabelaEmprestimos();
+}
+
+migrarTabelaLivros() {
+    const colunas = this.db.prepare('PRAGMA table_info(livros)').all();
+    if (!colunas.some((coluna) => coluna.name === 'ativo')) {
+        this.db.exec('ALTER TABLE livros ADD COLUMN ativo INTEGER NOT NULL DEFAULT 1 CHECK (ativo IN (0, 1))');
+    }
 }
 
 
