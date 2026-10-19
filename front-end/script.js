@@ -2095,6 +2095,30 @@ function setupBookAutocomplete() {
   });
 }
 
+//Função que chama o back-end via Electron IPC
+async function AlteracaoDataDevolucao(idEmprestimo, novaData) {
+  try {
+    if (!window.bibliotech || !window.bibliotech.loans.updateDate) {
+      console.error("Função updateDate não encontrada na ponte IPC.");
+      alert("Erro de sistema: Funcionalidade de alteração indisponível.");
+      return { ok: false };
+    }
+
+    const resposta = await window.bibliotech.loans.updateDate(idEmprestimo, novaData);
+
+    if (resposta && resposta.ok) {
+      return resposta;
+    } else {
+      alert(`Erro: ${resposta?.message || 'Não foi possível alterar a data.'}`);
+      return resposta;
+    }
+  } catch (erro) {
+    console.error("Erro inesperado ao alterar a data de devolução:", erro);
+    alert("Ocorreu um erro inesperado ao processar a renovação.");
+    return { ok: false };
+  }
+}
+
 
 /** Configura a mini tela usada para escolher e confirmar um novo prazo. */
 function setupDeadlineExtensionModal() {
@@ -2290,19 +2314,33 @@ function setupDeadlineExtensionModal() {
     if (modal.open && !event.target.closest('.deadline-date-picker')) setCalendarOpen(false);
   });
 
-  form.addEventListener('submit', (event) => {
-    event.preventDefault();
-    if (!selectedLoan || !dateInput.value) {
-      dateInput.setCustomValidity('Escolha uma nova data para continuar.');
-      dateHelp.textContent = 'Escolha uma nova data para continuar.';
-      dateButton.classList.add('is-invalid');
-      dateButton.focus();
-      return;
-    }
+  form.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  
+  if (!selectedLoan || !dateInput.value) {
+    dateInput.setCustomValidity('Escolha uma nova data para continuar.');
+    dateHelp.textContent = 'Escolha uma nova data para continuar.';
+    dateButton.classList.add('is-invalid');
+    dateButton.focus();
+    return;
+  }
 
-    selectedLoan.expectedReturnDate = dateInput.value;
-    notifyReturnsUpdated();
+  const idEmprestimo = selectedLoan.id || selectedLoan.id_emprestimo;
+  const novaData = dateInput.value;
+
+  try {
+    // Chama a função assíncrona que comunica com o back-end via IPC
+    await AlteracaoDataDevolucao(Number(idEmprestimo), novaData);
+
+    // Atualiza a interface local e fecha o modal após sucesso
+    selectedLoan.expectedReturnDate = novaData;
+    if (typeof notifyReturnsUpdated === 'function') {
+      notifyReturnsUpdated();
+    }
     closeModal();
+    } catch (erro) {
+      console.error("Erro ao submeter a alteração de prazo:", erro);
+    }
   });
 
   closeButtons.forEach((button) => button.addEventListener('click', closeModal));
@@ -3287,7 +3325,6 @@ async function livrosMaisLidosDoMes() {
 async function exportarModalParaPDF(modalId, tituloRelatorio) {
   const modal = document.getElementById(modalId);
   if (!modal) {
-    console.error(`Modal '${modalId}' não foi encontrado.`);
     return;
   }
 
@@ -3481,8 +3518,12 @@ function initializeApp() {
   notificationItens();
   carregarRelatorio();
   livrosMaisLidosGeral();
+  livrosMaisLidosDoMes();
   turmaDestaque();
   carregarVisaoGeral();
+  devolucoesDoMes();
+  emprestimosDoMes();
+  exportarModalParaPDF();
   bookForm.addEventListener('submit', handleBookSubmit);
   loanForm.addEventListener('submit', handleLoanSubmit);
 }

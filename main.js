@@ -367,7 +367,6 @@ function alterarDataDevolucao(idEmprestimo, novaData) {
     
     const info = stmt.run(novaData, idEmprestimo);
 
-    // Se nenhuma linha foi alterada (changes === 0), o ID não existe ou o livro já foi devolvido
     if (info.changes === 0) {
       return { 
         ok: false, 
@@ -383,7 +382,6 @@ function alterarDataDevolucao(idEmprestimo, novaData) {
   }
 }
 
-// Crie o ouvinte para o front-end acessar
 ipcMain.handle('loans:updateDate', async (event, idEmprestimo, novaData) => {
   return alterarDataDevolucao(idEmprestimo, novaData);
 });
