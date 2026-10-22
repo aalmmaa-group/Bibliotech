@@ -3331,9 +3331,21 @@ async function exportarModalParaPDF(modalId, tituloRelatorio) {
 
   // Extrai os dados dos cartões de resumo
   let summaryHTML = '<div class="summary">';
+
+  // O período fica fora dos cartões de resumo na tela. Incluímos esse dado no
+  // PDF com um rótulo explícito para não capturar o nome interno dos ícones.
+  const periodoRelatorio = modal.querySelector('[data-report-current-month]')?.textContent?.trim();
+  if (periodoRelatorio && periodoRelatorio !== '—') {
+    summaryHTML += `
+      <div class="card">
+        <span>Período</span>
+        <strong>${periodoRelatorio}</strong>
+      </div>
+    `;
+  }
   
   // Procura por todos os tipos de cartões possíveis
-  const summaryItems = modal.querySelectorAll('.report-metric-card, .report-modal__summary > div, .report-modal__card');
+  const summaryItems = modal.querySelectorAll('.report-metric-card, .report-modal__summary > div');
 
   if (summaryItems.length > 0) {
     summaryItems.forEach(item => {

@@ -703,13 +703,45 @@ async function geradorPDF(ipcEvent, dados) {
         <meta charset="UTF-8">
         <title>${titulo}</title>
         <style>
-          body { font-family: Arial, sans-serif; padding: 30px; color: #1a1a1a; }
-          h1 { font-size: 22px; margin-bottom: 5px; color: #0d1b2a; }
-          .meta-info { font-size: 11px; color: #666; margin-bottom: 25px; border-bottom: 1px solid #ddd; padding-bottom: 8px; }
-          .summary { display: flex; gap: 15px; margin-bottom: 25px; }
-          .card { border: 1px solid #e0e0e0; padding: 12px 16px; border-radius: 6px; flex: 1; background-color: #f9fbfd; }
-          .card span { font-size: 11px; color: #555; text-transform: uppercase; display: block; margin-bottom: 4px; }
-          .card strong { font-size: 18px; color: #111; }
+          body { font-family: Arial, sans-serif; padding: 26px; color: #1a1a1a; }
+          h1 { font-size: 20px; margin: 0 0 5px; color: #0d1b2a; }
+          .meta-info { font-size: 10px; color: #666; margin-bottom: 20px; border-bottom: 1px solid #ddd; padding-bottom: 8px; }
+          .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+            align-items: stretch;
+            gap: 9px;
+            margin-bottom: 20px;
+          }
+          .card {
+            display: flex;
+            min-width: 0;
+            min-height: 68px;
+            flex-direction: column;
+            justify-content: flex-start;
+            padding: 9px 11px;
+            background-color: #f9fbfd;
+            border: 1px solid #dfe5ea;
+            border-radius: 7px;
+            break-inside: avoid;
+          }
+          .card span {
+            display: flex;
+            min-height: 20px;
+            align-items: flex-start;
+            margin-bottom: 3px;
+            color: #52606d;
+            font-size: 8px;
+            font-weight: 600;
+            line-height: 1.2;
+            text-transform: uppercase;
+          }
+          .card strong {
+            color: #111827;
+            font-size: 14px;
+            line-height: 1.2;
+            overflow-wrap: anywhere;
+          }
           table { width: 100%; border-collapse: collapse; margin-top: 10px; }
           th, td { border: 1px solid #e2e8f0; padding: 10px 12px; text-align: left; font-size: 12px; }
           th { background-color: #f1f5f9; font-weight: bold; color: #334155; text-transform: uppercase; font-size: 10px; }
