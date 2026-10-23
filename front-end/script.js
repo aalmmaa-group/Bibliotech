@@ -1140,7 +1140,19 @@ function createNotificationItem(loan) {
 
   content.className = 'notification-panel-item__content';
   title.className = 'notification-panel-item__title';
-  title.textContent = 'Devolução amanhã';
+  
+  const hoje = new Date();
+  const ano = hoje.getFullYear();
+  const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+  const dia = String(hoje.getDate()).padStart(2, '0');
+  const dataHojeStr = `${ano}-${mes}-${dia}`;
+
+  if (rawDate === dataHojeStr) {
+    title.textContent = 'Devolução hoje';
+  } else {
+    title.textContent = 'Devolução amanhã';
+  }
+
   detail.className = 'notification-panel-item__detail';
   detail.textContent = `“${loan.nome_livro || 'Livro não informado'}” precisa ser devolvido.`;
 

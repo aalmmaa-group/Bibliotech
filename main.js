@@ -756,7 +756,7 @@ async function geradorPDF(ipcEvent, dados) {
         FROM emprestimos e
         JOIN livros l on l.id_livro = e.id_livro
         WHERE e.status_emprestimo IN ('emprestado', 'devolução pendente') 
-        AND (date(e.data_devolucao_prevista) = date('now', 'localtime', '+1 days'))`).all()
+        AND (date(e.data_devolucao_prevista) = date('now', 'localtime', '+1 days') OR date(e.data_devolucao_prevista) = date('now', 'localtime'))`).all()
 
       return {
       ok: true,
