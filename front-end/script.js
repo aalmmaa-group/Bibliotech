@@ -1037,6 +1037,7 @@ function setupBookDeleteModal() {
       closeModal({ restoreFocus: false });
       await loadCollectionBooks();
       carregarVisaoGeral();
+      await atualizarRelatorios();
       showPending(response.message);
     } catch (error) {
       console.error('Erro ao excluir o livro do acervo:', error);
