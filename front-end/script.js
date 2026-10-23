@@ -1147,7 +1147,17 @@ function createNotificationItem(loan) {
   const dia = String(hoje.getDate()).padStart(2, '0');
   const dataHojeStr = `${ano}-${mes}-${dia}`;
 
-  if (rawDate === dataHojeStr) {
+  // Data de Ontem
+  const ontem = new Date(hoje);
+  ontem.setDate(hoje.getDate() - 1);
+  const dataOntemStr = `${ontem.getFullYear()}-${String(ontem.getMonth() + 1).padStart(2, '0')}-${String(ontem.getDate()).padStart(2, '0')}`;
+
+  if (rawDate === dataOntemStr) {
+    title.textContent = 'Venceu ontem';
+    title.style.color = '#d32f2f'; 
+    icon.textContent = 'warning'; // Muda o ícone para um alerta
+    icon.style.color = '#d32f2f';  
+  } else if (rawDate === dataHojeStr) {
     title.textContent = 'Devolução hoje';
   } else {
     title.textContent = 'Devolução amanhã';
