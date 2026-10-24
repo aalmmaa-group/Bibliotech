@@ -175,6 +175,9 @@ function setupCalendarLayers() {
  * @param {'inicio'|'gestao'|'emprestimos'|'acervo'|'cadastro'|'relatorios'|'sobre'} view Tela que deve ser exibida.
  */
 function openView(view, { fromHistory = false, resetHistory = false } = {}) {
+  if (!registrationPage.hidden && view !== 'cadastro') {
+    clearBookForm();
+  }
   if (!loanPage.hidden && view !== 'emprestimos') {
     clearLoanForm();
     setLoanMessage('');
@@ -1332,14 +1335,20 @@ function clearBookFormErrors() {
   });
 }
 
+/** Descarta o rascunho e restaura o cadastro, incluindo o seletor de gênero. */
+function clearBookForm() {
+  bookForm.reset();
+  bookForm.querySelectorAll('input, select, textarea').forEach((control) => control.setCustomValidity(''));
+  clearBookFormErrors();
+  setFormMessage('');
+}
+
 /** Limpa o cadastro em andamento sem sair da tela. */
 function setupBookFormCancel() {
   const clearButton = bookForm.querySelector('[data-book-clear]');
 
   clearButton.addEventListener('click', () => {
-    bookForm.reset();
-    clearBookFormErrors();
-    setFormMessage('');
+    clearBookForm();
     bookForm.elements.title.focus();
   });
 }
@@ -1347,7 +1356,9 @@ function setupBookFormCancel() {
 /** Revalida um campo destacado assim que o usuário começa a corrigi-lo. */
 function setupBookFormValidation() {
   bookForm.querySelectorAll('[required]').forEach((input) => {
-    input.addEventListener('blur', () => validateBookField(input));
+    input.addEventListener('blur', () => {
+      if (!registrationPage.hidden) validateBookField(input);
+    });
     input.addEventListener('input', () => {
       if (input.closest('label, .form-field').classList.contains('is-invalid')) validateBookField(input);
     });
@@ -1445,7 +1456,7 @@ function setupGenreSelect() {
   optionsPanel.addEventListener('click', (event) => event.stopPropagation());
   document.addEventListener('click', () => setOpen(false));
   otherInput.addEventListener('blur', () => {
-    if (otherInput.required) validateBookField(otherInput);
+    if (!registrationPage.hidden && otherInput.required) validateBookField(otherInput);
   });
   otherInput.addEventListener('input', () => {
     if (otherInput.closest('label').classList.contains('is-invalid')) validateBookField(otherInput);
