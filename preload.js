@@ -24,6 +24,10 @@ contextBridge.exposeInMainWorld('bibliotech', {
   },
   notifications: {
     listItens: () => ipcRenderer.invoke('notification:listItens')
+  },
+  help: {
+    openManual: () => ipcRenderer.invoke('help:openManual'),
+    openWrittenManual: () => ipcRenderer.invoke('help:openWrittenManual')
   }
   
 });

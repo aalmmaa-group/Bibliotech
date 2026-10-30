@@ -11,6 +11,7 @@ const loanPage = document.querySelector('#loanPage');
 const registrationPage = document.querySelector('#registrationPage');
 const collectionPage = document.querySelector('#collectionPage');
 const reportsPage = document.querySelector('#reportsPage');
+const helpPage = document.querySelector('#helpPage');
 const aboutPage = document.querySelector('#aboutPage');
 const pageTitle = document.querySelector('#pageTitle');
 const breadcrumbCurrent = document.querySelector('#breadcrumbCurrent');
@@ -172,7 +173,7 @@ function setupCalendarLayers() {
 
 /**
  * Alterna a tela visível da aplicação.
- * @param {'inicio'|'gestao'|'emprestimos'|'acervo'|'cadastro'|'relatorios'|'sobre'} view Tela que deve ser exibida.
+ * @param {'inicio'|'gestao'|'emprestimos'|'acervo'|'cadastro'|'relatorios'|'ajuda'|'sobre'} view Tela que deve ser exibida.
  */
 function openView(view, { fromHistory = false, resetHistory = false } = {}) {
   if (!loanPage.hidden && view !== 'emprestimos') {
@@ -196,6 +197,7 @@ function openView(view, { fromHistory = false, resetHistory = false } = {}) {
   collectionPage.hidden = view !== 'acervo';
   registrationPage.hidden = view !== 'cadastro';
   reportsPage.hidden = view !== 'relatorios';
+  helpPage.hidden = view !== 'ajuda';
   aboutPage.hidden = view !== 'sobre';
 
   const titleByView = {
@@ -205,6 +207,7 @@ function openView(view, { fromHistory = false, resetHistory = false } = {}) {
     acervo: 'Acervo',
     cadastro: 'Cadastro de livro',
     relatorios: 'Relatórios',
+    ajuda: 'Ajuda',
     sobre: 'Sobre'
   };
   const title = titleByView[view];
@@ -221,6 +224,8 @@ function openView(view, { fromHistory = false, resetHistory = false } = {}) {
       ? 'Acervo'
       : view === 'relatorios'
         ? 'Relatórios'
+      : view === 'ajuda'
+        ? null
       : view === 'sobre'
         ? 'Sobre'
         : 'Gestão';
@@ -235,6 +240,7 @@ function openView(view, { fromHistory = false, resetHistory = false } = {}) {
     acervo: collectionPage,
     cadastro: registrationPage,
     relatorios: reportsPage,
+    ajuda: helpPage,
     sobre: aboutPage
   };
   const visiblePage = pageByView[view];
@@ -2022,9 +2028,18 @@ function setupPendingActions() {
     button.addEventListener('click', () => showPending(`${button.dataset.pending} está em construção.`));
   });
 
-  document.querySelector('#helpButton').addEventListener('click', () => {
-    showPending('A central de ajuda está em construção.');
+  document.querySelector('#helpButton').addEventListener('click', () => openView('ajuda'));
+
+  document.querySelector('#openHelpManualButton')?.addEventListener('click', async () => {
+    const response = await window.bibliotech.help.openManual();
+    if (!response?.ok) showPending(response?.message || 'Não foi possível abrir o documento de ajuda.');
   });
+
+  document.querySelector('#openHelpWrittenManualButton')?.addEventListener('click', async () => {
+    const response = await window.bibliotech.help.openWrittenManual();
+    if (!response?.ok) showPending(response?.message || 'Não foi possível abrir o manual por escrito.');
+  });
+
   document.querySelectorAll('.quick-action').forEach((button) => {
     button.addEventListener('click', () => {
       // Finaliza o efeito visual antes de abrir a tela ou mostrar o aviso.

@@ -1,5 +1,5 @@
 /** Processo principal: cria a janela e recebe chamadas seguras da interface. */
-const { app, BrowserWindow, ipcMain, dialog, screen } = require('electron/main');
+const { app, BrowserWindow, ipcMain, dialog, screen, shell } = require('electron/main');
 const fs = require('fs');
 const path = require('node:path');
 let db;
@@ -66,6 +66,46 @@ ipcMain.handle('reports:generatePDF', async (event, dados) => {
 
 ipcMain.handle('notification:listItens', async () => {
     return notificarPrazos();
+});
+
+ipcMain.handle('help:openManual', async () => {
+  const bundledManualPath = path.join(__dirname, 'front-end', 'assets', 'documentos', 'tutorial-bibliotech.pdf');
+  const manualPath = path.join(app.getPath('temp'), 'tutorial-bibliotech.pdf');
+
+  try {
+    fs.copyFileSync(bundledManualPath, manualPath);
+  } catch (error) {
+    console.error('Erro ao preparar o documento de ajuda:', error);
+    return { ok: false, message: 'Não foi possível preparar o documento de ajuda.' };
+  }
+
+  const errorMessage = await shell.openPath(manualPath);
+
+  if (errorMessage) {
+    return { ok: false, message: 'Não foi possível abrir o documento de ajuda.' };
+  }
+
+  return { ok: true };
+});
+
+ipcMain.handle('help:openWrittenManual', async () => {
+  const bundledManualPath = path.join(__dirname, 'front-end', 'assets', 'documentos', 'manual-bibliotech.pdf');
+  const manualPath = path.join(app.getPath('temp'), 'manual-bibliotech.pdf');
+
+  try {
+    fs.copyFileSync(bundledManualPath, manualPath);
+  } catch (error) {
+    console.error('Erro ao preparar o manual por escrito:', error);
+    return { ok: false, message: 'Não foi possível preparar o manual por escrito.' };
+  }
+
+  const errorMessage = await shell.openPath(manualPath);
+
+  if (errorMessage) {
+    return { ok: false, message: 'Não foi possível abrir o manual por escrito.' };
+  }
+
+  return { ok: true };
 });
 
 // função de cadastrar os livros 
