@@ -5825,6 +5825,452 @@ overflow-wrap: anywhere;
     outline: none;
 }
 
+/* Central de ajuda da Sprint 5. */
+.help-page {
+    width: 100%;
+    max-width: none;
+}
+
+.help-hero {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 18px 24px;
+    background:
+        radial-gradient(circle at 92% 10%, rgba(10, 155, 148, 0.14), transparent 34%),
+        linear-gradient(135deg, #ffffff 0%, #f4fbfb 100%);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    box-shadow: var(--shadow);
+}
+
+.help-hero__icon {
+    display: grid;
+    width: 62px;
+    height: 62px;
+    flex: 0 0 62px;
+    color: #087f7a;
+    background: #e1f5f4;
+    border: 1px solid #b7dedd;
+    border-radius: 16px;
+    place-items: center;
+}
+
+.help-hero__icon .material-symbols-outlined {
+    font-size: 33px;
+}
+
+.help-hero h1 {
+    margin: 1px 0 3px;
+    font-size: clamp(27px, 2.7vw, 34px);
+}
+
+.help-hero .page-intro__eyebrow {
+    margin-bottom: 6px;
+}
+
+.help-hero .page-intro__description {
+    max-width: 720px;
+    margin-top: 7px;
+}
+
+.help-functions {
+    margin-top: 18px;
+    padding: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: 0 8px 22px rgba(28, 72, 75, 0.06);
+}
+
+.help-section-heading {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+}
+
+.help-section-heading__icon {
+    display: grid;
+    width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
+    color: var(--primary-dark);
+    background: #e7f7f6;
+    border-radius: 12px;
+    place-items: center;
+}
+
+.help-section-heading h2 {
+    margin: 3px 0 0;
+    color: var(--text);
+    font-size: 19px;
+}
+
+.help-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.55fr) minmax(280px, 0.75fr);
+    gap: 18px;
+    margin-top: 18px;
+}
+
+.help-document,
+.help-resources {
+    padding: 22px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: 0 8px 22px rgba(28, 72, 75, 0.06);
+}
+
+.help-steps {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 11px;
+    margin-top: 16px;
+}
+
+.help-steps article {
+    display: flex;
+    min-width: 0;
+    align-items: flex-start;
+    gap: 11px;
+    padding: 14px;
+    background: #f7fbfb;
+    border: 1px solid #dcebec;
+    border-radius: 12px;
+}
+
+.help-steps__number {
+    display: grid;
+    width: 27px;
+    height: 27px;
+    flex: 0 0 27px;
+    color: #ffffff;
+    background: var(--primary);
+    border-radius: 50%;
+    font-size: 12px;
+    font-weight: 800;
+    place-items: center;
+}
+
+.help-steps strong {
+    display: block;
+    margin: 1px 0 4px;
+    color: var(--text);
+    font-size: 13px;
+}
+
+.help-steps p,
+.help-resources > p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+.help-resources {
+    display: flex;
+    flex-direction: column;
+}
+
+.help-resources > p {
+    margin: 18px 0;
+    font-size: 12px;
+}
+
+.help-resources .help-action {
+    width: 100%;
+}
+
+.help-resources .help-action + .help-action {
+    margin-top: 10px;
+}
+
+.help-function-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.help-function-card {
+    display: flex;
+    min-width: 0;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 13px;
+    background: #f7fbfb;
+    border: 1px solid #dcebec;
+    border-radius: 12px;
+}
+
+.help-function-card > .material-symbols-outlined {
+    display: grid;
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+    color: var(--primary-dark);
+    background: #e1f4f3;
+    border-radius: 9px;
+    font-size: 19px;
+    place-items: center;
+}
+
+.help-function-card h3 {
+    margin: 1px 0 4px;
+    color: var(--text);
+    font-size: 13px;
+}
+
+.help-function-card p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 10px;
+    line-height: 1.45;
+}
+
+.help-tutorial {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 14px;
+    padding: 17px 20px;
+    background: linear-gradient(135deg, #eef9f8 0%, #ffffff 100%);
+    border: 1px solid #badcdd;
+    border-radius: 16px;
+    box-shadow: 0 8px 22px rgba(28, 72, 75, 0.05);
+}
+
+.help-tutorial__icon {
+    display: grid;
+    width: 52px;
+    height: 52px;
+    flex: 0 0 52px;
+    color: #ffffff;
+    background: var(--primary);
+    border-radius: 13px;
+    font-size: 28px;
+    place-items: center;
+}
+
+.help-tutorial__content {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.help-tutorial h2 {
+    margin: 2px 0 3px;
+    color: var(--text);
+    font-size: 17px;
+}
+
+.help-tutorial p:last-child {
+    margin: 0;
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.45;
+}
+
+.help-action {
+    display: flex;
+    width: auto;
+    min-height: 48px;
+    align-items: center;
+    gap: 10px;
+    padding: 0 16px;
+    color: var(--primary-dark);
+    background: transparent;
+    border: 1px solid #9bcfd0;
+    border-radius: 11px;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+.help-action:hover {
+    color: var(--primary-dark);
+    background: #eaf8f8;
+    border-color: var(--primary);
+    transform: translateY(-1px);
+}
+
+.help-action:focus-visible {
+    outline: 3px solid rgba(10, 155, 148, 0.22);
+    outline-offset: 2px;
+}
+
+.help-action--primary {
+    color: #ffffff;
+    background: var(--primary);
+    border-color: var(--primary);
+}
+
+.help-action--primary:hover {
+    color: #ffffff;
+    background: var(--primary-dark);
+    border-color: var(--primary-dark);
+}
+
+.help-action__arrow {
+    margin-left: auto;
+    font-size: 18px;
+}
+
+html[data-theme="dark"] .help-hero {
+    background:
+        radial-gradient(circle at 92% 10%, rgba(58, 150, 148, 0.14), transparent 36%),
+        linear-gradient(135deg, #10252b 0%, #123038 100%);
+    border-color: #315058;
+}
+
+html[data-theme="dark"] .help-hero__icon {
+    color: #8fd6d2;
+    background: #1b3c43;
+    border-color: #3b6268;
+}
+
+html[data-theme="dark"] :is(.help-functions, .help-tutorial) {
+    background: #10252b;
+    border-color: #315058;
+    box-shadow: 0 10px 24px rgba(0, 7, 9, 0.22);
+}
+
+html[data-theme="dark"] :is(.help-document, .help-resources) {
+    background: #10252b;
+    border-color: #315058;
+    box-shadow: 0 10px 24px rgba(0, 7, 9, 0.22);
+}
+
+html[data-theme="dark"] .help-tutorial {
+    background: linear-gradient(135deg, #123038 0%, #10252b 100%);
+}
+
+html[data-theme="dark"] .help-section-heading {
+    border-color: #315058;
+}
+
+html[data-theme="dark"] .help-section-heading__icon {
+    color: #8fd6d2;
+    background: #1b3c43;
+}
+
+html[data-theme="dark"] :is(.help-section-heading h2, .help-function-card h3, .help-tutorial h2) {
+    color: #e1eef0;
+}
+
+html[data-theme="dark"] .help-steps article {
+    background: #163138;
+    border-color: #315058;
+}
+
+html[data-theme="dark"] .help-steps__number {
+    color: #e7f8f7;
+    background: #0d7471;
+}
+
+html[data-theme="dark"] .help-steps strong {
+    color: #e1eef0;
+}
+
+html[data-theme="dark"] :is(.help-steps p, .help-resources > p) {
+    color: #a9bec2;
+}
+
+html[data-theme="dark"] .help-function-card {
+    background: #163138;
+    border-color: #315058;
+}
+
+html[data-theme="dark"] .help-function-card > .material-symbols-outlined {
+    color: #8fd6d2;
+    background: #21444b;
+}
+
+html[data-theme="dark"] :is(.help-function-card p, .help-tutorial p:last-child) {
+    color: #94a9ae;
+}
+
+html[data-theme="dark"] .help-action {
+    color: #c7e7e6;
+    background: #17343a;
+    border-color: #3b656a;
+}
+
+html[data-theme="dark"] .help-action:hover {
+    color: #e7f8f7;
+    background: #1b4146;
+    border-color: #57918f;
+}
+
+html[data-theme="dark"] .help-action--primary,
+html[data-theme="dark"] .help-tutorial__icon {
+    color: #e7f8f7;
+    background: #0d7471;
+    border-color: #0d7471;
+}
+
+html[data-theme="dark"] .help-action--primary:hover {
+    color: #ffffff;
+    background: #118681;
+    border-color: #118681;
+}
+
+@media (max-width: 1120px) {
+    .help-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .help-function-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+}
+
+@media (max-width: 680px) {
+    .help-hero {
+        align-items: flex-start;
+        padding: 17px 16px;
+    }
+
+    .help-hero__icon {
+        width: 50px;
+        height: 50px;
+        flex-basis: 50px;
+        border-radius: 13px;
+    }
+
+    .help-hero__icon .material-symbols-outlined {
+        font-size: 28px;
+    }
+
+    .help-functions {
+        padding: 16px;
+    }
+
+    .help-document,
+    .help-resources {
+        padding: 18px;
+    }
+
+    .help-function-grid,
+    .help-steps {
+        grid-template-columns: 1fr;
+    }
+
+    .help-tutorial {
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .help-tutorial .help-action {
+        width: 100%;
+    }
+}
+
 /* Tela Sobre e créditos da Sprint 3. */
 .about-page {
     width: 100%;

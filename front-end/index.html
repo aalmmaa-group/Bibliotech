@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bibliotech</title>
     <link rel="icon" type="image/png" href="assets/bibliotech-logo.png?v=3">
-    <link rel="stylesheet" href="style.css/style.css?v=7">
+    <link rel="stylesheet" href="style.css/style.css?v=12">
 </head>
 <body class="is-loading" aria-busy="true">
     <div class="app-loading-screen" id="appLoadingScreen" role="status" aria-label="Carregando o Bibliotech">
@@ -702,6 +702,89 @@
                         <button class="primary-action" id="btnCadastrar" type="submit">Validar e enviar cadastro</button>
                     </div>
                 </form>
+            </section>
+
+            <!-- Central de ajuda: reúne o documento de orientação e o tutorial online. -->
+            <section class="page-intro help-page" id="helpPage" hidden aria-labelledby="helpPageTitle">
+                <header class="help-hero">
+                    <div class="help-hero__icon" aria-hidden="true">
+                        <span class="material-symbols-outlined">help</span>
+                    </div>
+                    <div>
+                        <p class="page-intro__eyebrow">Suporte ao usuário</p>
+                        <h1 id="helpPageTitle">Central de ajuda</h1>
+                        <p class="page-intro__description">
+                            Encontre orientações rápidas para utilizar os principais recursos do Bibliotech.
+                        </p>
+                    </div>
+                </header>
+
+                <div class="help-layout">
+                    <article class="help-document" aria-labelledby="helpFunctionsTitle">
+                        <header class="help-section-heading">
+                            <span class="help-section-heading__icon material-symbols-outlined" aria-hidden="true">apps</span>
+                            <div>
+                                <p class="page-intro__eyebrow">Funções do sistema</p>
+                                <h2 id="helpFunctionsTitle">O que você pode fazer</h2>
+                            </div>
+                        </header>
+
+                        <div class="help-steps">
+                            <article>
+                                <span class="help-steps__number">1</span>
+                                <div>
+                                    <strong>Visão geral e Gestão</strong>
+                                    <p>Acompanhe os indicadores do acervo e acesse as principais tarefas do sistema.</p>
+                                </div>
+                            </article>
+                            <article>
+                                <span class="help-steps__number">2</span>
+                                <div>
+                                    <strong>Cadastro e Acervo</strong>
+                                    <p>Cadastre, pesquise, edite ou exclua livros e consulte a disponibilidade.</p>
+                                </div>
+                            </article>
+                            <article>
+                                <span class="help-steps__number">3</span>
+                                <div>
+                                    <strong>Empréstimos e Devoluções</strong>
+                                    <p>Registre retiradas, acompanhe prazos e confirme o retorno dos livros.</p>
+                                </div>
+                            </article>
+                            <article>
+                                <span class="help-steps__number">4</span>
+                                <div>
+                                    <strong>Relatórios e Notificações</strong>
+                                    <p>Gere análises em PDF e acompanhe avisos de devoluções e atrasos.</p>
+                                </div>
+                            </article>
+                        </div>
+                    </article>
+
+                    <aside class="help-resources" aria-labelledby="helpTutorialTitle">
+                        <header class="help-section-heading">
+                            <span class="help-section-heading__icon material-symbols-outlined" aria-hidden="true">picture_as_pdf</span>
+                            <div>
+                                <p class="page-intro__eyebrow">Tutorial completo</p>
+                                <h2 id="helpTutorialTitle">Como usar o Bibliotech</h2>
+                            </div>
+                        </header>
+
+                        <p>Consulte o documento ilustrado com o passo a passo das telas e funções do sistema.</p>
+
+                        <button class="help-action help-action--primary" id="openHelpManualButton" type="button">
+                            <span class="material-symbols-outlined" aria-hidden="true">menu_book</span>
+                            <span>Abrir tutorial ilustrado</span>
+                            <span class="material-symbols-outlined help-action__arrow" aria-hidden="true">open_in_new</span>
+                        </button>
+
+                        <button class="help-action" id="openHelpWrittenManualButton" type="button">
+                            <span class="material-symbols-outlined" aria-hidden="true">description</span>
+                            <span>Abrir manual por escrito</span>
+                            <span class="material-symbols-outlined help-action__arrow" aria-hidden="true">open_in_new</span>
+                        </button>
+                    </aside>
+                </div>
             </section>
 
             <!-- Créditos da Sprint 3: apresenta o projeto, a instituição e a equipe. -->
@@ -1447,6 +1530,6 @@
         </article>
     </dialog>
 
-    <script src="script.js?v=6"></script>
+    <script src="script.js?v=7"></script>
 </body>
 </html>
