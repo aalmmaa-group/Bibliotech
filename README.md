@@ -36,7 +36,7 @@ Projeto desenvolvido por uma equipe de **7 integrantes**:
 
 ## 📌 Status
 
-🚧 **Em desenvolvimento**
+🚧 **Concluído**
 
 ---
 
